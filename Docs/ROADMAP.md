@@ -18,6 +18,8 @@
 
 완료 조건: 서버가 실행되고 자동 테스트와 Health Check가 통과한다.
 
+상태: 완료
+
 ## Step 3. PostgreSQL 연동
 
 - Docker Compose로 로컬 PostgreSQL 구성

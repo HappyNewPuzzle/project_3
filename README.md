@@ -29,4 +29,23 @@
 
 ## 현재 상태
 
-Step 1: 게임의 MVP 범위와 서버 설계 원칙을 정의했습니다.
+Step 2: .NET 솔루션, 서버 상태 API, OpenAPI/Swagger UI와 첫 자동 테스트를 구성했습니다.
+
+## 로컬 실행
+
+```powershell
+dotnet restore
+dotnet run --project src/IdleGuild.Api
+```
+
+실행 후 다음 주소를 확인할 수 있습니다.
+
+- Health Check: `http://localhost:5219/health`
+- System Status: `http://localhost:5219/api/v1/system/status`
+- Swagger UI: `http://localhost:5219/swagger`
+
+전체 테스트는 다음 명령으로 실행합니다.
+
+```powershell
+dotnet test
+```
