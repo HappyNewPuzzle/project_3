@@ -1,4 +1,5 @@
 <Project>
+  <!-- 모든 프로젝트에 동일한 컴파일 품질 기준을 적용합니다. -->
   <PropertyGroup>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
