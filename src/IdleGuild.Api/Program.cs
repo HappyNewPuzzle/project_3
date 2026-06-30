@@ -1,4 +1,5 @@
 using IdleGuild.Api.Endpoints;
+using IdleGuild.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -6,6 +7,13 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddOpenApi();
 builder.Services.AddHealthChecks();
 builder.Services.AddSingleton(TimeProvider.System);
+
+// 실제 비밀값은 환경 변수나 User Secrets가 appsettings의 자리표시자를 덮어씁니다.
+var gameDatabaseConnection = builder.Configuration
+    .GetConnectionString("GameDatabase")
+    ?? throw new InvalidOperationException(
+        "Connection string 'GameDatabase' is required.");
+builder.Services.AddInfrastructure(gameDatabaseConnection);
 
 var app = builder.Build();
 
