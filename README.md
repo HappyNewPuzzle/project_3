@@ -26,6 +26,7 @@
 - [게임 설계](Docs/GAME_DESIGN.md)
 - [서버 아키텍처](Docs/ARCHITECTURE.md)
 - [데이터베이스](Docs/DATABASE.md)
+- [프로젝트 폴더 및 파일 구조](Docs/PROJECT_STRUCTURE.md)
 - [개발 로드맵](Docs/ROADMAP.md)
 
 ## 현재 상태

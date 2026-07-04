@@ -1,0 +1,672 @@
+# 프로젝트 폴더 및 파일 구조
+
+이 문서는 `project3` 저장소에 있는 폴더와 파일의 역할, 생성 이유, 수정 시점을 설명합니다. 현재 프로젝트는 서버 권위형 방치형 게임을 위한 ASP.NET Core 서버이며, PostgreSQL 영속성 기반까지 구현되어 있습니다.
+
+## 1. 가장 먼저 이해할 구조
+
+```text
+project3
+├─ Docs/                          설계와 학습 문서
+├─ src/                           배포되는 실제 서버 코드
+│  ├─ IdleGuild.Api/              HTTP 요청과 서버 실행
+│  ├─ IdleGuild.Application/      유스케이스 조정
+│  ├─ IdleGuild.Domain/           순수 게임 규칙과 상태
+│  └─ IdleGuild.Infrastructure/   PostgreSQL과 외부 기술 구현
+├─ tests/                         자동 검증 코드
+│  ├─ IdleGuild.Api.Tests/
+│  ├─ IdleGuild.Domain.Tests/
+│  └─ IdleGuild.Infrastructure.Tests/
+├─ compose.yaml                   로컬 PostgreSQL 실행 환경
+├─ IdleGuild.sln                  전체 .NET 프로젝트 묶음
+└─ README.md                      프로젝트 시작 안내
+```
+
+프로덕션 코드의 의존성 방향은 다음과 같습니다.
+
+```text
+IdleGuild.Api
+    ├────────────> IdleGuild.Application ────────> IdleGuild.Domain
+    └────────────> IdleGuild.Infrastructure ─────> IdleGuild.Domain
+                              └───────────────────> IdleGuild.Application
+```
+
+의존성은 바깥 계층에서 안쪽 계층으로 향합니다. 가장 안쪽의 `Domain`은 웹 서버, EF Core, PostgreSQL을 참조하지 않습니다. 이 규칙 덕분에 게임 규칙을 기술 구현과 분리해 빠르게 테스트할 수 있습니다.
+
+## 2. 루트 폴더
+
+### `.git/`
+
+Git이 커밋, 브랜치, 원격 저장소 정보를 보관하는 내부 폴더입니다.
+
+- Git 명령이 자동으로 관리합니다.
+- 애플리케이션 코드가 아니며 직접 수정하지 않습니다.
+- 삭제하면 로컬 저장소의 Git 이력을 인식할 수 없게 됩니다.
+
+### `.agents/`
+
+개발 보조 도구가 작업 정보를 관리하기 위해 사용할 수 있는 내부 폴더입니다.
+
+- 게임 서버 실행과는 관계가 없습니다.
+- 현재 애플리케이션 파일은 들어 있지 않습니다.
+- 도구가 관리하므로 직접 코드를 추가하지 않습니다.
+
+### `Docs/`
+
+프로젝트의 의도와 결정 사항을 기록하는 폴더입니다. 코드는 현재 동작을 보여 주고, 문서는 코드가 그렇게 만들어진 이유를 설명합니다.
+
+새 기능을 만들 때 관련 규칙이나 구조가 달라졌다면 코드와 함께 이 폴더의 문서도 수정합니다.
+
+### `src/`
+
+실제 서버를 구성하는 프로덕션 코드가 들어갑니다. 테스트 전용 코드는 이곳에 넣지 않습니다.
+
+`Api`, `Application`, `Domain`, `Infrastructure`로 책임을 나눠 특정 프레임워크나 DB 기술이 게임 규칙 전체로 퍼지는 것을 막습니다.
+
+### `tests/`
+
+프로덕션 코드의 동작과 구조를 자동으로 검증합니다.
+
+- `Domain.Tests`: 순수 게임 규칙을 빠르게 검증합니다.
+- `Api.Tests`: HTTP 요청과 응답을 검증합니다.
+- `Infrastructure.Tests`: 실제 PostgreSQL 저장 동작을 검증합니다.
+
+프로덕션 프로젝트와 테스트 프로젝트를 분리한 이유는 테스트 패키지와 테스트용 컨테이너 코드가 실제 서버 배포물에 포함되지 않게 하기 위해서입니다.
+
+### 자동 생성되는 `bin/`과 `obj/`
+
+각 `.NET` 프로젝트 아래에는 빌드 후 `bin/`, `obj/` 폴더가 생깁니다.
+
+- `bin/`: DLL, 실행 파일, 런타임 설정 등 최종 빌드 결과를 보관합니다.
+- `obj/`: 컴파일 중간 파일, NuGet 복원 정보, 생성 코드를 보관합니다.
+- `dotnet build`와 `dotnet test`가 자동으로 다시 생성합니다.
+- 직접 수정하거나 Git에 커밋하지 않습니다.
+
+## 3. 루트 파일
+
+### `README.md`
+
+저장소의 첫 화면이며 프로젝트에 들어온 사람이 가장 먼저 읽는 안내서입니다.
+
+- 프로젝트 목적과 기술 구성을 설명합니다.
+- 문서 목록을 연결합니다.
+- PostgreSQL, Migration, API 실행 명령을 제공합니다.
+- 현재 완료된 Step을 표시합니다.
+
+실행 방법이나 주요 기술 구성이 바뀌면 반드시 수정합니다.
+
+### `IdleGuild.sln`
+
+7개의 `.NET` 프로젝트를 하나의 솔루션으로 묶습니다.
+
+- Visual Studio의 Solution Explorer에 프로젝트를 표시합니다.
+- `dotnet build IdleGuild.sln`으로 전체 프로젝트를 빌드할 수 있게 합니다.
+- `dotnet test IdleGuild.sln`으로 모든 테스트 프로젝트를 실행할 수 있게 합니다.
+- `src`와 `tests` 솔루션 폴더로 프로젝트를 보기 좋게 분류합니다.
+
+프로젝트를 추가하거나 제거할 때 `dotnet sln add/remove` 명령으로 갱신합니다. 일반적으로 텍스트를 직접 편집하지 않습니다.
+
+### `global.json`
+
+프로젝트가 사용할 .NET SDK 버전을 `10.0.301`로 고정합니다.
+
+개발자마다 다른 SDK를 사용하면 템플릿, 컴파일러, 빌드 결과가 달라질 수 있기 때문에 만들었습니다. SDK를 팀 전체에서 업그레이드할 때만 수정합니다.
+
+### `Directory.Build.props`
+
+모든 하위 `.csproj`에 공통으로 적용되는 빌드 규칙입니다.
+
+- `ImplicitUsings`: 자주 쓰는 네임스페이스를 자동으로 가져옵니다.
+- `Nullable`: null 가능성에 대한 컴파일 검사를 활성화합니다.
+- `TreatWarningsAsErrors`: 컴파일 경고도 오류로 처리합니다.
+
+각 프로젝트에 같은 설정을 반복하지 않고 품질 기준을 한곳에서 유지하기 위해 만들었습니다.
+
+### `dotnet-tools.json`
+
+저장소 전용 .NET CLI 도구 목록입니다.
+
+현재 `dotnet-ef` 10.0.9를 고정합니다. 새 개발자는 `dotnet tool restore`만 실행하면 같은 EF Migration 도구를 사용할 수 있습니다.
+
+도구 버전을 올리거나 새 로컬 도구를 추가할 때 수정되며, 보통 `dotnet tool install/update` 명령이 관리합니다.
+
+### `compose.yaml`
+
+로컬 PostgreSQL 18 컨테이너 실행 방법을 선언합니다.
+
+- PostgreSQL 이미지와 포트를 지정합니다.
+- DB 이름, 사용자, 비밀번호를 환경 변수로 받습니다.
+- 데이터가 컨테이너 재시작 후에도 남도록 볼륨을 연결합니다.
+- `pg_isready` Health Check로 DB 준비 상태를 확인합니다.
+
+개발자가 PostgreSQL을 직접 설치하지 않아도 같은 버전과 설정으로 실행하게 하기 위해 만들었습니다.
+
+### `.env.example`
+
+`compose.yaml`이 요구하는 환경 변수의 예시입니다.
+
+- 실제 `.env`를 만들 때 복사할 템플릿입니다.
+- 포함된 비밀번호는 로컬 개발용 자리표시자입니다.
+- 실제 운영 비밀값을 넣지 않습니다.
+
+환경 변수가 추가되면 이 파일에도 안전한 예시값을 추가합니다.
+
+### `.gitignore`
+
+Git이 추적하지 않아야 할 파일과 폴더를 정의합니다.
+
+- `.NET`의 `bin/`, `obj/`
+- Unity의 `Library/`, `Temp/`, `Build/`
+- IDE의 `.vs/`, `.idea/`, `.vscode/`
+- 실제 비밀값이 들어갈 `.env`
+- 로컬 전용 `appsettings.Development.json`
+
+빌드 결과와 비밀값이 원격 저장소에 올라가는 것을 막기 위해 필요합니다.
+
+## 4. `Docs/` 내부
+
+### `Docs/GAME_DESIGN.md`
+
+게임 자체의 규칙을 정의합니다.
+
+- 방치형 모험가 길드라는 콘셉트
+- 골드 생산 → 보상 수령 → 강화 → 스테이지 진행의 핵심 루프
+- MVP에 포함하거나 제외할 기능
+- 초기 강화 비용과 전투력 공식
+- 서버가 직접 검증해야 하는 값
+
+게임 규칙이나 밸런스 공식이 바뀔 때 수정합니다.
+
+### `Docs/ARCHITECTURE.md`
+
+서버의 기술 구조와 계층별 책임을 정의합니다.
+
+- 모듈형 모놀리스 선택 이유
+- API, Application, Domain, Infrastructure의 책임
+- 주요 모듈과 API 초안
+- 데이터 저장 원칙과 품질 기준
+
+새 계층이나 모듈이 추가되거나 의존성 방향이 바뀔 때 수정합니다.
+
+### `Docs/DATABASE.md`
+
+PostgreSQL과 EF Core 사용 방법을 설명합니다.
+
+- `PlayerGameState`에서 PostgreSQL까지의 데이터 흐름
+- `player_game_states` 테이블의 열
+- Migration 생성·적용 명령
+- `xmin` 동시성 토큰
+- Testcontainers 통합 테스트 방식
+
+테이블, Migration 방식, DB 실행 방법이 달라질 때 수정합니다.
+
+### `Docs/ROADMAP.md`
+
+프로젝트를 작은 완료 단위로 나눈 개발 계획입니다.
+
+- 각 Step에서 구현할 기능
+- 완료 여부를 판단하는 조건
+- 완료된 Step 상태
+- Unity 클라이언트로 넘어갈 시점
+
+Step을 시작하거나 완료할 때 상태를 갱신합니다.
+
+### `Docs/PROJECT_STRUCTURE.md`
+
+현재 읽고 있는 문서입니다.
+
+프로젝트의 모든 주요 폴더와 파일을 어디서부터 읽어야 하는지 설명합니다. 파일이 추가·삭제되거나 폴더 책임이 달라질 때 함께 수정합니다.
+
+## 5. `src/IdleGuild.Api/`
+
+HTTP 요청을 받아 Application 또는 Infrastructure에 전달하고 HTTP 응답으로 변환하는 프로젝트입니다. 게임 규칙을 직접 구현하는 장소가 아닙니다.
+
+### `IdleGuild.Api.csproj`
+
+API 프로젝트의 빌드 및 의존성 설정입니다.
+
+- Web SDK를 사용해 ASP.NET Core 실행 파일을 만듭니다.
+- 대상 프레임워크를 `net10.0`으로 지정합니다.
+- OpenAPI 문서 생성 패키지를 참조합니다.
+- Swagger UI 패키지를 참조합니다.
+- `Application`과 `Infrastructure` 프로젝트를 참조합니다.
+
+API 전용 NuGet 패키지나 프로젝트 참조가 바뀔 때 수정합니다.
+
+### `Program.cs`
+
+서버 프로세스의 진입점이자 Composition Root입니다.
+
+현재 다음 작업을 수행합니다.
+
+1. ASP.NET Core 애플리케이션 Builder를 생성합니다.
+2. OpenAPI, Health Check, `TimeProvider`를 DI 컨테이너에 등록합니다.
+3. 설정에서 PostgreSQL 연결 문자열을 읽습니다.
+4. `AddInfrastructure`로 `GameDbContext`를 등록합니다.
+5. Development 환경에서 OpenAPI와 Swagger UI를 활성화합니다.
+6. `/health`와 시스템 상태 엔드포인트를 연결합니다.
+7. 서버를 실행합니다.
+
+`Program`을 `partial`로 공개한 이유는 `WebApplicationFactory<Program>`이 테스트에서 서버 진입점을 찾게 하기 위해서입니다.
+
+새로운 큰 기능의 세부 구현을 이 파일에 직접 넣기보다, 각 계층의 등록 확장 메서드를 호출하는 형태로 유지합니다.
+
+### `appsettings.json`
+
+API의 기본 설정 파일입니다.
+
+- PostgreSQL 연결 문자열 형식을 제공합니다.
+- 로그 수준을 지정합니다.
+- 허용할 Host 설정을 제공합니다.
+
+DB 비밀번호는 `CHANGE_ME` 자리표시자일 뿐입니다. 실제 값은 환경 변수나 User Secrets로 덮어써야 합니다.
+
+### `IdleGuild.Api.http`
+
+IDE의 HTTP Client로 API를 직접 호출하는 예제 요청입니다.
+
+- `/health`
+- `/api/v1/system/status`
+
+새 API를 만들면 수동 확인용 요청 예시를 추가할 수 있습니다.
+
+### `Properties/`
+
+API 프로젝트의 실행 프로필 설정을 모아 둡니다.
+
+#### `Properties/launchSettings.json`
+
+로컬 개발 실행 설정입니다.
+
+- HTTP 실행 주소를 `http://localhost:5219`로 지정합니다.
+- 환경을 `Development`로 설정합니다.
+- 브라우저 자동 실행 여부를 지정합니다.
+
+배포 서버 설정이 아니라 로컬 IDE와 `dotnet run` 편의를 위한 파일입니다.
+
+### `Contracts/`
+
+HTTP 요청과 응답의 외부 계약 DTO를 보관합니다.
+
+Domain 객체를 그대로 외부에 노출하면 내부 모델 변경이 API 파괴 변경으로 이어질 수 있으므로 별도 폴더로 분리했습니다.
+
+#### `Contracts/SystemStatusResponse.cs`
+
+시스템 상태 API가 반환하는 응답 형식입니다.
+
+- `Status`: API 상태 문자열
+- `ServerTimeUtc`: 서버가 판단한 현재 UTC 시각
+
+Unity 클라이언트는 이 JSON 계약을 기준으로 응답을 역직렬화하게 됩니다.
+
+### `Endpoints/`
+
+Minimal API의 URL, HTTP 메서드, 입력과 출력 연결을 모아 둡니다.
+
+기능별 Endpoint 파일로 나누면 `Program.cs`가 커지는 것을 막을 수 있습니다.
+
+#### `Endpoints/SystemEndpoints.cs`
+
+`GET /api/v1/system/status`를 등록합니다.
+
+- `TimeProvider`를 DI로 받습니다.
+- 현재 서버 UTC 시각을 조회합니다.
+- `SystemStatusResponse`를 200 OK로 반환합니다.
+- OpenAPI 이름, 설명, 응답 형식을 등록합니다.
+
+`DateTimeOffset.UtcNow`를 직접 호출하지 않고 `TimeProvider`를 사용하는 이유는 이후 테스트에서 시간을 교체할 수 있게 하기 위해서입니다.
+
+## 6. `src/IdleGuild.Application/`
+
+한 번의 사용자 행동을 완성하는 유스케이스를 구현할 프로젝트입니다.
+
+예정된 Application 기능은 다음과 같습니다.
+
+- 게스트 계정 생성
+- 게임 상태 조회
+- 방치 보상 계산과 저장
+- 영웅 강화
+- 스테이지 도전
+
+Application은 Domain 규칙을 호출하고 저장소 인터페이스와 트랜잭션 경계를 조정합니다. HTTP나 EF Core 세부사항은 알지 않게 유지합니다.
+
+### `IdleGuild.Application.csproj`
+
+Application 프로젝트 설정입니다.
+
+- `net10.0` 클래스 라이브러리입니다.
+- `Domain` 프로젝트만 참조합니다.
+
+현재 Step 3까지는 유스케이스가 없어 `.csproj`만 존재합니다. Step 4부터 실제 코드가 추가됩니다.
+
+## 7. `src/IdleGuild.Domain/`
+
+게임에서 반드시 지켜야 하는 상태와 규칙을 표현합니다.
+
+Domain은 ASP.NET Core, EF Core, PostgreSQL 패키지를 참조하지 않습니다. 게임 규칙이 특정 저장 기술에 종속되지 않도록 하기 위한 구조입니다.
+
+### `IdleGuild.Domain.csproj`
+
+Domain 프로젝트 설정입니다.
+
+- `net10.0` 클래스 라이브러리입니다.
+- 다른 IdleGuild 프로젝트 참조가 없습니다.
+- 외부 NuGet 패키지도 없습니다.
+
+Domain의 순수성을 확인할 때 가장 먼저 볼 파일입니다.
+
+### `DomainAssembly.cs`
+
+Domain 어셈블리를 코드에서 안정적으로 찾기 위한 빈 표식 클래스입니다.
+
+현재 `DomainDependencyTests`가 `typeof(DomainAssembly).Assembly`를 통해 Domain DLL의 참조 목록을 검사할 때 사용합니다. 이후 자동 매핑이나 도메인 이벤트 등록에도 활용할 수 있습니다.
+
+### `GameStates/`
+
+플레이어의 지속되는 게임 진행 상태를 표현하는 Domain 객체를 보관합니다.
+
+#### `GameStates/PlayerGameState.cs`
+
+한 플레이어의 핵심 상태를 나타냅니다.
+
+- `PlayerId`: 플레이어 식별자
+- `Gold`: 보유 골드
+- `HeroLevel`: 주 영웅 레벨
+- `HighestStage`: 최고 도달 스테이지
+- `CreatedAtUtc`: 생성 시각
+- `LastIdleRewardClaimedAtUtc`: 마지막 방치 보상 정산 시각
+- `Version`: 동시 변경 감지 버전
+
+`Create` 팩터리 메서드는 빈 `Guid`와 기본 시각을 거부하고, 시각을 UTC로 변환합니다. 새 플레이어는 골드 0, 영웅 레벨 1, 최고 스테이지 1로 생성됩니다.
+
+속성의 setter를 `private`으로 둔 이유는 외부 코드가 검증 없이 게임 상태를 변경하지 못하게 하기 위해서입니다. 향후 골드 지급이나 강화는 의미 있는 Domain 메서드를 통해 수행합니다.
+
+매개변수 없는 private 생성자는 EF Core가 DB 값을 객체로 복원할 때 필요합니다.
+
+## 8. `src/IdleGuild.Infrastructure/`
+
+Application과 Domain이 필요로 하는 기능을 PostgreSQL, EF Core 같은 실제 기술로 구현합니다.
+
+### `IdleGuild.Infrastructure.csproj`
+
+Infrastructure 프로젝트 설정입니다.
+
+- `Application`과 `Domain`을 참조합니다.
+- EF Core 10.0.9를 참조합니다.
+- EF 설계 도구 패키지를 참조합니다.
+- Npgsql PostgreSQL 공급자를 참조합니다.
+
+`Microsoft.EntityFrameworkCore.Design`에 `PrivateAssets=all`을 지정해 설계 전용 패키지가 다른 프로젝트와 최종 배포물로 전파되지 않게 합니다.
+
+### `DependencyInjection.cs`
+
+Infrastructure 서비스 등록 확장 메서드를 제공합니다.
+
+`AddInfrastructure(connectionString)`은 다음 작업을 수행합니다.
+
+1. 연결 문자열이 비어 있지 않은지 검사합니다.
+2. `GameDbContext`를 DI 컨테이너에 등록합니다.
+3. EF Core가 Npgsql로 PostgreSQL에 연결하도록 설정합니다.
+
+Infrastructure 등록 세부사항을 `Program.cs`에서 분리하기 위해 만들었습니다.
+
+### `Persistence/`
+
+데이터를 PostgreSQL에 영속화하는 EF Core 구현을 보관합니다.
+
+#### `Persistence/GameDbContext.cs`
+
+EF Core의 작업 단위이자 DB 세션입니다.
+
+- `PlayerGameStates`를 통해 플레이어 상태를 조회·추가합니다.
+- 같은 어셈블리의 모든 `IEntityTypeConfiguration`을 자동으로 적용합니다.
+- 변경 추적 후 `SaveChangesAsync`를 호출하면 SQL을 생성해 DB에 반영합니다.
+
+한 요청에서 조회와 변경을 같은 `GameDbContext`로 처리하면 하나의 작업 단위로 관리할 수 있습니다.
+
+#### `Persistence/GameDbContextFactory.cs`
+
+EF CLI 전용 `IDesignTimeDbContextFactory` 구현입니다.
+
+Migration 생성 시 API 서버 전체를 실행하지 않고 `GameDbContext`를 만들 수 있게 합니다. 환경 변수에 연결 문자열이 있으면 사용하고, 없으면 설계 전용 자리표시자 연결 문자열을 사용합니다.
+
+이 클래스는 실제 게임 요청 처리보다 `dotnet-ef`의 설계 시점 작업을 지원합니다.
+
+### `Persistence/Configurations/`
+
+Domain 객체와 DB 스키마의 매핑 규칙을 보관합니다.
+
+Domain 클래스에 EF 특성(Attribute)을 붙이지 않고 Infrastructure에서 매핑해 Domain의 기술 독립성을 유지합니다.
+
+#### `Persistence/Configurations/PlayerGameStateConfiguration.cs`
+
+`PlayerGameState`를 `player_game_states` 테이블에 매핑합니다.
+
+- `player_id`를 기본키로 지정합니다.
+- C# 속성을 snake_case DB 열 이름으로 연결합니다.
+- 골드가 0 이상인지 검사하는 DB 제약조건을 만듭니다.
+- 영웅 레벨과 최고 스테이지가 1 이상인지 검사합니다.
+- `Version`을 PostgreSQL의 `xmin` 시스템 열과 연결합니다.
+
+Domain 검증과 DB 제약조건을 함께 사용하는 이유는 애플리케이션 버그나 직접 SQL 실행이 있어도 잘못된 데이터가 최종 저장되지 않게 방어하기 위해서입니다.
+
+### `Persistence/Migrations/`
+
+DB 스키마 변경 이력을 시간 순서대로 보관합니다.
+
+Migration 파일은 빈 DB를 현재 구조로 만들고, 기존 DB를 다음 버전으로 안전하게 변경하기 위해 필요합니다.
+
+#### `20260630131546_InitialGameState.cs`
+
+첫 번째 Migration의 실행 코드입니다.
+
+- `Up`: `player_game_states` 테이블과 제약조건을 생성합니다.
+- `Down`: 해당 테이블을 제거해 Migration을 되돌립니다.
+
+파일명 앞 숫자는 Migration이 만들어진 시각이며 실행 순서를 결정합니다. 이 파일은 EF가 생성하지만 실제 DB 변경 내용을 이해하기 위해 반드시 검토해야 합니다.
+
+#### `20260630131546_InitialGameState.Designer.cs`
+
+첫 Migration이 생성될 당시의 상세 EF 모델 정보입니다.
+
+- Migration과 모델 메타데이터를 연결합니다.
+- EF CLI가 자동 생성합니다.
+- 특별한 이유가 없다면 직접 수정하지 않습니다.
+
+#### `GameDbContextModelSnapshot.cs`
+
+마지막 Migration까지 적용된 현재 EF 모델의 스냅샷입니다.
+
+새 Migration을 만들 때 EF는 현재 C# 모델과 이 스냅샷을 비교해 변경점을 계산합니다. 수동 수정하면 다음 Migration이 잘못 생성될 수 있으므로 EF CLI가 관리하게 둡니다.
+
+## 9. `tests/IdleGuild.Api.Tests/`
+
+HTTP 계층이 실제 요청과 같은 방식으로 동작하는지 검증합니다.
+
+### `IdleGuild.Api.Tests.csproj`
+
+API 테스트 프로젝트 설정입니다.
+
+- xUnit과 Test SDK를 참조합니다.
+- 코드 커버리지 수집 패키지를 참조합니다.
+- `Microsoft.AspNetCore.Mvc.Testing`을 참조합니다.
+- 실제 `IdleGuild.Api` 프로젝트를 참조합니다.
+
+### `IdleGuildApiFactory.cs`
+
+`WebApplicationFactory<Program>`으로 메모리 안에서 실제 API 서버 파이프라인을 시작합니다.
+
+Development 환경으로 실행해 OpenAPI와 Swagger UI까지 검증할 수 있게 합니다. 실제 네트워크 포트를 열 필요가 없어 테스트가 빠르고 독립적입니다.
+
+### `SystemEndpointTests.cs`
+
+시스템 관련 HTTP 동작을 검증합니다.
+
+- `/health`가 `Healthy`를 반환하는지 확인합니다.
+- 상태 API가 `ok`와 서버 UTC 시각을 반환하는지 확인합니다.
+- OpenAPI 문서에 상태 API 경로가 포함되는지 확인합니다.
+- Development 환경에서 Swagger UI가 열리는지 확인합니다.
+
+Endpoint를 수정하면 해당 외부 동작을 이 테스트에서도 갱신합니다.
+
+## 10. `tests/IdleGuild.Domain.Tests/`
+
+프레임워크나 DB 없이 순수 게임 규칙을 검증합니다. 가장 빠르게 실행되어야 하는 테스트 계층입니다.
+
+### `IdleGuild.Domain.Tests.csproj`
+
+Domain 테스트 프로젝트 설정입니다.
+
+- xUnit, Test SDK, 코드 커버리지 패키지를 참조합니다.
+- `IdleGuild.Domain`만 프로젝트 참조합니다.
+
+### `DomainDependencyTests.cs`
+
+Domain 어셈블리가 다른 `IdleGuild.*` 프로젝트를 참조하지 않는지 검사합니다.
+
+실수로 Domain에서 EF Core나 API 계층 코드를 사용해 의존성 방향이 깨지는 것을 자동으로 막습니다.
+
+### `PlayerGameStateTests.cs`
+
+`PlayerGameState` 생성 규칙을 검증합니다.
+
+- 신규 플레이어가 골드 0, 레벨 1, 스테이지 1인지 확인합니다.
+- 생성 시각이 UTC로 변환되는지 확인합니다.
+- 빈 플레이어 ID가 거부되는지 확인합니다.
+
+게임 상태 규칙이 추가되면 DB 테스트보다 먼저 이곳에 빠른 단위 테스트를 추가합니다.
+
+## 11. `tests/IdleGuild.Infrastructure.Tests/`
+
+EF Core 매핑과 Migration이 실제 PostgreSQL에서 동작하는지 검증합니다.
+
+### `IdleGuild.Infrastructure.Tests.csproj`
+
+Infrastructure 테스트 프로젝트 설정입니다.
+
+- xUnit과 Test SDK를 참조합니다.
+- Testcontainers PostgreSQL 패키지를 참조합니다.
+- `Infrastructure`와 `Domain` 프로젝트를 참조합니다.
+
+### `PostgreSqlDatabaseFixture.cs`
+
+Infrastructure 테스트에서 공유할 PostgreSQL 환경을 준비합니다.
+
+기본 동작은 다음과 같습니다.
+
+1. PostgreSQL 18 일회용 컨테이너를 생성합니다.
+2. 테스트 DB와 사용자를 설정합니다.
+3. 컨테이너를 시작합니다.
+4. 모든 EF Migration을 적용합니다.
+5. 테스트 종료 후 컨테이너와 임시 데이터를 제거합니다.
+
+Docker를 직접 사용할 수 없는 CI 환경에서는 `IDLEGUILD_TEST_POSTGRES_CONNECTION_STRING`으로 외부 테스트 DB를 지정할 수도 있습니다.
+
+### `PlayerGameStatePersistenceTests.cs`
+
+`PlayerGameState`의 실제 PostgreSQL 저장·조회 왕복을 검증합니다.
+
+1. Domain 팩터리로 상태를 생성합니다.
+2. 첫 번째 `GameDbContext`로 저장합니다.
+3. 두 번째 `GameDbContext`로 다시 조회합니다.
+4. 골드, 레벨, 스테이지, UTC 시각을 비교합니다.
+5. PostgreSQL이 `xmin` 버전을 생성했는지 확인합니다.
+
+서로 다른 DbContext를 사용하는 이유는 첫 Context의 메모리 캐시가 아니라 DB에서 실제로 읽은 값인지 보장하기 위해서입니다.
+
+## 12. 현재 실행 흐름
+
+### 시스템 상태 API
+
+```text
+클라이언트
+    |
+    | GET /api/v1/system/status
+    v
+Program.cs
+    |
+    | MapSystemEndpoints()
+    v
+SystemEndpoints.cs
+    |
+    | TimeProvider.GetUtcNow()
+    v
+SystemStatusResponse
+    |
+    | JSON 직렬화
+    v
+클라이언트 응답
+```
+
+### 게임 상태 저장
+
+```text
+PlayerGameState.Create()
+    |
+    | Domain 생성 규칙
+    v
+GameDbContext.PlayerGameStates.Add()
+    |
+    | PlayerGameStateConfiguration
+    v
+Npgsql이 SQL 생성
+    |
+    v
+PostgreSQL player_game_states
+```
+
+## 13. 앞으로 파일을 어디에 추가할지 판단하는 방법
+
+| 만들려는 것 | 위치 |
+| --- | --- |
+| 게임 상태와 계산 규칙 | `src/IdleGuild.Domain/` |
+| 한 번의 사용자 행동과 처리 순서 | `src/IdleGuild.Application/` |
+| DB, 토큰, 외부 서비스 실제 구현 | `src/IdleGuild.Infrastructure/` |
+| URL, HTTP 요청·응답 DTO | `src/IdleGuild.Api/` |
+| 게임 규칙 단위 테스트 | `tests/IdleGuild.Domain.Tests/` |
+| HTTP 통합 테스트 | `tests/IdleGuild.Api.Tests/` |
+| PostgreSQL 통합 테스트 | `tests/IdleGuild.Infrastructure.Tests/` |
+| 게임·구조·운영 설명 | `Docs/` |
+
+예를 들어 게스트 계정 생성을 구현한다면 다음과 같이 나눕니다.
+
+```text
+Domain
+  계정과 게임 상태의 유효한 생성 규칙
+
+Application
+  게스트 생성 유스케이스와 저장소 인터페이스
+
+Infrastructure
+  EF Core 저장소와 인증 토큰 구현
+
+Api
+  POST /api/v1/accounts/guest와 요청·응답 계약
+
+Tests
+  각 계층의 규칙, 저장, HTTP 결과 검증
+```
+
+## 14. 추천 코드 분석 순서
+
+1. `README.md`에서 목적과 실행 방법을 확인합니다.
+2. `Docs/GAME_DESIGN.md`에서 만들어야 할 게임을 이해합니다.
+3. `Docs/ARCHITECTURE.md`에서 계층 책임을 확인합니다.
+4. 각 `.csproj`의 `ProjectReference`로 의존성 방향을 확인합니다.
+5. `Program.cs`에서 서버 시작과 DI 구성을 따라갑니다.
+6. `Endpoints`에서 URL의 진입점을 찾습니다.
+7. `Domain`에서 실제 게임 상태와 규칙을 읽습니다.
+8. `Application`에서 유스케이스 처리 순서를 읽습니다.
+9. `Infrastructure`에서 DB 저장 방식을 확인합니다.
+10. 같은 이름의 테스트에서 기대 동작과 예외 조건을 확인합니다.
+
+새 기능을 분석할 때는 다음 질문을 순서대로 사용하면 됩니다.
+
+```text
+어떤 URL로 요청이 들어오는가?
+→ 어떤 Application 유스케이스가 실행되는가?
+→ 어떤 Domain 규칙을 사용하는가?
+→ 어떤 Infrastructure 구현으로 저장하는가?
+→ 어떤 테스트가 이 동작을 보장하는가?
+```
+
+현재는 Step 3까지 완료되어 Application 유스케이스가 비어 있습니다. Step 4의 게스트 인증부터 이 흐름의 가운데 부분이 실제 코드로 채워집니다.
