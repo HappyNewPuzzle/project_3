@@ -1,3 +1,5 @@
+using IdleGuild.Domain.Rewards;
+
 namespace IdleGuild.Domain.GameStates;
 
 /// <summary>플레이어 한 명의 재화와 핵심 진행 상태를 표현합니다.</summary>
@@ -55,5 +57,42 @@ public sealed class PlayerGameState
         return new PlayerGameState(
             playerId,
             createdAt.ToUniversalTime());
+    }
+
+    /// <summary>서버 시각 기준 최대 8시간의 방치 골드를 정산하고 상태를 갱신합니다.</summary>
+    public IdleRewardSettlement ClaimIdleReward(
+        DateTimeOffset requestedAt)
+    {
+        if (requestedAt == default)
+        {
+            throw new ArgumentException(
+                "Claim time must be provided.",
+                nameof(requestedAt));
+        }
+
+        var requestedAtUtc = requestedAt.ToUniversalTime();
+        var claimedAtUtc = requestedAtUtc <
+            LastIdleRewardClaimedAtUtc
+            ? LastIdleRewardClaimedAtUtc
+            : requestedAtUtc;
+        var elapsed = claimedAtUtc -
+            LastIdleRewardClaimedAtUtc;
+        var elapsedWholeSeconds =
+            elapsed.Ticks / TimeSpan.TicksPerSecond;
+        var accumulatedSeconds = (int)Math.Min(
+            elapsedWholeSeconds,
+            IdleRewardPolicy.MaxAccumulationSeconds);
+        var goldAwarded = checked(
+            (long)accumulatedSeconds *
+            IdleRewardPolicy.BaseGoldPerSecond);
+
+        Gold = checked(Gold + goldAwarded);
+        LastIdleRewardClaimedAtUtc = claimedAtUtc;
+
+        return new IdleRewardSettlement(
+            goldAwarded,
+            accumulatedSeconds,
+            Gold,
+            claimedAtUtc);
     }
 }

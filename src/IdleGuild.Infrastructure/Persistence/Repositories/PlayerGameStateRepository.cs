@@ -24,4 +24,12 @@ public sealed class PlayerGameStateRepository(
             .SingleOrDefaultAsync(
                 state => state.PlayerId == playerId,
                 cancellationToken);
+
+    /// <summary>보상 정산을 위해 변경 추적되는 게임 상태를 조회합니다.</summary>
+    public Task<PlayerGameState?> FindForUpdateAsync(
+        Guid playerId,
+        CancellationToken cancellationToken = default) =>
+        dbContext.PlayerGameStates.SingleOrDefaultAsync(
+            state => state.PlayerId == playerId,
+            cancellationToken);
 }

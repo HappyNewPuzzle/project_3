@@ -20,9 +20,13 @@ public sealed class IdleGuildApiFactory : WebApplicationFactory<Program>
         builder.ConfigureTestServices(services =>
         {
             services.RemoveAll<IPlayerGameStateRepository>();
+            services.RemoveAll<IIdleRewardClaimRepository>();
             services.RemoveAll<IGameUnitOfWork>();
             services.AddSingleton<InMemoryPlayerGameStateStore>();
             services.AddSingleton<IPlayerGameStateRepository>(
+                provider => provider.GetRequiredService<
+                    InMemoryPlayerGameStateStore>());
+            services.AddSingleton<IIdleRewardClaimRepository>(
                 provider => provider.GetRequiredService<
                     InMemoryPlayerGameStateStore>());
             services.AddSingleton<IGameUnitOfWork>(

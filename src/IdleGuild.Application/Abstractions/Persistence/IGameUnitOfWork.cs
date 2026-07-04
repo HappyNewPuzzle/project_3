@@ -5,4 +5,6 @@ public interface IGameUnitOfWork
 {
     Task<int> SaveChangesAsync(
         CancellationToken cancellationToken = default);
+
+    void DiscardChanges();
 }

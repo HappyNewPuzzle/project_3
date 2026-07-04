@@ -1,19 +1,21 @@
 using IdleGuild.Domain.GameStates;
-using IdleGuild.Application.Abstractions.Persistence;
+using IdleGuild.Domain.Rewards;
 using Microsoft.EntityFrameworkCore;
 
 namespace IdleGuild.Infrastructure.Persistence;
 
-/// <summary>게임 도메인 객체와 PostgreSQL 테이블 사이의 작업 단위를 제공합니다.</summary>
+/// <summary>게임 영속 객체와 PostgreSQL 테이블 사이의 작업 공간을 제공합니다.</summary>
 public sealed class GameDbContext(
     DbContextOptions<GameDbContext> options) :
-    DbContext(options),
-    IGameUnitOfWork
+    DbContext(options)
 {
     public DbSet<PlayerGameState> PlayerGameStates =>
         Set<PlayerGameState>();
 
-    // 같은 어셈블리의 모든 IEntityTypeConfiguration 구현을 자동 적용합니다.
+    public DbSet<IdleRewardClaimReceipt> IdleRewardClaimReceipts =>
+        Set<IdleRewardClaimReceipt>();
+
+    // 같은 어셈블리의 모든 엔티티 구성을 자동으로 적용합니다.
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(

@@ -27,12 +27,13 @@
 - [서버 아키텍처](Docs/ARCHITECTURE.md)
 - [데이터베이스](Docs/DATABASE.md)
 - [게스트 인증](Docs/AUTHENTICATION.md)
+- [방치 보상](Docs/IDLE_REWARDS.md)
 - [프로젝트 폴더 및 파일 구조](Docs/PROJECT_STRUCTURE.md)
 - [개발 로드맵](Docs/ROADMAP.md)
 
 ## 현재 상태
 
-Step 4: 게스트 계정 생성, JWT 인증과 사용자별 게임 상태 접근을 구성했습니다.
+Step 5: 서버 시각 방치 보상, 멱등 요청, PostgreSQL 동시성 제어를 구성했습니다.
 
 ## 로컬 실행
 
@@ -58,6 +59,7 @@ dotnet run --project src/IdleGuild.Api
 - System Status: `http://localhost:5219/api/v1/system/status`
 - Create Guest: `POST http://localhost:5219/api/v1/accounts/guest`
 - Game State: `GET http://localhost:5219/api/v1/game-state`
+- Idle Reward: `POST http://localhost:5219/api/v1/rewards/idle/claim`
 - Swagger UI: `http://localhost:5219/swagger`
 
 전체 테스트는 다음 명령으로 실행합니다.

@@ -10,4 +10,8 @@ public interface IPlayerGameStateRepository
     Task<PlayerGameState?> FindByIdAsync(
         Guid playerId,
         CancellationToken cancellationToken = default);
+
+    Task<PlayerGameState?> FindForUpdateAsync(
+        Guid playerId,
+        CancellationToken cancellationToken = default);
 }

@@ -22,6 +22,8 @@ GameDbContext
     | Npgsql
     v
 PostgreSQL player_game_states
+    |
+    `-- 1:N idle_reward_claim_receipts
 ```
 
 Domain 객체는 PostgreSQL을 알지 못합니다. 열 이름, 제약조건, `xmin` 같은 DB 세부사항은 Infrastructure의 EF 설정이 담당합니다.
@@ -40,7 +42,20 @@ Domain 객체는 PostgreSQL을 알지 못합니다. 열 이름, 제약조건, `x
 
 DB 체크 제약조건은 골드가 음수가 되거나 영웅 레벨과 최고 스테이지가 1보다 작아지는 것을 차단합니다.
 
-## 4. Migration
+## 4. idle_reward_claim_receipts
+
+| 열 | PostgreSQL 형식 | 역할 |
+| --- | --- | --- |
+| `player_id` | `uuid` | 플레이어 ID와 외래키 |
+| `idempotency_key` | `varchar(64)` | 클라이언트 요청의 중복 방지 키 |
+| `gold_awarded` | `bigint` | 실제 지급 골드 |
+| `accumulated_seconds` | `integer` | 보상에 반영된 초 |
+| `gold_balance_after` | `bigint` | 지급 직후 골드 잔액 |
+| `claimed_at_utc` | `timestamp with time zone` | 서버 정산 시각 |
+
+`(player_id, idempotency_key)` 복합 기본키가 같은 요청의 영수증을 하나만 허용합니다. 영수증은 재시도 시 최초 결과를 그대로 반환하는 근거이며 플레이어 삭제 시 함께 삭제됩니다.
+
+## 5. Migration
 
 Migration은 C# 모델 변경을 재현 가능한 DB 스키마 변경 이력으로 저장합니다.
 
@@ -64,7 +79,7 @@ dotnet tool run dotnet-ef database update `
   --startup-project src/IdleGuild.Infrastructure
 ```
 
-## 5. 통합 테스트
+## 6. 통합 테스트
 
 `PlayerGameStatePersistenceTests`는 다음 순서로 실제 PostgreSQL 동작을 검증합니다.
 
@@ -73,5 +88,7 @@ dotnet tool run dotnet-ef database update `
 3. 새로운 게임 상태를 저장한다.
 4. 별도의 DbContext로 다시 조회한다.
 5. 초기값, UTC 시각, `xmin` 버전을 확인한다.
+
+`IdleRewardConcurrencyTests`는 두 DbContext가 같은 키로 동시에 보상을 요청해도 영수증 한 개와 한 번의 골드 지급만 남는지 검증합니다.
 
 Docker를 직접 제어할 수 없는 CI 환경에서는 `IDLEGUILD_TEST_POSTGRES_CONNECTION_STRING` 환경 변수로 준비된 테스트 DB를 지정할 수 있습니다.

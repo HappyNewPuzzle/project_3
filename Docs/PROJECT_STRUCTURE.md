@@ -1,6 +1,6 @@
 # 프로젝트 폴더 및 파일 구조
 
-이 문서는 `project3` 저장소에 있는 폴더와 파일의 역할, 생성 이유, 수정 시점을 설명합니다. 현재 프로젝트는 서버 권위형 방치형 게임을 위한 ASP.NET Core 서버이며, PostgreSQL 영속성과 게스트 JWT 인증까지 구현되어 있습니다.
+이 문서는 `project3` 저장소에 있는 폴더와 파일의 역할, 생성 이유, 수정 시점을 설명합니다. 현재 프로젝트는 서버 권위형 방치형 게임을 위한 ASP.NET Core 서버이며, PostgreSQL 영속성, 게스트 JWT 인증, 멱등한 방치 보상까지 구현되어 있습니다.
 
 ## 1. 가장 먼저 이해할 구조
 
@@ -892,4 +892,22 @@ Tests
 → 어떤 테스트가 이 동작을 보장하는가?
 ```
 
-현재는 Step 4까지 완료되어 게스트 생성과 게임 상태 조회가 이 전체 흐름을 처음으로 연결합니다. 다음 Step부터 같은 구조를 따라 방치 보상과 성장 유스케이스를 추가합니다.
+현재는 Step 5까지 완료되어 게스트 생성, 게임 상태 조회, 방치 보상 수령이 전체 흐름을 연결합니다. 다음 Step은 같은 구조를 따라 골드 차감과 영웅 강화를 추가합니다.
+
+## 16. Step 5에서 추가된 파일
+
+- `Docs/IDLE_REWARDS.md`: 계산식, API 사용법, 중복·동시 요청 방어 이유를 설명합니다.
+- `Domain/Rewards/IdleRewardPolicy.cs`: 초당 생산량, 8시간 상한, 멱등 키 길이를 한곳에 둡니다.
+- `Domain/Rewards/IdleRewardSettlement.cs`: 한 번의 계산 결과를 값 객체로 전달합니다.
+- `Domain/Rewards/IdleRewardClaimReceipt.cs`: 최초 지급 결과를 재생할 영수증 모델입니다.
+- `Application/Rewards/ClaimIdleReward/*`: 방치 보상 유스케이스와 반환 모델입니다.
+- `Application/Abstractions/Persistence/IIdleRewardClaimRepository.cs`: Application이 기술과 무관하게 영수증을 조회·추가하게 합니다.
+- `Application/Abstractions/Persistence/PersistenceConflictException.cs`: DB별 충돌 예외를 Application 언어로 바꿉니다.
+- `Api/Contracts/IdleRewardClaimResponse.cs`: 보상 API의 JSON 응답 계약입니다.
+- `Api/Endpoints/RewardsEndpoints.cs`: 인증과 멱등 키를 검사하고 Handler 결과를 HTTP로 바꿉니다.
+- `Infrastructure/Persistence/EfGameUnitOfWork.cs`: 저장 충돌을 변환하고 재시도 전 추적 상태를 비웁니다.
+- `Infrastructure/Persistence/Configurations/IdleRewardClaimReceiptConfiguration.cs`: 영수증 테이블과 복합키·제약조건을 정의합니다.
+- `Infrastructure/Persistence/Repositories/IdleRewardClaimRepository.cs`: 영수증 조회와 추가를 EF Core로 구현합니다.
+- `Infrastructure/Persistence/Migrations/*AddIdleRewardClaims*`: 새 영수증 테이블을 재현 가능한 스키마 이력으로 만듭니다.
+- `tests/*/IdleReward*Tests.cs`: 계산 규칙, Handler 멱등성, HTTP 계약, 실제 PostgreSQL 동시성을 계층별로 검증합니다.
+- `tests/IdleGuild.Infrastructure.Tests/PostgreSqlTestCollection.cs`: DB 통합 테스트가 하나의 Fixture를 안전하게 공유하게 합니다.

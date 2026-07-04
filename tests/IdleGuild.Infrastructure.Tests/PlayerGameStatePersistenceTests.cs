@@ -4,9 +4,9 @@ using IdleGuild.Infrastructure.Persistence.Repositories;
 namespace IdleGuild.Infrastructure.Tests;
 
 /// <summary>게임 상태가 실제 PostgreSQL 스키마에 저장되고 복원되는지 검증합니다.</summary>
+[Collection(PostgreSqlTestCollection.Name)]
 public sealed class PlayerGameStatePersistenceTests(
-    PostgreSqlDatabaseFixture database) :
-    IClassFixture<PostgreSqlDatabaseFixture>
+    PostgreSqlDatabaseFixture database)
 {
     // 저장과 조회에 서로 다른 DbContext를 사용해 메모리 캐시가 아닌 DB 결과를 검증합니다.
     [Fact]

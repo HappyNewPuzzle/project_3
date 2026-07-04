@@ -93,11 +93,12 @@ if (app.Environment.IsDevelopment())
 app.UseAuthentication();
 app.UseAuthorization();
 
-// 인프라 상태, 계정, 게임 상태 Endpoint를 각각 연결합니다.
+// 인프라 상태, 계정, 게임 상태, 보상 Endpoint를 각각 연결합니다.
 app.MapHealthChecks("/health");
 app.MapSystemEndpoints();
 app.MapAccountEndpoints();
 app.MapGameStateEndpoints();
+app.MapRewardsEndpoints();
 
 app.Run();
 

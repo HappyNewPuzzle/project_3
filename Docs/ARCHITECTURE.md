@@ -56,7 +56,7 @@ PostgreSQL
 
 ### 현재 저장 모델
 
-`player_game_states` 테이블은 플레이어 ID, 골드, 영웅 레벨, 최고 스테이지, 생성 시각과 마지막 방치 보상 정산 시각을 저장합니다. PostgreSQL의 `xmin` 시스템 열을 동시성 토큰으로 사용하고, 음수 골드나 1보다 작은 레벨·스테이지는 DB 제약조건으로도 차단합니다.
+`player_game_states` 테이블은 플레이어의 현재 상태를 저장하고 PostgreSQL의 `xmin`을 동시성 토큰으로 사용합니다. `idle_reward_claim_receipts`는 플레이어와 멱등 키별 최초 지급 결과를 저장합니다. 동시 수정이나 영수증 키 충돌이 발생하면 Application 계층이 최신 상태를 다시 읽어 최대 3회 시도합니다.
 
 ## 6. API 초안
 
