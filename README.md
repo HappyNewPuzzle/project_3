@@ -26,12 +26,13 @@
 - [게임 설계](Docs/GAME_DESIGN.md)
 - [서버 아키텍처](Docs/ARCHITECTURE.md)
 - [데이터베이스](Docs/DATABASE.md)
+- [게스트 인증](Docs/AUTHENTICATION.md)
 - [프로젝트 폴더 및 파일 구조](Docs/PROJECT_STRUCTURE.md)
 - [개발 로드맵](Docs/ROADMAP.md)
 
 ## 현재 상태
 
-Step 3: PostgreSQL, EF Core Migration, 게임 상태 모델과 실제 DB 통합 테스트를 구성했습니다.
+Step 4: 게스트 계정 생성, JWT 인증과 사용자별 게임 상태 접근을 구성했습니다.
 
 ## 로컬 실행
 
@@ -43,6 +44,7 @@ Copy-Item .env.example .env
 docker compose up -d --wait
 
 $env:ConnectionStrings__GameDatabase = "Host=localhost;Port=5432;Database=idleguild;Username=idleguild;Password=replace_with_local_password"
+$env:Jwt__SigningKey = "replace_with_a_random_secret_of_at_least_32_bytes"
 dotnet tool run dotnet-ef database update --project src/IdleGuild.Infrastructure --startup-project src/IdleGuild.Infrastructure
 
 dotnet run --project src/IdleGuild.Api
@@ -54,6 +56,8 @@ dotnet run --project src/IdleGuild.Api
 
 - Health Check: `http://localhost:5219/health`
 - System Status: `http://localhost:5219/api/v1/system/status`
+- Create Guest: `POST http://localhost:5219/api/v1/accounts/guest`
+- Game State: `GET http://localhost:5219/api/v1/game-state`
 - Swagger UI: `http://localhost:5219/swagger`
 
 전체 테스트는 다음 명령으로 실행합니다.

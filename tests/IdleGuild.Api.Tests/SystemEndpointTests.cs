@@ -45,6 +45,9 @@ public sealed class SystemEndpointTests(
         var document = await _client.GetStringAsync("/openapi/v1.json");
 
         Assert.Contains("/api/v1/system/status", document, StringComparison.Ordinal);
+        Assert.Contains("/api/v1/accounts/guest", document, StringComparison.Ordinal);
+        Assert.Contains("/api/v1/game-state", document, StringComparison.Ordinal);
+        Assert.Contains("\"Bearer\"", document, StringComparison.Ordinal);
     }
 
     // 개발 중 브라우저에서 API를 직접 시험할 Swagger UI가 제공되는지 검증합니다.

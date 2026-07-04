@@ -1,5 +1,5 @@
 using IdleGuild.Domain.GameStates;
-using Microsoft.EntityFrameworkCore;
+using IdleGuild.Infrastructure.Persistence.Repositories;
 
 namespace IdleGuild.Infrastructure.Tests;
 
@@ -21,15 +21,18 @@ public sealed class PlayerGameStatePersistenceTests(
 
         await using (var writeContext = database.CreateDbContext())
         {
-            writeContext.PlayerGameStates.Add(state);
+            var writeRepository =
+                new PlayerGameStateRepository(writeContext);
+            writeRepository.Add(state);
             await writeContext.SaveChangesAsync();
         }
 
         await using var readContext = database.CreateDbContext();
-        var saved = await readContext.PlayerGameStates
-            .AsNoTracking()
-            .SingleAsync(item => item.PlayerId == playerId);
+        var readRepository =
+            new PlayerGameStateRepository(readContext);
+        var saved = await readRepository.FindByIdAsync(playerId);
 
+        Assert.NotNull(saved);
         Assert.Equal(0, saved.Gold);
         Assert.Equal(1, saved.HeroLevel);
         Assert.Equal(1, saved.HighestStage);

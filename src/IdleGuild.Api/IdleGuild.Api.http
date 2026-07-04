@@ -9,3 +9,16 @@ GET {{IdleGuild.Api_HostAddress}}/api/v1/system/status
 Accept: application/json
 
 ###
+
+POST {{IdleGuild.Api_HostAddress}}/api/v1/accounts/guest
+Accept: application/json
+
+###
+
+@AccessToken = paste_guest_access_token_here
+
+GET {{IdleGuild.Api_HostAddress}}/api/v1/game-state
+Authorization: Bearer {{AccessToken}}
+Accept: application/json
+
+###

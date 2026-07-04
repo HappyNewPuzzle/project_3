@@ -1,11 +1,14 @@
 using IdleGuild.Domain.GameStates;
+using IdleGuild.Application.Abstractions.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 namespace IdleGuild.Infrastructure.Persistence;
 
 /// <summary>게임 도메인 객체와 PostgreSQL 테이블 사이의 작업 단위를 제공합니다.</summary>
 public sealed class GameDbContext(
-    DbContextOptions<GameDbContext> options) : DbContext(options)
+    DbContextOptions<GameDbContext> options) :
+    DbContext(options),
+    IGameUnitOfWork
 {
     public DbSet<PlayerGameState> PlayerGameStates =>
         Set<PlayerGameState>();
