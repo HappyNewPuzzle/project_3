@@ -1,5 +1,6 @@
 using IdleGuild.Domain.Heroes;
 using IdleGuild.Domain.Rewards;
+using IdleGuild.Domain.Stages;
 
 namespace IdleGuild.Domain.GameStates;
 
@@ -19,6 +20,7 @@ public sealed class PlayerGameState
         HighestStage = 1;
         CreatedAtUtc = createdAtUtc;
         LastIdleRewardClaimedAtUtc = createdAtUtc;
+        IdleRewardRemainderHundredths = 0;
     }
 
     public Guid PlayerId { get; private set; }
@@ -32,6 +34,8 @@ public sealed class PlayerGameState
     public DateTimeOffset CreatedAtUtc { get; private set; }
 
     public DateTimeOffset LastIdleRewardClaimedAtUtc { get; private set; }
+
+    public int IdleRewardRemainderHundredths { get; private set; }
 
     // PostgreSQL의 xmin 시스템 열과 연결되어 동시 수정을 감지합니다.
     public uint Version { get; private set; }
@@ -83,17 +87,22 @@ public sealed class PlayerGameState
         var accumulatedSeconds = (int)Math.Min(
             elapsedWholeSeconds,
             IdleRewardPolicy.MaxAccumulationSeconds);
-        var goldAwarded = checked(
-            (long)accumulatedSeconds *
-            IdleRewardPolicy.BaseGoldPerSecond);
+        var calculation = IdleRewardPolicy.CalculateGold(
+            accumulatedSeconds,
+            HighestStage,
+            IdleRewardRemainderHundredths);
 
-        Gold = checked(Gold + goldAwarded);
+        Gold = checked(Gold + calculation.GoldAwarded);
+        IdleRewardRemainderHundredths =
+            calculation.RemainderHundredths;
         LastIdleRewardClaimedAtUtc = claimedAtUtc;
 
         return new IdleRewardSettlement(
-            goldAwarded,
+            calculation.GoldAwarded,
             accumulatedSeconds,
             Gold,
+            calculation.RemainderHundredths,
+            calculation.ProductionPercent,
             claimedAtUtc);
     }
 
@@ -146,5 +155,80 @@ public sealed class PlayerGameState
             goldCost,
             Gold,
             processedAtUtc);
+    }
+
+    /// <summary>서버 전투력으로 스테이지를 판정하고 성공 시 생산 구간을 전환합니다.</summary>
+    public StageChallengeSettlement ChallengeStage(
+        int targetStage,
+        DateTimeOffset requestedAt)
+    {
+        StageChallengePolicy.ValidateStage(targetStage);
+
+        if (requestedAt == default)
+        {
+            throw new ArgumentException(
+                "Challenge time must be provided.",
+                nameof(requestedAt));
+        }
+
+        var processedAtUtc = requestedAt.ToUniversalTime();
+        var previousHighestStage = HighestStage;
+        var heroPower =
+            StageChallengePolicy.CalculateHeroPower(
+                HeroLevel);
+        var requiredPower =
+            StageChallengePolicy.CalculateRequiredPower(
+                targetStage);
+        var outcome =
+            DetermineStageChallengeOutcome(
+                targetStage,
+                heroPower,
+                requiredPower);
+        long checkpointGoldAwarded = 0;
+
+        if (outcome == StageChallengeOutcome.Succeeded)
+        {
+            // 새 배율이 과거 방치 시간에 소급되지 않도록 기존 배율 구간을 먼저 정산합니다.
+            var checkpoint = ClaimIdleReward(
+                processedAtUtc);
+            checkpointGoldAwarded =
+                checkpoint.GoldAwarded;
+            HighestStage = targetStage;
+        }
+
+        return new StageChallengeSettlement(
+            targetStage,
+            outcome,
+            previousHighestStage,
+            HighestStage,
+            heroPower,
+            requiredPower,
+            StageChallengePolicy
+                .CalculateProductionBonusPercent(
+                    HighestStage),
+            checkpointGoldAwarded,
+            Gold,
+            processedAtUtc);
+    }
+
+    private StageChallengeOutcome
+        DetermineStageChallengeOutcome(
+            int targetStage,
+            int heroPower,
+            int requiredPower)
+    {
+        if (targetStage <= HighestStage)
+        {
+            return StageChallengeOutcome.AlreadyCompleted;
+        }
+
+        if (targetStage > HighestStage + 1)
+        {
+            return StageChallengeOutcome.StageLocked;
+        }
+
+        return heroPower >= requiredPower
+            ? StageChallengeOutcome.Succeeded
+            : StageChallengeOutcome.InsufficientPower;
     }
 }

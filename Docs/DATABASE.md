@@ -24,7 +24,8 @@ GameDbContext
 PostgreSQL player_game_states
     |
     |-- 1:N idle_reward_claim_receipts
-    `-- 1:N hero_upgrade_receipts
+    |-- 1:N hero_upgrade_receipts
+    `-- 1:N stage_challenge_receipts
 ```
 
 Domain 객체는 PostgreSQL을 알지 못합니다. 열 이름, 제약조건, `xmin` 같은 DB 세부사항은 Infrastructure의 EF 설정이 담당합니다.
@@ -39,6 +40,7 @@ Domain 객체는 PostgreSQL을 알지 못합니다. 열 이름, 제약조건, `x
 | `highest_stage` | `integer` | 최고 도달 스테이지 |
 | `created_at_utc` | `timestamp with time zone` | 생성 시각 |
 | `last_idle_reward_claimed_at_utc` | `timestamp with time zone` | 마지막 방치 보상 정산 시각 |
+| `idle_reward_remainder_hundredths` | `integer` | 다음 정산으로 이월할 1/100 골드 |
 | `xmin` | `xid` | PostgreSQL이 갱신하는 동시성 토큰 |
 
 DB 체크 제약조건은 골드가 음수가 되거나 영웅 레벨과 최고 스테이지가 1보다 작아지는 것을 차단합니다.
@@ -52,6 +54,8 @@ DB 체크 제약조건은 골드가 음수가 되거나 영웅 레벨과 최고 
 | `gold_awarded` | `bigint` | 실제 지급 골드 |
 | `accumulated_seconds` | `integer` | 보상에 반영된 초 |
 | `gold_balance_after` | `bigint` | 지급 직후 골드 잔액 |
+| `remainder_hundredths` | `integer` | 지급 후 남은 1/100 골드 |
+| `production_percent` | `integer` | 정산에 적용한 기준 대비 생산 배율 |
 | `claimed_at_utc` | `timestamp with time zone` | 서버 정산 시각 |
 
 `(player_id, idempotency_key)` 복합 기본키가 같은 요청의 영수증을 하나만 허용합니다. 영수증은 재시도 시 최초 결과를 그대로 반환하는 근거이며 플레이어 삭제 시 함께 삭제됩니다.
@@ -71,7 +75,26 @@ DB 체크 제약조건은 골드가 음수가 되거나 영웅 레벨과 최고 
 
 복합 기본키는 같은 강화 키를 한 번만 저장합니다. 체크 제약조건은 결과별 레벨 관계, 음수가 아닌 골드, 최대 레벨을 DB에서도 검증합니다.
 
-## 6. Migration
+## 6. stage_challenge_receipts
+
+| 열 | PostgreSQL 형식 | 역할 |
+| --- | --- | --- |
+| `player_id` | `uuid` | 플레이어 ID와 외래키 |
+| `idempotency_key` | `varchar(64)` | 도전 요청 중복 방지 키 |
+| `target_stage` | `integer` | 요청한 목표 스테이지 |
+| `outcome` | `integer` | 성공 또는 실패 판정 |
+| `previous_highest_stage` | `integer` | 판정 전 최고 스테이지 |
+| `highest_stage_after` | `integer` | 판정 후 최고 스테이지 |
+| `hero_power` | `integer` | 판정 당시 영웅 전투력 |
+| `required_power` | `integer` | 목표 스테이지 요구 전투력 |
+| `production_bonus_percent_after` | `integer` | 판정 후 생산 보너스 |
+| `checkpoint_gold_awarded` | `bigint` | 성공 전 기존 배율 정산 골드 |
+| `gold_balance_after` | `bigint` | 판정 직후 골드 |
+| `processed_at_utc` | `timestamp with time zone` | 서버 판정 시각 |
+
+복합 기본키가 같은 도전 키를 한 번만 저장합니다. 체크 제약조건은 결과별 스테이지 관계, 전투력 비교, 음수가 아닌 골드를 DB에서도 검증합니다.
+
+## 7. Migration
 
 Migration은 C# 모델 변경을 재현 가능한 DB 스키마 변경 이력으로 저장합니다.
 
@@ -95,7 +118,7 @@ dotnet tool run dotnet-ef database update `
   --startup-project src/IdleGuild.Infrastructure
 ```
 
-## 7. 통합 테스트
+## 8. 통합 테스트
 
 `PlayerGameStatePersistenceTests`는 다음 순서로 실제 PostgreSQL 동작을 검증합니다.
 
@@ -108,5 +131,7 @@ dotnet tool run dotnet-ef database update `
 `IdleRewardConcurrencyTests`는 두 DbContext가 같은 키로 동시에 보상을 요청해도 영수증 한 개와 한 번의 골드 지급만 남는지 검증합니다.
 
 `HeroUpgradeConcurrencyTests`는 한 번의 비용만 가진 상태에서 동시 강화가 하나만 성공하는지, 같은 실패 키가 동시에 와도 영수증 하나만 생성되는지 검증합니다.
+
+`StageProgressionPersistenceTests`는 동시 스테이지 도전이 한 번만 진행되는지와 1/100 골드 잔여값이 DbContext 사이에서 보존되는지 검증합니다.
 
 Docker를 직접 제어할 수 없는 CI 환경에서는 `IDLEGUILD_TEST_POSTGRES_CONNECTION_STRING` 환경 변수로 준비된 테스트 DB를 지정할 수 있습니다.

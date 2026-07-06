@@ -894,7 +894,7 @@ Tests
 → 어떤 테스트가 이 동작을 보장하는가?
 ```
 
-현재는 Step 6까지 완료되어 게스트 생성, 게임 상태 조회, 방치 보상 수령, 영웅 강화가 전체 흐름을 연결합니다. 다음 Step은 같은 구조를 따라 스테이지 도전과 생산 보너스를 추가합니다.
+현재는 Step 7까지 완료되어 게스트 생성, 방치 보상, 영웅 강화, 스테이지 진행과 생산 보너스가 핵심 플레이 루프를 연결합니다. 다음 Step은 API 오류 계약, 로깅, 배포와 포트폴리오 마감을 진행합니다.
 
 ## 16. Step 5에서 추가된 파일
 
@@ -930,3 +930,21 @@ Tests
 - `Infrastructure/Persistence/Repositories/HeroUpgradeReceiptRepository.cs`: 강화 영수증 조회·추가를 EF Core로 구현합니다.
 - `Infrastructure/Persistence/Migrations/*AddHeroUpgrades*`: 강화 영수증 테이블의 스키마 이력입니다.
 - `tests/*/HeroUpgrade*Tests.cs`: 비용, 유스케이스, HTTP, 실제 DB 동시성을 계층별로 검증합니다.
+
+## 18. Step 7에서 추가된 파일
+
+- `Docs/STAGE_PROGRESSION.md`: 전투 공식, 진행 순서, 생산 보너스와 소급 방지를 설명합니다.
+- `Domain/Stages/StageChallengePolicy.cs`: 전투력, 요구 전투력, 최대 스테이지와 보너스를 계산합니다.
+- `Domain/Stages/StageChallengeOutcome.cs`: 성공과 세 가지 진행 실패를 구분합니다.
+- `Domain/Stages/StageChallengeSettlement.cs`: 한 번의 도전 판정 직후 상태를 전달합니다.
+- `Domain/Stages/StageChallengeReceipt.cs`: 최초 도전 결과를 재생할 영수증 모델입니다.
+- `Domain/Rewards/IdleGoldCalculation.cs`: 정수 골드, 1/100 잔여값, 생산 배율 계산 결과입니다.
+- `Application/Stages/ChallengeStage/*`: 멱등 도전, 경로 값 충돌, 저장 재시도를 구현합니다.
+- `Application/Abstractions/Persistence/IStageChallengeReceiptRepository.cs`: 도전 영수증 저장 기술을 분리합니다.
+- `Application/Abstractions/Persistence/IdempotencyKeyConflictException.cs`: 같은 키의 다른 명령 재사용을 표현합니다.
+- `Api/Contracts/StageChallengeResponse.cs`: Unity가 받을 도전 JSON 계약입니다.
+- `Api/Endpoints/StagesEndpoints.cs`: 스테이지 범위·JWT·키를 검사하고 HTTP 결과로 변환합니다.
+- `Infrastructure/Persistence/Configurations/StageChallengeReceiptConfiguration.cs`: 도전 테이블과 결과별 DB 제약을 정의합니다.
+- `Infrastructure/Persistence/Repositories/StageChallengeReceiptRepository.cs`: 도전 영수증을 EF Core로 조회·추가합니다.
+- `Infrastructure/Persistence/Migrations/*AddStageProgression*`: 영수증, 생산 잔여값, 보상 배율 열의 스키마 이력입니다.
+- `tests/*/Stage*Tests.cs`: 규칙, 유스케이스, HTTP, 실제 DB 동시 진행을 계층별로 검증합니다.

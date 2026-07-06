@@ -55,6 +55,8 @@ public static class GameStateEndpoints
                 result.Gold,
                 result.HeroLevel,
                 result.HighestStage,
+                result.ProductionBonusPercent,
+                result.IdleRewardRemainderHundredths,
                 result.LastIdleRewardClaimedAtUtc));
     }
 }

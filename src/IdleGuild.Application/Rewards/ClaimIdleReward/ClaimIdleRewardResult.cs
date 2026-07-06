@@ -6,5 +6,7 @@ public sealed record ClaimIdleRewardResult(
     long GoldAwarded,
     int AccumulatedSeconds,
     long GoldBalanceAfter,
+    int RemainderHundredths,
+    int ProductionPercent,
     DateTimeOffset ClaimedAtUtc,
     bool IsReplay);

@@ -36,3 +36,10 @@ Idempotency-Key: hero-upgrade-001
 Accept: application/json
 
 ###
+
+POST {{IdleGuild.Api_HostAddress}}/api/v1/stages/2/challenge
+Authorization: Bearer {{AccessToken}}
+Idempotency-Key: stage-2-challenge-001
+Accept: application/json
+
+###

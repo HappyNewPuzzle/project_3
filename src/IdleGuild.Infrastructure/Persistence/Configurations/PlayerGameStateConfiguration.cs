@@ -22,7 +22,10 @@ public sealed class PlayerGameStateConfiguration :
                 "hero_level >= 1");
             table.HasCheckConstraint(
                 "ck_player_game_states_highest_stage_positive",
-                "highest_stage >= 1");
+                "highest_stage >= 1 AND highest_stage <= 32");
+            table.HasCheckConstraint(
+                "ck_player_game_states_idle_reward_remainder",
+                "idle_reward_remainder_hundredths >= 0 AND idle_reward_remainder_hundredths < 100");
         });
 
         builder.HasKey(state => state.PlayerId)
@@ -50,6 +53,14 @@ public sealed class PlayerGameStateConfiguration :
 
         builder.Property(state => state.LastIdleRewardClaimedAtUtc)
             .HasColumnName("last_idle_reward_claimed_at_utc")
+            .IsRequired();
+
+        builder.Property(
+                state =>
+                    state.IdleRewardRemainderHundredths)
+            .HasColumnName(
+                "idle_reward_remainder_hundredths")
+            .HasDefaultValue(0)
             .IsRequired();
 
         // xmin은 행이 변경될 때 PostgreSQL이 자동 갱신하는 동시성 토큰입니다.

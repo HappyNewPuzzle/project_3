@@ -1,4 +1,5 @@
 using IdleGuild.Application.Abstractions.Persistence;
+using IdleGuild.Domain.Stages;
 
 namespace IdleGuild.Application.GameStates.GetGameState;
 
@@ -22,6 +23,10 @@ public sealed class GetGameStateHandler(
                 gameState.Gold,
                 gameState.HeroLevel,
                 gameState.HighestStage,
+                StageChallengePolicy
+                    .CalculateProductionBonusPercent(
+                        gameState.HighestStage),
+                gameState.IdleRewardRemainderHundredths,
                 gameState.LastIdleRewardClaimedAtUtc);
     }
 }

@@ -1,21 +1,22 @@
 using IdleGuild.Application.Abstractions.Persistence;
 using IdleGuild.Domain.Requests;
-using IdleGuild.Domain.Rewards;
+using IdleGuild.Domain.Stages;
 
-namespace IdleGuild.Application.Rewards.ClaimIdleReward;
+namespace IdleGuild.Application.Stages.ChallengeStage;
 
-/// <summary>방치 보상을 멱등하게 정산하고 동시 저장 충돌을 재시도합니다.</summary>
-public sealed class ClaimIdleRewardHandler(
+/// <summary>스테이지 도전을 멱등하게 판정하고 저장 충돌을 재시도합니다.</summary>
+public sealed class ChallengeStageHandler(
     IPlayerGameStateRepository gameStateRepository,
-    IIdleRewardClaimRepository claimRepository,
+    IStageChallengeReceiptRepository receiptRepository,
     IGameUnitOfWork unitOfWork,
     TimeProvider timeProvider)
 {
     private const int MaxSaveAttempts = 3;
 
-    /// <summary>같은 플레이어와 멱등 키에는 최초 지급 결과만 반환합니다.</summary>
-    public async Task<ClaimIdleRewardResult?> HandleAsync(
+    /// <summary>같은 플레이어와 멱등 키에는 최초 스테이지 판정만 반환합니다.</summary>
+    public async Task<ChallengeStageResult?> HandleAsync(
         Guid playerId,
+        int targetStage,
         string idempotencyKey,
         CancellationToken cancellationToken = default)
     {
@@ -26,6 +27,7 @@ public sealed class ClaimIdleRewardHandler(
                 nameof(playerId));
         }
 
+        StageChallengePolicy.ValidateStage(targetStage);
         ArgumentException.ThrowIfNullOrWhiteSpace(
             idempotencyKey);
         var normalizedKey = idempotencyKey.Trim();
@@ -38,20 +40,26 @@ public sealed class ClaimIdleRewardHandler(
                 $"Idempotency key cannot exceed {IdempotencyPolicy.MaxKeyLength} characters.");
         }
 
-        // 재시도마다 시간이 늘어나 보상이 달라지지 않도록 한 요청의 서버 시각을 고정합니다.
-        var claimedAtUtc = timeProvider.GetUtcNow();
+        // 재시도 전후에 전투와 생산 체크포인트 시각이 바뀌지 않게 고정합니다.
+        var processedAtUtc = timeProvider.GetUtcNow();
 
         for (var attempt = 1;
              attempt <= MaxSaveAttempts;
              attempt++)
         {
-            var existing = await claimRepository.FindAsync(
+            var existing = await receiptRepository.FindAsync(
                 playerId,
                 normalizedKey,
                 cancellationToken);
 
             if (existing is not null)
             {
+                if (existing.TargetStage != targetStage)
+                {
+                    throw new IdempotencyKeyConflictException(
+                        "Idempotency key was already used for a different stage.");
+                }
+
                 return FromReceipt(
                     existing,
                     isReplay: true);
@@ -67,13 +75,14 @@ public sealed class ClaimIdleRewardHandler(
                 return null;
             }
 
-            var settlement = gameState.ClaimIdleReward(
-                claimedAtUtc);
-            var receipt = IdleRewardClaimReceipt.Create(
+            var settlement = gameState.ChallengeStage(
+                targetStage,
+                processedAtUtc);
+            var receipt = StageChallengeReceipt.Create(
                 playerId,
                 normalizedKey,
                 settlement);
-            claimRepository.Add(receipt);
+            receiptRepository.Add(receipt);
 
             try
             {
@@ -87,25 +96,29 @@ public sealed class ClaimIdleRewardHandler(
             catch (PersistenceConflictException)
                 when (attempt < MaxSaveAttempts)
             {
-                // 실패한 추적 상태를 제거한 뒤 최신 DB 상태와 영수증을 다시 읽습니다.
+                // 최신 진행 상태와 영수증으로 다시 판정하도록 변경 추적을 비웁니다.
                 unitOfWork.DiscardChanges();
             }
         }
 
         throw new InvalidOperationException(
-            "Idle reward claim could not be saved after retries.");
+            "Stage challenge could not be saved after retries.");
     }
 
-    private static ClaimIdleRewardResult FromReceipt(
-        IdleRewardClaimReceipt receipt,
+    private static ChallengeStageResult FromReceipt(
+        StageChallengeReceipt receipt,
         bool isReplay) =>
         new(
             receipt.IdempotencyKey,
-            receipt.GoldAwarded,
-            receipt.AccumulatedSeconds,
+            receipt.TargetStage,
+            receipt.Outcome,
+            receipt.PreviousHighestStage,
+            receipt.HighestStageAfter,
+            receipt.HeroPower,
+            receipt.RequiredPower,
+            receipt.ProductionBonusPercentAfter,
+            receipt.CheckpointGoldAwarded,
             receipt.GoldBalanceAfter,
-            receipt.RemainderHundredths,
-            receipt.ProductionPercent,
-            receipt.ClaimedAtUtc,
+            receipt.ProcessedAtUtc,
             isReplay);
 }

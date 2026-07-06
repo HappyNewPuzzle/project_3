@@ -21,6 +21,8 @@ public sealed class IdleRewardClaimReceipt
         GoldAwarded = settlement.GoldAwarded;
         AccumulatedSeconds = settlement.AccumulatedSeconds;
         GoldBalanceAfter = settlement.GoldBalanceAfter;
+        RemainderHundredths = settlement.RemainderHundredths;
+        ProductionPercent = settlement.ProductionPercent;
         ClaimedAtUtc = settlement.ClaimedAtUtc;
     }
 
@@ -33,6 +35,10 @@ public sealed class IdleRewardClaimReceipt
     public int AccumulatedSeconds { get; private set; }
 
     public long GoldBalanceAfter { get; private set; }
+
+    public int RemainderHundredths { get; private set; }
+
+    public int ProductionPercent { get; private set; }
 
     public DateTimeOffset ClaimedAtUtc { get; private set; }
 
@@ -66,6 +72,11 @@ public sealed class IdleRewardClaimReceipt
             settlement.AccumulatedSeconds < 0 ||
             settlement.AccumulatedSeconds >
             IdleRewardPolicy.MaxAccumulationSeconds ||
+            settlement.RemainderHundredths < 0 ||
+            settlement.RemainderHundredths >=
+            IdleRewardPolicy.PercentScale ||
+            settlement.ProductionPercent <
+            IdleRewardPolicy.PercentScale ||
             settlement.ClaimedAtUtc == default)
         {
             throw new ArgumentException(

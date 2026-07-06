@@ -3,6 +3,7 @@ using IdleGuild.Application.Abstractions.Persistence;
 using IdleGuild.Domain.GameStates;
 using IdleGuild.Domain.Heroes;
 using IdleGuild.Domain.Rewards;
+using IdleGuild.Domain.Stages;
 
 namespace IdleGuild.Api.Tests;
 
@@ -11,6 +12,7 @@ public sealed class InMemoryPlayerGameStateStore :
     IPlayerGameStateRepository,
     IIdleRewardClaimRepository,
     IHeroUpgradeReceiptRepository,
+    IStageChallengeReceiptRepository,
     IGameUnitOfWork
 {
     private readonly ConcurrentDictionary<Guid, PlayerGameState> _states = [];
@@ -20,6 +22,9 @@ public sealed class InMemoryPlayerGameStateStore :
     private readonly ConcurrentDictionary<
         (Guid, string),
         HeroUpgradeReceipt> _upgradeReceipts = [];
+    private readonly ConcurrentDictionary<
+        (Guid, string),
+        StageChallengeReceipt> _stageReceipts = [];
 
     public void Add(PlayerGameState gameState)
     {
@@ -86,6 +91,30 @@ public sealed class InMemoryPlayerGameStateStore :
         {
             throw new InvalidOperationException(
                 "Hero upgrade receipt already exists.");
+        }
+    }
+
+    Task<StageChallengeReceipt?>
+        IStageChallengeReceiptRepository.FindAsync(
+            Guid playerId,
+            string idempotencyKey,
+            CancellationToken cancellationToken)
+    {
+        _stageReceipts.TryGetValue(
+            (playerId, idempotencyKey),
+            out var receipt);
+        return Task.FromResult(receipt);
+    }
+
+    void IStageChallengeReceiptRepository.Add(
+        StageChallengeReceipt receipt)
+    {
+        if (!_stageReceipts.TryAdd(
+                (receipt.PlayerId, receipt.IdempotencyKey),
+                receipt))
+        {
+            throw new InvalidOperationException(
+                "Stage challenge receipt already exists.");
         }
     }
 

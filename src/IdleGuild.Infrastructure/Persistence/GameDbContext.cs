@@ -1,6 +1,7 @@
 using IdleGuild.Domain.GameStates;
 using IdleGuild.Domain.Heroes;
 using IdleGuild.Domain.Rewards;
+using IdleGuild.Domain.Stages;
 using Microsoft.EntityFrameworkCore;
 
 namespace IdleGuild.Infrastructure.Persistence;
@@ -18,6 +19,9 @@ public sealed class GameDbContext(
 
     public DbSet<HeroUpgradeReceipt> HeroUpgradeReceipts =>
         Set<HeroUpgradeReceipt>();
+
+    public DbSet<StageChallengeReceipt> StageChallengeReceipts =>
+        Set<StageChallengeReceipt>();
 
     // 같은 어셈블리의 모든 엔티티 구성을 자동으로 적용합니다.
     protected override void OnModelCreating(ModelBuilder modelBuilder)

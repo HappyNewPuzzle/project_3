@@ -29,6 +29,8 @@ public static class DependencyInjection
             IdleRewardClaimRepository>();
         services.AddScoped<IHeroUpgradeReceiptRepository,
             HeroUpgradeReceiptRepository>();
+        services.AddScoped<IStageChallengeReceiptRepository,
+            StageChallengeReceiptRepository>();
         services.AddScoped<IGameUnitOfWork,
             EfGameUnitOfWork>();
         services.AddSingleton(jwtOptions);

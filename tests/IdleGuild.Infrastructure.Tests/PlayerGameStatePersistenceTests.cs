@@ -38,6 +38,7 @@ public sealed class PlayerGameStatePersistenceTests(
         Assert.Equal(1, saved.HighestStage);
         Assert.Equal(createdAtUtc, saved.CreatedAtUtc);
         Assert.Equal(createdAtUtc, saved.LastIdleRewardClaimedAtUtc);
+        Assert.Equal(0, saved.IdleRewardRemainderHundredths);
         Assert.NotEqual(0u, saved.Version);
     }
 }

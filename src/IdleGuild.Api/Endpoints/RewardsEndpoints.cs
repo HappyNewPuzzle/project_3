@@ -94,6 +94,8 @@ public static class RewardsEndpoints
                 result.GoldAwarded,
                 result.AccumulatedSeconds,
                 result.GoldBalanceAfter,
+                result.RemainderHundredths,
+                result.ProductionPercent,
                 result.ClaimedAtUtc,
                 result.IsReplay));
     }

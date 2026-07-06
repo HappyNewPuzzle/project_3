@@ -3,6 +3,7 @@ using IdleGuild.Application.Abstractions.Persistence;
 using IdleGuild.Domain.GameStates;
 using IdleGuild.Domain.Heroes;
 using IdleGuild.Domain.Rewards;
+using IdleGuild.Domain.Stages;
 
 namespace IdleGuild.Application.Tests;
 
@@ -11,6 +12,7 @@ internal sealed class InMemoryPlayerGameStateRepository :
     IPlayerGameStateRepository,
     IIdleRewardClaimRepository,
     IHeroUpgradeReceiptRepository,
+    IStageChallengeReceiptRepository,
     IGameUnitOfWork
 {
     private readonly Dictionary<Guid, PlayerGameState> _states = [];
@@ -18,6 +20,8 @@ internal sealed class InMemoryPlayerGameStateRepository :
         _receipts = [];
     private readonly Dictionary<(Guid, string), HeroUpgradeReceipt>
         _upgradeReceipts = [];
+    private readonly Dictionary<(Guid, string), StageChallengeReceipt>
+        _stageReceipts = [];
 
     public int SaveCount { get; private set; }
 
@@ -68,6 +72,24 @@ internal sealed class InMemoryPlayerGameStateRepository :
     void IHeroUpgradeReceiptRepository.Add(
         HeroUpgradeReceipt receipt) =>
         _upgradeReceipts.Add(
+            (receipt.PlayerId, receipt.IdempotencyKey),
+            receipt);
+
+    Task<StageChallengeReceipt?>
+        IStageChallengeReceiptRepository.FindAsync(
+            Guid playerId,
+            string idempotencyKey,
+            CancellationToken cancellationToken)
+    {
+        _stageReceipts.TryGetValue(
+            (playerId, idempotencyKey),
+            out var receipt);
+        return Task.FromResult(receipt);
+    }
+
+    void IStageChallengeReceiptRepository.Add(
+        StageChallengeReceipt receipt) =>
+        _stageReceipts.Add(
             (receipt.PlayerId, receipt.IdempotencyKey),
             receipt);
 

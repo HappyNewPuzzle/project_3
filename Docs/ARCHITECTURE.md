@@ -56,7 +56,7 @@ PostgreSQL
 
 ### 현재 저장 모델
 
-`player_game_states` 테이블은 플레이어의 현재 상태를 저장하고 PostgreSQL의 `xmin`을 동시성 토큰으로 사용합니다. `idle_reward_claim_receipts`와 `hero_upgrade_receipts`는 플레이어와 멱등 키별 최초 판정 결과를 저장합니다. 동시 수정이나 영수증 키 충돌이 발생하면 Application 계층이 최신 상태를 다시 읽어 최대 3회 시도합니다.
+`player_game_states` 테이블은 플레이어 상태와 1/100 골드 생산 잔여값을 저장하고 PostgreSQL의 `xmin`을 동시성 토큰으로 사용합니다. `idle_reward_claim_receipts`, `hero_upgrade_receipts`, `stage_challenge_receipts`는 플레이어와 멱등 키별 최초 판정 결과를 저장합니다. 동시 수정이나 영수증 키 충돌이 발생하면 Application 계층이 최신 상태를 다시 읽어 최대 3회 시도합니다.
 
 ## 6. API 초안
 

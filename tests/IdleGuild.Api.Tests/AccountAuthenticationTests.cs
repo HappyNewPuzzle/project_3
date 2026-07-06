@@ -38,6 +38,7 @@ public sealed class AccountAuthenticationTests(
         Assert.Equal(0, state.Gold);
         Assert.Equal(1, state.HeroLevel);
         Assert.Equal(1, state.HighestStage);
+        Assert.Equal(0, state.ProductionBonusPercent);
     }
 
     // 서로 다른 토큰의 subject가 각기 다른 플레이어 상태로 연결되어야 합니다.

@@ -6,4 +6,6 @@ public sealed record GetGameStateResult(
     long Gold,
     int HeroLevel,
     int HighestStage,
+    int ProductionBonusPercent,
+    int IdleRewardRemainderHundredths,
     DateTimeOffset LastIdleRewardClaimedAtUtc);

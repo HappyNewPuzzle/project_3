@@ -2,6 +2,7 @@ using IdleGuild.Application.Accounts.CreateGuest;
 using IdleGuild.Application.GameStates.GetGameState;
 using IdleGuild.Application.Heroes.UpgradeMainHero;
 using IdleGuild.Application.Rewards.ClaimIdleReward;
+using IdleGuild.Application.Stages.ChallengeStage;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace IdleGuild.Application;
@@ -17,6 +18,7 @@ public static class DependencyInjection
         services.AddScoped<GetGameStateHandler>();
         services.AddScoped<ClaimIdleRewardHandler>();
         services.AddScoped<UpgradeMainHeroHandler>();
+        services.AddScoped<ChallengeStageHandler>();
 
         return services;
     }

@@ -5,4 +5,6 @@ public sealed record IdleRewardSettlement(
     long GoldAwarded,
     int AccumulatedSeconds,
     long GoldBalanceAfter,
+    int RemainderHundredths,
+    int ProductionPercent,
     DateTimeOffset ClaimedAtUtc);

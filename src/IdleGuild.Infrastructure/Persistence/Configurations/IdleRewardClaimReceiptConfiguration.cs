@@ -26,6 +26,12 @@ public sealed class IdleRewardClaimReceiptConfiguration :
                 table.HasCheckConstraint(
                     "ck_idle_reward_claim_receipts_gold_balance_after",
                     "gold_balance_after >= 0");
+                table.HasCheckConstraint(
+                    "ck_idle_reward_claim_receipts_remainder",
+                    "remainder_hundredths >= 0 AND remainder_hundredths < 100");
+                table.HasCheckConstraint(
+                    "ck_idle_reward_claim_receipts_production_percent",
+                    "production_percent >= 100");
             });
 
         builder.HasKey(receipt => new
@@ -45,6 +51,12 @@ public sealed class IdleRewardClaimReceiptConfiguration :
             .HasColumnName("accumulated_seconds");
         builder.Property(receipt => receipt.GoldBalanceAfter)
             .HasColumnName("gold_balance_after");
+        builder.Property(receipt => receipt.RemainderHundredths)
+            .HasColumnName("remainder_hundredths")
+            .HasDefaultValue(0);
+        builder.Property(receipt => receipt.ProductionPercent)
+            .HasColumnName("production_percent")
+            .HasDefaultValue(100);
         builder.Property(receipt => receipt.ClaimedAtUtc)
             .HasColumnName("claimed_at_utc");
 
