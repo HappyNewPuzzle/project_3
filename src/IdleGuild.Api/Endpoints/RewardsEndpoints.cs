@@ -3,7 +3,7 @@ using IdleGuild.Api.Authentication;
 using IdleGuild.Api.Contracts;
 using IdleGuild.Application.Abstractions.Persistence;
 using IdleGuild.Application.Rewards.ClaimIdleReward;
-using IdleGuild.Domain.Rewards;
+using IdleGuild.Domain.Requests;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.Extensions.Primitives;
 
@@ -65,10 +65,10 @@ public static class RewardsEndpoints
         var idempotencyKey = headerValue[0]!.Trim();
 
         if (idempotencyKey.Length >
-            IdleRewardPolicy.MaxIdempotencyKeyLength)
+            IdempotencyPolicy.MaxKeyLength)
         {
             return TypedResults.BadRequest(
-                $"Idempotency-Key cannot exceed {IdleRewardPolicy.MaxIdempotencyKeyLength} characters.");
+                $"Idempotency-Key cannot exceed {IdempotencyPolicy.MaxKeyLength} characters.");
         }
 
         ClaimIdleRewardResult? result;

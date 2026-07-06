@@ -1,3 +1,5 @@
+using IdleGuild.Domain.Requests;
+
 namespace IdleGuild.Domain.Rewards;
 
 /// <summary>동일 요청의 중복 지급을 막고 최초 결과를 재현하는 영수증입니다.</summary>
@@ -52,11 +54,11 @@ public sealed class IdleRewardClaimReceipt
         ArgumentNullException.ThrowIfNull(settlement);
 
         if (idempotencyKey.Length >
-            IdleRewardPolicy.MaxIdempotencyKeyLength)
+            IdempotencyPolicy.MaxKeyLength)
         {
             throw new ArgumentOutOfRangeException(
                 nameof(idempotencyKey),
-                $"Idempotency key cannot exceed {IdleRewardPolicy.MaxIdempotencyKeyLength} characters.");
+                $"Idempotency key cannot exceed {IdempotencyPolicy.MaxKeyLength} characters.");
         }
 
         if (settlement.GoldAwarded < 0 ||

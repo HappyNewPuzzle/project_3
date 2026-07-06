@@ -1,5 +1,6 @@
 using IdleGuild.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using Testcontainers.PostgreSql;
 
 namespace IdleGuild.Infrastructure.Tests;
@@ -29,9 +30,20 @@ public sealed class PostgreSqlDatabaseFixture : IAsyncLifetime
         }
     }
 
-    public string ConnectionString =>
-        _externalConnectionString
-        ?? _container!.GetConnectionString();
+    public string ConnectionString
+    {
+        get
+        {
+            var source = _externalConnectionString
+                ?? _container!.GetConnectionString();
+
+            // 각 동시성 테스트가 이전 테스트의 물리 연결 상태와 독립적으로 실행되게 합니다.
+            return new NpgsqlConnectionStringBuilder(source)
+            {
+                Pooling = false
+            }.ConnectionString;
+        }
+    }
 
     /// <summary>PostgreSQL을 시작하고 모든 Migration을 순서대로 적용합니다.</summary>
     public async Task InitializeAsync()

@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using IdleGuild.Application.Abstractions.Persistence;
 using IdleGuild.Domain.GameStates;
+using IdleGuild.Domain.Heroes;
 using IdleGuild.Domain.Rewards;
 
 namespace IdleGuild.Api.Tests;
@@ -9,12 +10,16 @@ namespace IdleGuild.Api.Tests;
 public sealed class InMemoryPlayerGameStateStore :
     IPlayerGameStateRepository,
     IIdleRewardClaimRepository,
+    IHeroUpgradeReceiptRepository,
     IGameUnitOfWork
 {
     private readonly ConcurrentDictionary<Guid, PlayerGameState> _states = [];
     private readonly ConcurrentDictionary<
         (Guid, string),
         IdleRewardClaimReceipt> _receipts = [];
+    private readonly ConcurrentDictionary<
+        (Guid, string),
+        HeroUpgradeReceipt> _upgradeReceipts = [];
 
     public void Add(PlayerGameState gameState)
     {
@@ -57,6 +62,30 @@ public sealed class InMemoryPlayerGameStateStore :
         {
             throw new InvalidOperationException(
                 "Idle reward receipt already exists.");
+        }
+    }
+
+    Task<HeroUpgradeReceipt?>
+        IHeroUpgradeReceiptRepository.FindAsync(
+            Guid playerId,
+            string idempotencyKey,
+            CancellationToken cancellationToken)
+    {
+        _upgradeReceipts.TryGetValue(
+            (playerId, idempotencyKey),
+            out var receipt);
+        return Task.FromResult(receipt);
+    }
+
+    void IHeroUpgradeReceiptRepository.Add(
+        HeroUpgradeReceipt receipt)
+    {
+        if (!_upgradeReceipts.TryAdd(
+                (receipt.PlayerId, receipt.IdempotencyKey),
+                receipt))
+        {
+            throw new InvalidOperationException(
+                "Hero upgrade receipt already exists.");
         }
     }
 

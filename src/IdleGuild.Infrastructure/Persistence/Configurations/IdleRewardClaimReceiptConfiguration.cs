@@ -1,4 +1,5 @@
 using IdleGuild.Domain.GameStates;
+using IdleGuild.Domain.Requests;
 using IdleGuild.Domain.Rewards;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -37,7 +38,7 @@ public sealed class IdleRewardClaimReceiptConfiguration :
             .HasColumnName("player_id");
         builder.Property(receipt => receipt.IdempotencyKey)
             .HasColumnName("idempotency_key")
-            .HasMaxLength(IdleRewardPolicy.MaxIdempotencyKeyLength);
+            .HasMaxLength(IdempotencyPolicy.MaxKeyLength);
         builder.Property(receipt => receipt.GoldAwarded)
             .HasColumnName("gold_awarded");
         builder.Property(receipt => receipt.AccumulatedSeconds)

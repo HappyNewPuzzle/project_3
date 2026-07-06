@@ -1,20 +1,20 @@
 using IdleGuild.Application.Abstractions.Persistence;
+using IdleGuild.Domain.Heroes;
 using IdleGuild.Domain.Requests;
-using IdleGuild.Domain.Rewards;
 
-namespace IdleGuild.Application.Rewards.ClaimIdleReward;
+namespace IdleGuild.Application.Heroes.UpgradeMainHero;
 
-/// <summary>방치 보상을 멱등하게 정산하고 동시 저장 충돌을 재시도합니다.</summary>
-public sealed class ClaimIdleRewardHandler(
+/// <summary>주 영웅 강화를 멱등하게 판정하고 저장 충돌을 재시도합니다.</summary>
+public sealed class UpgradeMainHeroHandler(
     IPlayerGameStateRepository gameStateRepository,
-    IIdleRewardClaimRepository claimRepository,
+    IHeroUpgradeReceiptRepository receiptRepository,
     IGameUnitOfWork unitOfWork,
     TimeProvider timeProvider)
 {
     private const int MaxSaveAttempts = 3;
 
-    /// <summary>같은 플레이어와 멱등 키에는 최초 지급 결과만 반환합니다.</summary>
-    public async Task<ClaimIdleRewardResult?> HandleAsync(
+    /// <summary>같은 플레이어와 멱등 키에는 최초 강화 판정만 반환합니다.</summary>
+    public async Task<UpgradeMainHeroResult?> HandleAsync(
         Guid playerId,
         string idempotencyKey,
         CancellationToken cancellationToken = default)
@@ -38,14 +38,14 @@ public sealed class ClaimIdleRewardHandler(
                 $"Idempotency key cannot exceed {IdempotencyPolicy.MaxKeyLength} characters.");
         }
 
-        // 재시도마다 시간이 늘어나 보상이 달라지지 않도록 한 요청의 서버 시각을 고정합니다.
-        var claimedAtUtc = timeProvider.GetUtcNow();
+        // 충돌 재시도 전후에 처리 시각이 달라지지 않도록 요청 시각을 한 번만 읽습니다.
+        var processedAtUtc = timeProvider.GetUtcNow();
 
         for (var attempt = 1;
              attempt <= MaxSaveAttempts;
              attempt++)
         {
-            var existing = await claimRepository.FindAsync(
+            var existing = await receiptRepository.FindAsync(
                 playerId,
                 normalizedKey,
                 cancellationToken);
@@ -67,13 +67,13 @@ public sealed class ClaimIdleRewardHandler(
                 return null;
             }
 
-            var settlement = gameState.ClaimIdleReward(
-                claimedAtUtc);
-            var receipt = IdleRewardClaimReceipt.Create(
+            var settlement = gameState.UpgradeMainHero(
+                processedAtUtc);
+            var receipt = HeroUpgradeReceipt.Create(
                 playerId,
                 normalizedKey,
                 settlement);
-            claimRepository.Add(receipt);
+            receiptRepository.Add(receipt);
 
             try
             {
@@ -87,23 +87,25 @@ public sealed class ClaimIdleRewardHandler(
             catch (PersistenceConflictException)
                 when (attempt < MaxSaveAttempts)
             {
-                // 실패한 추적 상태를 제거한 뒤 최신 DB 상태와 영수증을 다시 읽습니다.
+                // 최신 레벨·잔액·영수증을 다시 읽도록 실패한 추적 상태를 제거합니다.
                 unitOfWork.DiscardChanges();
             }
         }
 
         throw new InvalidOperationException(
-            "Idle reward claim could not be saved after retries.");
+            "Hero upgrade could not be saved after retries.");
     }
 
-    private static ClaimIdleRewardResult FromReceipt(
-        IdleRewardClaimReceipt receipt,
+    private static UpgradeMainHeroResult FromReceipt(
+        HeroUpgradeReceipt receipt,
         bool isReplay) =>
         new(
             receipt.IdempotencyKey,
-            receipt.GoldAwarded,
-            receipt.AccumulatedSeconds,
+            receipt.Outcome,
+            receipt.PreviousLevel,
+            receipt.HeroLevelAfter,
+            receipt.GoldCost,
             receipt.GoldBalanceAfter,
-            receipt.ClaimedAtUtc,
+            receipt.ProcessedAtUtc,
             isReplay);
 }

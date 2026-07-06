@@ -1,3 +1,4 @@
+using IdleGuild.Domain.Heroes;
 using IdleGuild.Domain.Rewards;
 
 namespace IdleGuild.Domain.GameStates;
@@ -94,5 +95,56 @@ public sealed class PlayerGameState
             accumulatedSeconds,
             Gold,
             claimedAtUtc);
+    }
+
+    /// <summary>서버가 계산한 비용을 검사해 주 영웅을 한 레벨 강화합니다.</summary>
+    public HeroUpgradeSettlement UpgradeMainHero(
+        DateTimeOffset requestedAt)
+    {
+        if (requestedAt == default)
+        {
+            throw new ArgumentException(
+                "Upgrade time must be provided.",
+                nameof(requestedAt));
+        }
+
+        var processedAtUtc = requestedAt.ToUniversalTime();
+        var previousLevel = HeroLevel;
+
+        if (HeroLevel >= HeroUpgradePolicy.MaxHeroLevel)
+        {
+            return new HeroUpgradeSettlement(
+                HeroUpgradeOutcome.MaxLevelReached,
+                previousLevel,
+                HeroLevel,
+                GoldCost: 0,
+                Gold,
+                processedAtUtc);
+        }
+
+        var goldCost = HeroUpgradePolicy.CalculateCost(
+            HeroLevel);
+
+        if (Gold < goldCost)
+        {
+            return new HeroUpgradeSettlement(
+                HeroUpgradeOutcome.InsufficientGold,
+                previousLevel,
+                HeroLevel,
+                goldCost,
+                Gold,
+                processedAtUtc);
+        }
+
+        Gold -= goldCost;
+        HeroLevel++;
+
+        return new HeroUpgradeSettlement(
+            HeroUpgradeOutcome.Succeeded,
+            previousLevel,
+            HeroLevel,
+            goldCost,
+            Gold,
+            processedAtUtc);
     }
 }

@@ -1,5 +1,6 @@
 using IdleGuild.Application.Accounts.CreateGuest;
 using IdleGuild.Application.GameStates.GetGameState;
+using IdleGuild.Application.Heroes.UpgradeMainHero;
 using IdleGuild.Application.Rewards.ClaimIdleReward;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -15,6 +16,7 @@ public static class DependencyInjection
         services.AddScoped<CreateGuestAccountHandler>();
         services.AddScoped<GetGameStateHandler>();
         services.AddScoped<ClaimIdleRewardHandler>();
+        services.AddScoped<UpgradeMainHeroHandler>();
 
         return services;
     }

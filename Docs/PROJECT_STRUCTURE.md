@@ -752,6 +752,8 @@ Infrastructure 테스트에서 공유할 PostgreSQL 환경을 준비합니다.
 
 Docker를 직접 사용할 수 없는 CI 환경에서는 `IDLEGUILD_TEST_POSTGRES_CONNECTION_STRING`으로 외부 테스트 DB를 지정할 수도 있습니다.
 
+동시성 테스트는 이전 테스트가 사용한 물리 연결 상태의 영향을 받지 않도록 연결 풀을 끄고 각 DbContext가 독립 연결을 사용합니다.
+
 ### `PlayerGameStatePersistenceTests.cs`
 
 `PlayerGameState`의 실제 PostgreSQL 저장·조회 왕복을 검증합니다.
@@ -892,12 +894,12 @@ Tests
 → 어떤 테스트가 이 동작을 보장하는가?
 ```
 
-현재는 Step 5까지 완료되어 게스트 생성, 게임 상태 조회, 방치 보상 수령이 전체 흐름을 연결합니다. 다음 Step은 같은 구조를 따라 골드 차감과 영웅 강화를 추가합니다.
+현재는 Step 6까지 완료되어 게스트 생성, 게임 상태 조회, 방치 보상 수령, 영웅 강화가 전체 흐름을 연결합니다. 다음 Step은 같은 구조를 따라 스테이지 도전과 생산 보너스를 추가합니다.
 
 ## 16. Step 5에서 추가된 파일
 
 - `Docs/IDLE_REWARDS.md`: 계산식, API 사용법, 중복·동시 요청 방어 이유를 설명합니다.
-- `Domain/Rewards/IdleRewardPolicy.cs`: 초당 생산량, 8시간 상한, 멱등 키 길이를 한곳에 둡니다.
+- `Domain/Rewards/IdleRewardPolicy.cs`: 초당 생산량과 8시간 상한을 한곳에 둡니다.
 - `Domain/Rewards/IdleRewardSettlement.cs`: 한 번의 계산 결과를 값 객체로 전달합니다.
 - `Domain/Rewards/IdleRewardClaimReceipt.cs`: 최초 지급 결과를 재생할 영수증 모델입니다.
 - `Application/Rewards/ClaimIdleReward/*`: 방치 보상 유스케이스와 반환 모델입니다.
@@ -911,3 +913,20 @@ Tests
 - `Infrastructure/Persistence/Migrations/*AddIdleRewardClaims*`: 새 영수증 테이블을 재현 가능한 스키마 이력으로 만듭니다.
 - `tests/*/IdleReward*Tests.cs`: 계산 규칙, Handler 멱등성, HTTP 계약, 실제 PostgreSQL 동시성을 계층별로 검증합니다.
 - `tests/IdleGuild.Infrastructure.Tests/PostgreSqlTestCollection.cs`: DB 통합 테스트가 하나의 Fixture를 안전하게 공유하게 합니다.
+
+## 17. Step 6에서 추가된 파일
+
+- `Docs/HERO_UPGRADES.md`: 비용 공식, API 계약, 실패 멱등성, 동시성 방어를 설명합니다.
+- `Domain/Requests/IdempotencyPolicy.cs`: 모든 상태 변경 API의 멱등 키 길이 규칙을 공유합니다.
+- `Domain/Heroes/HeroUpgradePolicy.cs`: 강화 비용을 정확한 정수 연산으로 계산하고 최대 레벨을 정의합니다.
+- `Domain/Heroes/HeroUpgradeOutcome.cs`: 성공, 골드 부족, 최대 레벨 판정을 구분합니다.
+- `Domain/Heroes/HeroUpgradeSettlement.cs`: 한 번의 강화 판정 직후 결과를 전달합니다.
+- `Domain/Heroes/HeroUpgradeReceipt.cs`: 성공과 실패의 최초 판정을 재생할 영수증 모델입니다.
+- `Application/Heroes/UpgradeMainHero/*`: 강화 처리 순서, 충돌 재시도, 반환 모델을 구현합니다.
+- `Application/Abstractions/Persistence/IHeroUpgradeReceiptRepository.cs`: 강화 영수증 저장 기술을 Application에서 분리합니다.
+- `Api/Contracts/HeroUpgradeResponse.cs`: Unity가 받을 강화 JSON 응답 계약입니다.
+- `Api/Endpoints/HeroesEndpoints.cs`: JWT·멱등 키를 검사하고 판정을 HTTP 상태로 변환합니다.
+- `Infrastructure/Persistence/Configurations/HeroUpgradeReceiptConfiguration.cs`: 강화 영수증 테이블과 무결성 제약을 정의합니다.
+- `Infrastructure/Persistence/Repositories/HeroUpgradeReceiptRepository.cs`: 강화 영수증 조회·추가를 EF Core로 구현합니다.
+- `Infrastructure/Persistence/Migrations/*AddHeroUpgrades*`: 강화 영수증 테이블의 스키마 이력입니다.
+- `tests/*/HeroUpgrade*Tests.cs`: 비용, 유스케이스, HTTP, 실제 DB 동시성을 계층별로 검증합니다.

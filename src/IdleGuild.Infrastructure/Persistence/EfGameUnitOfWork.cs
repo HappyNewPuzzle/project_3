@@ -28,7 +28,7 @@ public sealed class EfGameUnitOfWork(
             })
         {
             throw new PersistenceConflictException(
-                "동일한 멱등 키의 정산 영수증이 이미 저장되었습니다.",
+                "동일한 멱등 키의 처리 영수증이 이미 저장되었습니다.",
                 exception);
         }
     }

@@ -1,6 +1,7 @@
 using IdleGuild.Application.Abstractions.Authentication;
 using IdleGuild.Application.Abstractions.Persistence;
 using IdleGuild.Domain.GameStates;
+using IdleGuild.Domain.Heroes;
 using IdleGuild.Domain.Rewards;
 
 namespace IdleGuild.Application.Tests;
@@ -9,11 +10,14 @@ namespace IdleGuild.Application.Tests;
 internal sealed class InMemoryPlayerGameStateRepository :
     IPlayerGameStateRepository,
     IIdleRewardClaimRepository,
+    IHeroUpgradeReceiptRepository,
     IGameUnitOfWork
 {
     private readonly Dictionary<Guid, PlayerGameState> _states = [];
     private readonly Dictionary<(Guid, string), IdleRewardClaimReceipt>
         _receipts = [];
+    private readonly Dictionary<(Guid, string), HeroUpgradeReceipt>
+        _upgradeReceipts = [];
 
     public int SaveCount { get; private set; }
 
@@ -46,6 +50,24 @@ internal sealed class InMemoryPlayerGameStateRepository :
 
     public void Add(IdleRewardClaimReceipt receipt) =>
         _receipts.Add(
+            (receipt.PlayerId, receipt.IdempotencyKey),
+            receipt);
+
+    Task<HeroUpgradeReceipt?>
+        IHeroUpgradeReceiptRepository.FindAsync(
+            Guid playerId,
+            string idempotencyKey,
+            CancellationToken cancellationToken)
+    {
+        _upgradeReceipts.TryGetValue(
+            (playerId, idempotencyKey),
+            out var receipt);
+        return Task.FromResult(receipt);
+    }
+
+    void IHeroUpgradeReceiptRepository.Add(
+        HeroUpgradeReceipt receipt) =>
+        _upgradeReceipts.Add(
             (receipt.PlayerId, receipt.IdempotencyKey),
             receipt);
 

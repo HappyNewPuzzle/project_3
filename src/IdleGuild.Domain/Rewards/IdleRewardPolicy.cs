@@ -7,5 +7,4 @@ public static class IdleRewardPolicy
 
     public const int MaxAccumulationSeconds = 8 * 60 * 60;
 
-    public const int MaxIdempotencyKeyLength = 64;
 }

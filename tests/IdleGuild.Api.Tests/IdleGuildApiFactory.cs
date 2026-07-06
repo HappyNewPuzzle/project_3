@@ -21,12 +21,16 @@ public sealed class IdleGuildApiFactory : WebApplicationFactory<Program>
         {
             services.RemoveAll<IPlayerGameStateRepository>();
             services.RemoveAll<IIdleRewardClaimRepository>();
+            services.RemoveAll<IHeroUpgradeReceiptRepository>();
             services.RemoveAll<IGameUnitOfWork>();
             services.AddSingleton<InMemoryPlayerGameStateStore>();
             services.AddSingleton<IPlayerGameStateRepository>(
                 provider => provider.GetRequiredService<
                     InMemoryPlayerGameStateStore>());
             services.AddSingleton<IIdleRewardClaimRepository>(
+                provider => provider.GetRequiredService<
+                    InMemoryPlayerGameStateStore>());
+            services.AddSingleton<IHeroUpgradeReceiptRepository>(
                 provider => provider.GetRequiredService<
                     InMemoryPlayerGameStateStore>());
             services.AddSingleton<IGameUnitOfWork>(
