@@ -894,7 +894,7 @@ Tests
 → 어떤 테스트가 이 동작을 보장하는가?
 ```
 
-현재는 Step 8-1까지 완료되어 게스트 생성, 방치 보상, 영웅 강화, 스테이지 진행과 생산 보너스가 핵심 플레이 루프를 연결하고 API 오류 응답을 `ProblemDetails`로 정리했습니다. 다음 Step은 로깅, 예외 처리, 배포와 포트폴리오 마감을 진행합니다.
+현재는 Step 8-2까지 완료되어 게스트 생성, 방치 보상, 영웅 강화, 스테이지 진행과 생산 보너스가 핵심 플레이 루프를 연결하고 API 오류 응답, 전역 예외 처리, 요청 로깅을 정리했습니다. 다음 Step은 배포와 포트폴리오 마감을 진행합니다.
 
 ## 16. Step 5에서 추가된 파일
 
@@ -945,6 +945,7 @@ Tests
 - `Api/Contracts/StageChallengeResponse.cs`: Unity가 받을 도전 JSON 계약입니다.
 - `Api/Endpoints/StagesEndpoints.cs`: 스테이지 범위·JWT·키를 검사하고 HTTP 결과로 변환합니다.
 - `Api/Endpoints/EndpointProblemResults.cs`: API 오류 응답과 멱등 키 검증을 공통화합니다.
+- `Api/ErrorHandling/GlobalExceptionHandler.cs`: 예상하지 못한 예외를 500 `ProblemDetails`와 서버 로그로 변환합니다.
 - `Infrastructure/Persistence/Configurations/StageChallengeReceiptConfiguration.cs`: 도전 테이블과 결과별 DB 제약을 정의합니다.
 - `Infrastructure/Persistence/Repositories/StageChallengeReceiptRepository.cs`: 도전 영수증을 EF Core로 조회·추가합니다.
 - `Infrastructure/Persistence/Migrations/*AddStageProgression*`: 영수증, 생산 잔여값, 보상 배율 열의 스키마 이력입니다.
@@ -955,3 +956,9 @@ Tests
 - `Docs/API_ERRORS.md`: 클라이언트가 실패 응답을 처리할 수 있도록 `ProblemDetails`와 상태 코드 의미를 정리합니다.
 - `Api/Endpoints/EndpointProblemResults.cs`: 반복되는 멱등 키 검증과 400·404·409·503 오류 응답 생성을 한곳에 모읍니다.
 - `tests/IdleGuild.Api.Tests/*EndpointTests.cs`: 실패 응답이 상태 코드뿐 아니라 `ProblemDetails` 제목까지 만족하는지 검증합니다.
+
+## 20. Step 8-2에서 추가된 파일
+
+- `Docs/OBSERVABILITY.md`: 요청 로깅, 전역 예외 처리, `traceId` 활용 방식을 설명합니다.
+- `Api/ErrorHandling/GlobalExceptionHandler.cs`: 처리되지 않은 예외를 로그와 500 `ProblemDetails`로 변환합니다.
+- `tests/IdleGuild.Api.Tests/ErrorHandlingTests.cs`: 실제 HTTP 파이프라인에서 예외가 안전한 오류 계약으로 변환되는지 검증합니다.

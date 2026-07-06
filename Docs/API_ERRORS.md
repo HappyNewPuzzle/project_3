@@ -33,6 +33,7 @@
 | `404 Not Found` | 인증된 플레이어의 게임 상태를 찾을 수 없음 | 계정 생성 흐름을 다시 시작합니다. |
 | `409 Conflict` | 멱등 키를 다른 명령에 재사용했거나 게임 규칙상 실패 판정 | Body 형식에 따라 처리합니다. |
 | `503 Service Unavailable` | 내부 재시도 후에도 저장 충돌이 지속됨 | 같은 `Idempotency-Key`로 잠시 뒤 재시도합니다. |
+| `500 Internal Server Error` | 예상하지 못한 서버 예외 | `traceId`를 로그에 남기고 잠시 뒤 재시도합니다. |
 
 ## 4. 멱등 키 오류
 
@@ -81,6 +82,7 @@ Idempotency-Key: claim-20260707-001
 ## 6. 현재 구현 위치
 
 - `src/IdleGuild.Api/Endpoints/EndpointProblemResults.cs`: 공통 오류 응답과 멱등 키 검증
+- `src/IdleGuild.Api/ErrorHandling/GlobalExceptionHandler.cs`: 예상하지 못한 예외를 500 오류 계약으로 변환
 - `src/IdleGuild.Api/Endpoints/RewardsEndpoints.cs`: 방치 보상 오류 변환
 - `src/IdleGuild.Api/Endpoints/HeroesEndpoints.cs`: 영웅 강화 오류 변환
 - `src/IdleGuild.Api/Endpoints/StagesEndpoints.cs`: 스테이지 도전 오류 변환

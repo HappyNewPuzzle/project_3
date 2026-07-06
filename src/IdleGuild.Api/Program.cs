@@ -1,10 +1,12 @@
 using System.IdentityModel.Tokens.Jwt;
 using IdleGuild.Api.Endpoints;
+using IdleGuild.Api.ErrorHandling;
 using IdleGuild.Api.OpenApi;
 using IdleGuild.Application;
 using IdleGuild.Infrastructure;
 using IdleGuild.Infrastructure.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpLogging;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,6 +24,17 @@ builder.Services.AddOpenApi(options =>
         BearerSecurityRequirementTransformer>();
 });
 builder.Services.AddHealthChecks();
+builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+builder.Services.AddHttpLogging(options =>
+{
+    // 운영 로그에 필요한 최소 HTTP 정보만 남겨 토큰과 Body 노출을 피합니다.
+    options.LoggingFields =
+        HttpLoggingFields.RequestMethod |
+        HttpLoggingFields.RequestPath |
+        HttpLoggingFields.ResponseStatusCode |
+        HttpLoggingFields.Duration;
+});
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddApplication();
 
@@ -88,6 +101,12 @@ if (app.Environment.IsDevelopment())
         options.SwaggerEndpoint("/openapi/v1.json", "Idle Guild API v1");
     });
 }
+
+// 처리되지 않은 예외를 500 ProblemDetails로 통일하고 추적 가능한 로그를 남깁니다.
+app.UseExceptionHandler();
+
+// 요청 메서드, 경로, 상태 코드, 소요 시간을 남겨 API 동작을 추적합니다.
+app.UseHttpLogging();
 
 // 인증 미들웨어가 JWT를 검증한 뒤 Endpoint의 권한 정책을 평가합니다.
 app.UseAuthentication();

@@ -31,12 +31,13 @@
 - [영웅 강화](Docs/HERO_UPGRADES.md)
 - [스테이지 진행](Docs/STAGE_PROGRESSION.md)
 - [API 오류 계약](Docs/API_ERRORS.md)
+- [로깅과 예외 처리](Docs/OBSERVABILITY.md)
 - [프로젝트 폴더 및 파일 구조](Docs/PROJECT_STRUCTURE.md)
 - [개발 로드맵](Docs/ROADMAP.md)
 
 ## 현재 상태
 
-Step 8-1: API 오류 응답을 `ProblemDetails` 중심으로 정리하고 멱등 키 검증을 공통화했습니다.
+Step 8-2: API 오류 응답, 전역 예외 처리, 요청 로깅을 정리해 운영 중 문제를 추적할 수 있게 했습니다.
 
 ## 로컬 실행
 
