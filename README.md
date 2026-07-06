@@ -25,6 +25,7 @@
 
 - [게임 설계](Docs/GAME_DESIGN.md)
 - [서버 아키텍처](Docs/ARCHITECTURE.md)
+- [Step별 진행 이유와 의사결정](Docs/STEP_DECISIONS.md)
 - [데이터베이스](Docs/DATABASE.md)
 - [게스트 인증](Docs/AUTHENTICATION.md)
 - [방치 보상](Docs/IDLE_REWARDS.md)

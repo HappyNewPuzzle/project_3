@@ -224,6 +224,17 @@ PostgreSQL과 EF Core 사용 방법을 설명합니다.
 
 Step을 시작하거나 완료할 때 상태를 갱신합니다.
 
+### `Docs/STEP_DECISIONS.md`
+
+각 Step에서 왜 그 작업을 진행했는지 정리하는 의사결정 문서입니다.
+
+- Step별 목적
+- 해결하려던 문제
+- 선택한 구현 방향
+- 검증 방법
+
+포트폴리오 리뷰어가 구현 순서와 설계 의도를 빠르게 따라갈 수 있게 하기 위해 만들었습니다.
+
 ### `Docs/PROJECT_STRUCTURE.md`
 
 현재 읽고 있는 문서입니다.
@@ -962,3 +973,7 @@ Tests
 - `Docs/OBSERVABILITY.md`: 요청 로깅, 전역 예외 처리, `traceId` 활용 방식을 설명합니다.
 - `Api/ErrorHandling/GlobalExceptionHandler.cs`: 처리되지 않은 예외를 로그와 500 `ProblemDetails`로 변환합니다.
 - `tests/IdleGuild.Api.Tests/ErrorHandlingTests.cs`: 실제 HTTP 파이프라인에서 예외가 안전한 오류 계약으로 변환되는지 검증합니다.
+
+## 21. Step 8-3 문서 보강에서 추가된 파일
+
+- `Docs/STEP_DECISIONS.md`: Step 1부터 Step 8-2까지 왜 진행했는지, 어떤 문제를 해결했는지, 어떤 선택을 했는지, 어떻게 검증했는지 설명합니다.
