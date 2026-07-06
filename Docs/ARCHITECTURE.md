@@ -60,7 +60,7 @@ PostgreSQL
 
 ## 6. API 초안
 
-구현 과정에서 요청·응답 모델과 오류 계약을 구체화합니다.
+요청·응답 모델은 기능별 DTO로 유지하고, 일반 오류는 `ProblemDetails`로 반환합니다. 게임 규칙상 실패한 판정은 클라이언트가 그대로 표시하고 재시도 정책을 세울 수 있도록 기능 응답 DTO의 `outcome`으로 표현합니다.
 
 | Method | Path | 목적 |
 | --- | --- | --- |
@@ -69,6 +69,8 @@ PostgreSQL
 | `POST` | `/api/v1/rewards/idle/claim` | 방치 보상 수령 |
 | `POST` | `/api/v1/heroes/main/upgrade` | 주 영웅 강화 |
 | `POST` | `/api/v1/stages/{stage}/challenge` | 스테이지 도전 |
+
+자세한 실패 응답 규칙은 [API 오류 계약](API_ERRORS.md)에 정리합니다.
 
 ## 7. 품질 기준
 

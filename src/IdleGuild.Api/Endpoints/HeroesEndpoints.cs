@@ -4,8 +4,6 @@ using IdleGuild.Api.Contracts;
 using IdleGuild.Application.Abstractions.Persistence;
 using IdleGuild.Application.Heroes.UpgradeMainHero;
 using IdleGuild.Domain.Heroes;
-using IdleGuild.Domain.Requests;
-using Microsoft.Extensions.Primitives;
 
 namespace IdleGuild.Api.Endpoints;
 
@@ -29,9 +27,9 @@ public static class HeroesEndpoints
             .Produces<HeroUpgradeResponse>()
             .Produces<HeroUpgradeResponse>(
                 StatusCodes.Status409Conflict)
-            .Produces(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized)
-            .Produces(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status503ServiceUnavailable);
 
         return endpoints;
@@ -49,23 +47,12 @@ public static class HeroesEndpoints
             return TypedResults.Unauthorized();
         }
 
-        if (!request.Headers.TryGetValue(
-                "Idempotency-Key",
-                out StringValues headerValue) ||
-            headerValue.Count != 1 ||
-            string.IsNullOrWhiteSpace(headerValue[0]))
+        if (!EndpointProblemResults.TryReadIdempotencyKey(
+                request,
+                out var idempotencyKey,
+                out var problem))
         {
-            return TypedResults.BadRequest(
-                "Idempotency-Key header is required.");
-        }
-
-        var idempotencyKey = headerValue[0]!.Trim();
-
-        if (idempotencyKey.Length >
-            IdempotencyPolicy.MaxKeyLength)
-        {
-            return TypedResults.BadRequest(
-                $"Idempotency-Key cannot exceed {IdempotencyPolicy.MaxKeyLength} characters.");
+            return problem!;
         }
 
         UpgradeMainHeroResult? result;
@@ -80,17 +67,16 @@ public static class HeroesEndpoints
         catch (PersistenceConflictException)
         {
             // 내부 재시도 후에도 충돌하면 같은 키로 다시 시도할 수 있는 오류를 반환합니다.
-            return TypedResults.Problem(
-                title: "Hero upgrade is temporarily busy.",
-                detail:
-                    "Retry later with the same Idempotency-Key.",
-                statusCode:
-                    StatusCodes.Status503ServiceUnavailable);
+            return EndpointProblemResults.ServiceUnavailable(
+                "Hero upgrade is temporarily busy.",
+                "Retry later with the same Idempotency-Key.");
         }
 
         if (result is null)
         {
-            return TypedResults.NotFound();
+            return EndpointProblemResults.NotFound(
+                "Game state was not found.",
+                "Create a guest account before calling this endpoint.");
         }
 
         var response = new HeroUpgradeResponse(

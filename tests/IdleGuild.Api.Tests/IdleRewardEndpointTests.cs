@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using IdleGuild.Api.Contracts;
+using Microsoft.AspNetCore.Mvc;
 
 namespace IdleGuild.Api.Tests;
 
@@ -40,6 +41,11 @@ public sealed class IdleRewardEndpointTests(
         Assert.Equal(
             HttpStatusCode.BadRequest,
             response.StatusCode);
+        var problem = await response.Content
+            .ReadFromJsonAsync<ProblemDetails>();
+        Assert.Equal(
+            "Idempotency key is required.",
+            problem?.Title);
     }
 
     // 네트워크 재시도를 가정한 같은 키 요청은 최초 지급 결과를 그대로 재생해야 합니다.

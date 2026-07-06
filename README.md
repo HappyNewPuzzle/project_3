@@ -30,12 +30,13 @@
 - [방치 보상](Docs/IDLE_REWARDS.md)
 - [영웅 강화](Docs/HERO_UPGRADES.md)
 - [스테이지 진행](Docs/STAGE_PROGRESSION.md)
+- [API 오류 계약](Docs/API_ERRORS.md)
 - [프로젝트 폴더 및 파일 구조](Docs/PROJECT_STRUCTURE.md)
 - [개발 로드맵](Docs/ROADMAP.md)
 
 ## 현재 상태
 
-Step 7: 결정론적 스테이지 판정, 멱등 진행, 생산 보너스와 소수 이월을 구성했습니다.
+Step 8-1: API 오류 응답을 `ProblemDetails` 중심으로 정리하고 멱등 키 검증을 공통화했습니다.
 
 ## 로컬 실행
 

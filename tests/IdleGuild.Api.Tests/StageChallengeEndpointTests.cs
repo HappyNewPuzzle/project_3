@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using IdleGuild.Api.Contracts;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace IdleGuild.Api.Tests;
@@ -45,6 +46,11 @@ public sealed class StageChallengeEndpointTests(
         Assert.Equal(
             HttpStatusCode.BadRequest,
             response.StatusCode);
+        var problem = await response.Content
+            .ReadFromJsonAsync<ProblemDetails>();
+        Assert.Equal(
+            "Stage is outside the supported range.",
+            problem?.Title);
     }
 
     // 전투력 부족 결과는 같은 키의 네트워크 재시도에서도 그대로 재생해야 합니다.
@@ -127,11 +133,11 @@ public sealed class StageChallengeEndpointTests(
         Assert.Equal(
             HttpStatusCode.Conflict,
             response.StatusCode);
-        var content = await response.Content
-            .ReadAsStringAsync();
+        var problem = await response.Content
+            .ReadFromJsonAsync<ProblemDetails>();
         Assert.Contains(
             "Idempotency key conflict",
-            content,
+            problem?.Title,
             StringComparison.Ordinal);
     }
 

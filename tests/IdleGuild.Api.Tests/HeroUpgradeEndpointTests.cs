@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using IdleGuild.Api.Contracts;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.AspNetCore.Mvc;
 
 namespace IdleGuild.Api.Tests;
 
@@ -44,6 +45,11 @@ public sealed class HeroUpgradeEndpointTests(
         Assert.Equal(
             HttpStatusCode.BadRequest,
             response.StatusCode);
+        var problem = await response.Content
+            .ReadFromJsonAsync<ProblemDetails>();
+        Assert.Equal(
+            "Idempotency key is required.",
+            problem?.Title);
     }
 
     // 골드 부족 결과도 같은 키 재요청에서 최초 판정 그대로 재생해야 합니다.

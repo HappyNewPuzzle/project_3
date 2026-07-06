@@ -3,9 +3,6 @@ using IdleGuild.Api.Authentication;
 using IdleGuild.Api.Contracts;
 using IdleGuild.Application.Abstractions.Persistence;
 using IdleGuild.Application.Rewards.ClaimIdleReward;
-using IdleGuild.Domain.Requests;
-using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.Extensions.Primitives;
 
 namespace IdleGuild.Api.Endpoints;
 
@@ -27,21 +24,16 @@ public static class RewardsEndpoints
             .WithSummary(
                 "Claims accumulated idle rewards exactly once per idempotency key.")
             .Produces<IdleRewardClaimResponse>()
-            .Produces(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized)
-            .Produces(StatusCodes.Status404NotFound)
-            .Produces(StatusCodes.Status409Conflict);
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status503ServiceUnavailable);
 
         return endpoints;
     }
 
     // JWT의 플레이어와 요청 헤더의 멱등 키만 사용해 보상을 정산합니다.
-    private static async Task<Results<
-        Ok<IdleRewardClaimResponse>,
-        BadRequest<string>,
-        UnauthorizedHttpResult,
-        NotFound,
-        Conflict<string>>> ClaimIdleRewardAsync(
+    private static async Task<IResult> ClaimIdleRewardAsync(
         ClaimsPrincipal user,
         HttpRequest request,
         ClaimIdleRewardHandler handler,
@@ -52,23 +44,12 @@ public static class RewardsEndpoints
             return TypedResults.Unauthorized();
         }
 
-        if (!request.Headers.TryGetValue(
-                "Idempotency-Key",
-                out StringValues headerValue) ||
-            headerValue.Count != 1 ||
-            string.IsNullOrWhiteSpace(headerValue[0]))
+        if (!EndpointProblemResults.TryReadIdempotencyKey(
+                request,
+                out var idempotencyKey,
+                out var problem))
         {
-            return TypedResults.BadRequest(
-                "Idempotency-Key header is required.");
-        }
-
-        var idempotencyKey = headerValue[0]!.Trim();
-
-        if (idempotencyKey.Length >
-            IdempotencyPolicy.MaxKeyLength)
-        {
-            return TypedResults.BadRequest(
-                $"Idempotency-Key cannot exceed {IdempotencyPolicy.MaxKeyLength} characters.");
+            return problem!;
         }
 
         ClaimIdleRewardResult? result;
@@ -83,12 +64,15 @@ public static class RewardsEndpoints
         catch (PersistenceConflictException)
         {
             // 짧은 재시도 후에도 충돌하면 클라이언트가 같은 키로 다시 요청하게 알립니다.
-            return TypedResults.Conflict(
-                "Reward claim is busy. Retry with the same Idempotency-Key.");
+            return EndpointProblemResults.ServiceUnavailable(
+                "Idle reward claim is temporarily busy.",
+                "Retry later with the same Idempotency-Key.");
         }
 
         return result is null
-            ? TypedResults.NotFound()
+            ? EndpointProblemResults.NotFound(
+                "Game state was not found.",
+                "Create a guest account before calling this endpoint.")
             : TypedResults.Ok(new IdleRewardClaimResponse(
                 result.IdempotencyKey,
                 result.GoldAwarded,

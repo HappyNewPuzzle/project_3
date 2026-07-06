@@ -3,9 +3,7 @@ using IdleGuild.Api.Authentication;
 using IdleGuild.Api.Contracts;
 using IdleGuild.Application.Abstractions.Persistence;
 using IdleGuild.Application.Stages.ChallengeStage;
-using IdleGuild.Domain.Requests;
 using IdleGuild.Domain.Stages;
-using Microsoft.Extensions.Primitives;
 
 namespace IdleGuild.Api.Endpoints;
 
@@ -31,9 +29,9 @@ public static class StagesEndpoints
             .Produces<StageChallengeResponse>(
                 StatusCodes.Status409Conflict)
             .ProducesProblem(StatusCodes.Status409Conflict)
-            .Produces(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized)
-            .Produces(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status503ServiceUnavailable);
 
         return endpoints;
@@ -55,27 +53,17 @@ public static class StagesEndpoints
         if (stage < 1 ||
             stage > StageChallengePolicy.MaxStage)
         {
-            return TypedResults.BadRequest(
+            return EndpointProblemResults.BadRequest(
+                "Stage is outside the supported range.",
                 $"Stage must be between 1 and {StageChallengePolicy.MaxStage}.");
         }
 
-        if (!request.Headers.TryGetValue(
-                "Idempotency-Key",
-                out StringValues headerValue) ||
-            headerValue.Count != 1 ||
-            string.IsNullOrWhiteSpace(headerValue[0]))
+        if (!EndpointProblemResults.TryReadIdempotencyKey(
+                request,
+                out var idempotencyKey,
+                out var problem))
         {
-            return TypedResults.BadRequest(
-                "Idempotency-Key header is required.");
-        }
-
-        var idempotencyKey = headerValue[0]!.Trim();
-
-        if (idempotencyKey.Length >
-            IdempotencyPolicy.MaxKeyLength)
-        {
-            return TypedResults.BadRequest(
-                $"Idempotency-Key cannot exceed {IdempotencyPolicy.MaxKeyLength} characters.");
+            return problem!;
         }
 
         ChallengeStageResult? result;
@@ -90,26 +78,23 @@ public static class StagesEndpoints
         }
         catch (IdempotencyKeyConflictException exception)
         {
-            return TypedResults.Problem(
-                title: "Idempotency key conflict.",
-                detail: exception.Message,
-                statusCode: StatusCodes.Status409Conflict);
+            return EndpointProblemResults.Conflict(
+                "Idempotency key conflict.",
+                exception.Message);
         }
         catch (PersistenceConflictException)
         {
             // 내부 재시도 후에도 충돌하면 같은 키와 스테이지로 다시 요청하게 합니다.
-            return TypedResults.Problem(
-                title:
-                    "Stage challenge is temporarily busy.",
-                detail:
-                    "Retry later with the same Idempotency-Key and stage.",
-                statusCode:
-                    StatusCodes.Status503ServiceUnavailable);
+            return EndpointProblemResults.ServiceUnavailable(
+                "Stage challenge is temporarily busy.",
+                "Retry later with the same Idempotency-Key and stage.");
         }
 
         if (result is null)
         {
-            return TypedResults.NotFound();
+            return EndpointProblemResults.NotFound(
+                "Game state was not found.",
+                "Create a guest account before calling this endpoint.");
         }
 
         var response = new StageChallengeResponse(
