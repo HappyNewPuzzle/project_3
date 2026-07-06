@@ -59,7 +59,7 @@ Idempotency-Key: claim-20260707-001
 {
   "title": "Idempotency key is too long.",
   "status": 400,
-  "detail": "Idempotency-Key cannot exceed 120 characters."
+  "detail": "Idempotency-Key cannot exceed 64 characters."
 }
 ```
 

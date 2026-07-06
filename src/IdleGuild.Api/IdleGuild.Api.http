@@ -1,4 +1,5 @@
 @IdleGuild.Api_HostAddress = http://localhost:5219
+@AccessToken = paste_guest_access_token_here
 
 GET {{IdleGuild.Api_HostAddress}}/health
 Accept: text/plain
@@ -14,8 +15,6 @@ POST {{IdleGuild.Api_HostAddress}}/api/v1/accounts/guest
 Accept: application/json
 
 ###
-
-@AccessToken = paste_guest_access_token_here
 
 GET {{IdleGuild.Api_HostAddress}}/api/v1/game-state
 Authorization: Bearer {{AccessToken}}
@@ -40,6 +39,21 @@ Accept: application/json
 POST {{IdleGuild.Api_HostAddress}}/api/v1/stages/2/challenge
 Authorization: Bearer {{AccessToken}}
 Idempotency-Key: stage-2-challenge-001
+Accept: application/json
+
+###
+
+# 같은 멱등 키를 재사용하면 최초 보상 결과가 재생되어 isReplay가 true가 됩니다.
+POST {{IdleGuild.Api_HostAddress}}/api/v1/rewards/idle/claim
+Authorization: Bearer {{AccessToken}}
+Idempotency-Key: idle-claim-001
+Accept: application/json
+
+###
+
+# 멱등 키가 없으면 400 ProblemDetails가 반환됩니다.
+POST {{IdleGuild.Api_HostAddress}}/api/v1/rewards/idle/claim
+Authorization: Bearer {{AccessToken}}
 Accept: application/json
 
 ###

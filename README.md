@@ -26,6 +26,8 @@
 - [게임 설계](Docs/GAME_DESIGN.md)
 - [서버 아키텍처](Docs/ARCHITECTURE.md)
 - [Step별 진행 이유와 의사결정](Docs/STEP_DECISIONS.md)
+- [데모 시나리오](Docs/DEMO_SCENARIO.md)
+- [배포와 운영 설정](Docs/DEPLOYMENT.md)
 - [데이터베이스](Docs/DATABASE.md)
 - [게스트 인증](Docs/AUTHENTICATION.md)
 - [방치 보상](Docs/IDLE_REWARDS.md)
@@ -38,7 +40,7 @@
 
 ## 현재 상태
 
-Step 8-2: API 오류 응답, 전역 예외 처리, 요청 로깅을 정리해 운영 중 문제를 추적할 수 있게 했습니다.
+Step 8-3: README에서 실행 흐름을 찾고, 별도 데모 문서로 핵심 게임 루프를 직접 검증할 수 있게 정리했습니다.
 
 ## 로컬 실행
 
@@ -68,6 +70,21 @@ dotnet run --project src/IdleGuild.Api
 - Main Hero Upgrade: `POST http://localhost:5219/api/v1/heroes/main/upgrade`
 - Stage Challenge: `POST http://localhost:5219/api/v1/stages/{stage}/challenge`
 - Swagger UI: `http://localhost:5219/swagger`
+
+## 빠른 데모 흐름
+
+서버 실행 후 [데모 시나리오](Docs/DEMO_SCENARIO.md)를 따라가면 다음 핵심 루프를 확인할 수 있습니다.
+
+```text
+게스트 생성
+→ 게임 상태 조회
+→ 방치 보상 수령
+→ 영웅 강화
+→ 스테이지 2 도전
+→ 생산 보너스 5% 반영 확인
+```
+
+IDE의 HTTP Client를 사용한다면 [IdleGuild.Api.http](src/IdleGuild.Api/IdleGuild.Api.http) 파일에서 같은 흐름을 순서대로 호출할 수 있습니다.
 
 전체 테스트는 다음 명령으로 실행합니다.
 
