@@ -13,6 +13,8 @@ public sealed class UnityClientBootstrap : MonoBehaviour
     private string playerId;
     private string stageInput = "2";
     private bool isBusy;
+    private bool isDemoRunning;
+    private bool lastRequestSucceeded;
     private GameStateResponse gameState;
 
     private void Awake()
@@ -33,18 +35,23 @@ public sealed class UnityClientBootstrap : MonoBehaviour
         GUILayout.Label("Token: " + (string.IsNullOrEmpty(accessToken) ? "(none)" : "saved"));
 
         GUILayout.Space(8);
-        GUI.enabled = !isBusy;
+        GUI.enabled = !isBusy && !isDemoRunning;
         if (GUILayout.Button("Check Server Status"))
         {
             StartCoroutine(GetSystemStatus());
         }
 
-        if (GUILayout.Button("1. Guest Login"))
+        if (GUILayout.Button("Run Demo Flow"))
         {
-            StartCoroutine(GuestLogin());
+            StartCoroutine(RunDemoFlow());
         }
 
-        GUI.enabled = !isBusy && HasToken;
+        if (GUILayout.Button("1. Guest Login"))
+        {
+            StartCoroutine(GuestLoginAndLoadState());
+        }
+
+        GUI.enabled = !isBusy && !isDemoRunning && HasToken;
         if (GUILayout.Button("2. Get Game State"))
         {
             StartCoroutine(GetGameState());
@@ -92,12 +99,13 @@ public sealed class UnityClientBootstrap : MonoBehaviour
                 }));
         }
 
-        GUI.enabled = true;
+        GUI.enabled = !isDemoRunning;
         if (GUILayout.Button("Clear Saved Session"))
         {
             ClearSession();
         }
 
+        GUI.enabled = true;
         GUILayout.Space(8);
         DrawGameState();
         GUILayout.Space(8);
@@ -117,6 +125,64 @@ public sealed class UnityClientBootstrap : MonoBehaviour
             response => AddLog("Server status: " + response.status + " at " + response.serverTimeUtc));
     }
 
+    private IEnumerator RunDemoFlow()
+    {
+        isDemoRunning = true;
+        AddLog("Demo flow started.");
+        yield return GetSystemStatus();
+        if (!ShouldContinueDemo())
+        {
+            yield break;
+        }
+
+        yield return GuestLogin();
+        if (!ShouldContinueDemo())
+        {
+            yield break;
+        }
+
+        yield return GetGameState();
+        if (!ShouldContinueDemo())
+        {
+            yield break;
+        }
+
+        AddLog("Waiting 10 seconds for idle reward...");
+        yield return new WaitForSeconds(10f);
+
+        yield return PostWithIdempotency<ClaimIdleRewardResponse>(
+            "/api/v1/rewards/idle/claim",
+            "demo-idle-claim",
+            response => AddLog("Demo claim: +" + response.goldAwarded + " gold, balance " + response.goldBalanceAfter + ReplayText(response.isReplay)));
+        if (!ShouldContinueDemo())
+        {
+            yield break;
+        }
+
+        yield return PostWithIdempotency<UpgradeHeroResponse>(
+            "/api/v1/heroes/main/upgrade",
+            "demo-hero-upgrade",
+            response => AddLog("Demo upgrade: " + response.outcome + ", level " + response.heroLevelAfter + ", cost " + response.goldCost + ReplayText(response.isReplay)));
+        if (!ShouldContinueDemo())
+        {
+            yield break;
+        }
+
+        int stage = ParseStageInput();
+        yield return PostWithIdempotency<ChallengeStageResponse>(
+            "/api/v1/stages/" + stage + "/challenge",
+            "demo-stage-" + stage,
+            response => AddLog("Demo stage " + stage + ": " + response.outcome + ", highest " + response.highestStageAfter + ", bonus " + response.productionBonusPercentAfter + "%" + ReplayText(response.isReplay)));
+        if (!ShouldContinueDemo())
+        {
+            yield break;
+        }
+
+        yield return GetGameState();
+        AddLog("Demo flow finished.");
+        isDemoRunning = false;
+    }
+
     private IEnumerator GuestLogin()
     {
         yield return Send<GuestLoginResponse>(
@@ -132,8 +198,16 @@ public sealed class UnityClientBootstrap : MonoBehaviour
                 PlayerPrefs.SetString("IdleGuild.PlayerId", playerId);
                 PlayerPrefs.Save();
                 AddLog("Guest login succeeded. Player: " + playerId);
-                StartCoroutine(GetGameState());
             });
+    }
+
+    private IEnumerator GuestLoginAndLoadState()
+    {
+        yield return GuestLogin();
+        if (lastRequestSucceeded)
+        {
+            yield return GetGameState();
+        }
     }
 
     private IEnumerator GetGameState()
@@ -159,6 +233,7 @@ public sealed class UnityClientBootstrap : MonoBehaviour
     private IEnumerator Send<TResponse>(string method, string path, string idempotencyKey, bool includeAuthorization, Action<TResponse> onSuccess)
     {
         isBusy = true;
+        lastRequestSucceeded = false;
         string url = apiBaseUrl.TrimEnd('/') + path;
 
         using (UnityWebRequest request = new UnityWebRequest(url, method))
@@ -168,6 +243,7 @@ public sealed class UnityClientBootstrap : MonoBehaviour
             if (method == UnityWebRequest.kHttpVerbPOST)
             {
                 request.uploadHandler = new UploadHandlerRaw(new byte[0]);
+                request.SetRequestHeader("Content-Type", "application/json");
             }
 
             request.SetRequestHeader("Accept", "application/json");
@@ -192,6 +268,7 @@ public sealed class UnityClientBootstrap : MonoBehaviour
             }
 
             TResponse response = JsonUtility.FromJson<TResponse>(body);
+            lastRequestSucceeded = true;
             onSuccess?.Invoke(response);
         }
     }
@@ -212,8 +289,13 @@ public sealed class UnityClientBootstrap : MonoBehaviour
 
     private void AddError(long statusCode, string body)
     {
-        ProblemDetails problem = JsonUtility.FromJson<ProblemDetails>(body);
-        string title = problem == null || string.IsNullOrWhiteSpace(problem.title) ? body : problem.title;
+        string title = "Request failed without response body.";
+        if (!string.IsNullOrWhiteSpace(body))
+        {
+            ProblemDetails problem = JsonUtility.FromJson<ProblemDetails>(body);
+            title = problem == null || string.IsNullOrWhiteSpace(problem.title) ? body : problem.title;
+        }
+
         AddLog("HTTP " + statusCode + ": " + title);
     }
 
@@ -238,6 +320,18 @@ public sealed class UnityClientBootstrap : MonoBehaviour
         PlayerPrefs.DeleteKey("IdleGuild.PlayerId");
         PlayerPrefs.Save();
         AddLog("Saved session cleared.");
+    }
+
+    private bool ShouldContinueDemo()
+    {
+        if (lastRequestSucceeded)
+        {
+            return true;
+        }
+
+        AddLog("Demo flow stopped.");
+        isDemoRunning = false;
+        return false;
     }
 
     private void AddLog(string message)
