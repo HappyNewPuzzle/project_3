@@ -11,6 +11,7 @@ public sealed class UnityClientBootstrap : MonoBehaviour
     private readonly StringBuilder log = new StringBuilder();
     private string accessToken;
     private string playerId;
+    private string stageInput = "2";
     private bool isBusy;
     private GameStateResponse gameState;
 
@@ -33,6 +34,11 @@ public sealed class UnityClientBootstrap : MonoBehaviour
 
         GUILayout.Space(8);
         GUI.enabled = !isBusy;
+        if (GUILayout.Button("Check Server Status"))
+        {
+            StartCoroutine(GetSystemStatus());
+        }
+
         if (GUILayout.Button("1. Guest Login"))
         {
             StartCoroutine(GuestLogin());
@@ -68,19 +74,30 @@ public sealed class UnityClientBootstrap : MonoBehaviour
                 }));
         }
 
-        if (GUILayout.Button("5. Challenge Stage 2"))
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("Stage", GUILayout.Width(48));
+        stageInput = GUILayout.TextField(stageInput, GUILayout.Width(80));
+        GUILayout.EndHorizontal();
+
+        if (GUILayout.Button("5. Challenge Stage"))
         {
+            int stage = ParseStageInput();
             StartCoroutine(PostWithIdempotency<ChallengeStageResponse>(
-                "/api/v1/stages/2/challenge",
-                "stage-2",
+                "/api/v1/stages/" + stage + "/challenge",
+                "stage-" + stage,
                 response =>
                 {
-                    AddLog("Stage 2: " + response.outcome + ", highest " + response.highestStageAfter + ", bonus " + response.productionBonusPercentAfter + "%" + ReplayText(response.isReplay));
+                    AddLog("Stage " + stage + ": " + response.outcome + ", highest " + response.highestStageAfter + ", bonus " + response.productionBonusPercentAfter + "%" + ReplayText(response.isReplay));
                     StartCoroutine(GetGameState());
                 }));
         }
 
         GUI.enabled = true;
+        if (GUILayout.Button("Clear Saved Session"))
+        {
+            ClearSession();
+        }
+
         GUILayout.Space(8);
         DrawGameState();
         GUILayout.Space(8);
@@ -89,6 +106,16 @@ public sealed class UnityClientBootstrap : MonoBehaviour
     }
 
     private bool HasToken => !string.IsNullOrWhiteSpace(accessToken);
+
+    private IEnumerator GetSystemStatus()
+    {
+        yield return Send<SystemStatusResponse>(
+            UnityWebRequest.kHttpVerbGET,
+            "/api/v1/system/status",
+            null,
+            false,
+            response => AddLog("Server status: " + response.status + " at " + response.serverTimeUtc));
+    }
 
     private IEnumerator GuestLogin()
     {
@@ -140,7 +167,7 @@ public sealed class UnityClientBootstrap : MonoBehaviour
 
             if (method == UnityWebRequest.kHttpVerbPOST)
             {
-                request.uploadHandler = new UploadHandlerRaw(Array.Empty<byte>());
+                request.uploadHandler = new UploadHandlerRaw(new byte[0]);
             }
 
             request.SetRequestHeader("Accept", "application/json");
@@ -190,6 +217,29 @@ public sealed class UnityClientBootstrap : MonoBehaviour
         AddLog("HTTP " + statusCode + ": " + title);
     }
 
+    private int ParseStageInput()
+    {
+        int stage;
+        if (!int.TryParse(stageInput, out stage) || stage < 1)
+        {
+            stage = 1;
+            stageInput = "1";
+        }
+
+        return stage;
+    }
+
+    private void ClearSession()
+    {
+        accessToken = string.Empty;
+        playerId = string.Empty;
+        gameState = null;
+        PlayerPrefs.DeleteKey("IdleGuild.AccessToken");
+        PlayerPrefs.DeleteKey("IdleGuild.PlayerId");
+        PlayerPrefs.Save();
+        AddLog("Saved session cleared.");
+    }
+
     private void AddLog(string message)
     {
         log.Insert(0, "[" + DateTime.Now.ToString("HH:mm:ss") + "] " + message + Environment.NewLine);
@@ -198,6 +248,13 @@ public sealed class UnityClientBootstrap : MonoBehaviour
     private static string ReplayText(bool isReplay)
     {
         return isReplay ? " (replay)" : string.Empty;
+    }
+
+    [Serializable]
+    private sealed class SystemStatusResponse
+    {
+        public string status;
+        public string serverTimeUtc;
     }
 
     [Serializable]
