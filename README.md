@@ -26,6 +26,7 @@
 - [게임 설계](Docs/GAME_DESIGN.md)
 - [서버 아키텍처](Docs/ARCHITECTURE.md)
 - [Step별 진행 이유와 의사결정](Docs/STEP_DECISIONS.md)
+- [서버 MVP 완료 정리](Docs/SERVER_MVP_COMPLETE.md)
 - [데모 시나리오](Docs/DEMO_SCENARIO.md)
 - [배포와 운영 설정](Docs/DEPLOYMENT.md)
 - [데이터베이스](Docs/DATABASE.md)
@@ -40,7 +41,7 @@
 
 ## 현재 상태
 
-Step 8-3: README에서 실행 흐름을 찾고, 별도 데모 문서로 핵심 게임 루프를 직접 검증할 수 있게 정리했습니다.
+서버 MVP 완료: 게스트 인증, 방치 보상, 영웅 강화, 스테이지 진행, API 오류 계약, 운영 기본기와 데모 문서까지 정리했습니다. 다음 큰 단계는 Unity 클라이언트입니다.
 
 ## 로컬 실행
 
@@ -93,3 +94,7 @@ dotnet test
 ```
 
 PostgreSQL 통합 테스트는 기본적으로 Testcontainers가 일회용 DB를 자동 생성하므로 Docker Desktop이 실행 중이어야 합니다.
+
+## 서버 MVP 범위
+
+현재 서버 MVP의 완료 기준, 포함 기능, 제외 범위, 다음 확장 후보는 [서버 MVP 완료 정리](Docs/SERVER_MVP_COMPLETE.md)에 정리되어 있습니다.
