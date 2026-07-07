@@ -12,6 +12,10 @@
 [Bb]uilds/
 [Ll]ogs/
 [Uu]ser[Ss]ettings/
+UnityClient/My project/*.csproj
+UnityClient/My project/*.sln
+UnityClient/My project/*.slnx
+UnityClient/My project/.vsconfig
 
 # IDE
 .idea/
