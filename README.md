@@ -59,9 +59,23 @@ dotnet tool run dotnet-ef database update --project src/IdleGuild.Infrastructure
 dotnet run --project src/IdleGuild.Api
 ```
 
+`dotnet run`을 실행한 PowerShell 창은 서버 프로세스가 실행 중인 창이므로 닫지 않습니다. 서버가 켜지면 대략 다음과 같은 로그가 표시됩니다.
+
+```text
+Now listening on: http://localhost:5219
+Application started. Press Ctrl+C to shut down.
+```
+
 `.env.example`의 비밀번호는 로컬 개발 전용이며 운영 환경에서는 반드시 별도의 비밀값으로 교체해야 합니다.
 
-실행 후 다음 주소를 확인할 수 있습니다.
+서버 실행 후 새 PowerShell 창에서 다음 명령으로 상태를 확인할 수 있습니다.
+
+```powershell
+Invoke-RestMethod http://localhost:5219/health
+Invoke-RestMethod http://localhost:5219/api/v1/system/status
+```
+
+브라우저나 HTTP Client에서는 다음 주소를 확인할 수 있습니다. URL을 PowerShell에 그대로 입력하면 명령어로 해석되어 오류가 나므로, 브라우저 주소창에 입력하거나 `Invoke-RestMethod`를 사용합니다.
 
 - Health Check: `http://localhost:5219/health`
 - System Status: `http://localhost:5219/api/v1/system/status`
