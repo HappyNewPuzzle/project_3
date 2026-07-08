@@ -35,7 +35,7 @@ public sealed class IdleGuildRuntimeUi
         Action<int> onChallengeStage,
         Action onClearSession)
     {
-        uiFont = Resources.GetBuiltinResource<Font>("Arial.ttf");
+        uiFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         EnsureEventSystem();
 
         GameObject canvasObject = new GameObject("IdleGuild Runtime UI");
