@@ -2,6 +2,7 @@ using System;
 using System.Text;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.InputSystem.UI;
 using UnityEngine.UI;
 
 public sealed class IdleGuildRuntimeUi
@@ -170,7 +171,7 @@ public sealed class IdleGuildRuntimeUi
 
         GameObject eventSystem = new GameObject("EventSystem");
         eventSystem.AddComponent<EventSystem>();
-        eventSystem.AddComponent<StandaloneInputModule>();
+        eventSystem.AddComponent<InputSystemUIInputModule>();
     }
 
     private static GameObject CreatePanel(Transform parent, string objectName, Color color)
