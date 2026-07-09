@@ -27,6 +27,7 @@
 - [서버 아키텍처](Docs/ARCHITECTURE.md)
 - [Step별 진행 이유와 의사결정](Docs/STEP_DECISIONS.md)
 - [서버 MVP 완료 정리](Docs/SERVER_MVP_COMPLETE.md)
+- [서버 고도화 로드맵](Docs/SERVER_HARDENING_ROADMAP.md)
 - [데모 시나리오](Docs/DEMO_SCENARIO.md)
 - [배포와 운영 설정](Docs/DEPLOYMENT.md)
 - [데이터베이스](Docs/DATABASE.md)
@@ -112,3 +113,5 @@ PostgreSQL 통합 테스트는 기본적으로 Testcontainers가 일회용 DB를
 ## 서버 MVP 범위
 
 현재 서버 MVP의 완료 기준, 포함 기능, 제외 범위, 다음 확장 후보는 [서버 MVP 완료 정리](Docs/SERVER_MVP_COMPLETE.md)에 정리되어 있습니다.
+
+운영 게임 서버 수준으로 확장하기 위한 다음 작업 목록은 [서버 고도화 로드맵](Docs/SERVER_HARDENING_ROADMAP.md)에 정리되어 있습니다.

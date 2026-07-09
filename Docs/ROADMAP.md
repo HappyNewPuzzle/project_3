@@ -105,3 +105,14 @@
 - 게임 상태 표시
 - 보상 수령, 강화, 스테이지 도전 UI
 - 오류 및 네트워크 재시도 처리
+
+## 서버 고도화 트랙
+
+Unity 클라이언트와 별개로, 서버를 운영 게임 서버 수준에 가깝게 확장하는 작업은 [서버 고도화 로드맵](SERVER_HARDENING_ROADMAP.md)을 기준으로 진행합니다.
+
+추천 다음 작업:
+
+- Hardening Step 1. 재화 변경 이력 원장
+- Hardening Step 2. Rate Limiting
+- Hardening Step 3. 관리자용 조회 API
+- Hardening Step 4. Dockerfile과 배포 자동화 기초
