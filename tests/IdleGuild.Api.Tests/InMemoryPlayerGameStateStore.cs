@@ -15,6 +15,7 @@ public sealed class InMemoryPlayerGameStateStore :
     IHeroUpgradeReceiptRepository,
     IStageChallengeReceiptRepository,
     IGoldLedgerRepository,
+    IGoldLedgerReader,
     IGameUnitOfWork
 {
     private readonly ConcurrentDictionary<Guid, PlayerGameState> _states = [];
@@ -135,6 +136,28 @@ public sealed class InMemoryPlayerGameStateStore :
             throw new InvalidOperationException(
                 "Gold ledger entry already exists.");
         }
+    }
+
+    /// <summary>관리자 API 테스트에 플레이어별 최신순 원장 페이지를 제공합니다.</summary>
+    public Task<IReadOnlyList<GoldLedgerEntry>>
+        ListByPlayerAsync(
+            Guid playerId,
+            int take,
+            GoldLedgerPagePosition? before,
+            CancellationToken cancellationToken = default)
+    {
+        var entries = _goldLedgerEntries.Values
+            .Where(entry => entry.PlayerId == playerId)
+            .Where(entry => before is null ||
+                entry.OccurredAtUtc < before.OccurredAtUtc ||
+                (entry.OccurredAtUtc == before.OccurredAtUtc &&
+                 entry.EntryId.CompareTo(before.EntryId) < 0))
+            .OrderByDescending(entry => entry.OccurredAtUtc)
+            .ThenByDescending(entry => entry.EntryId)
+            .Take(take)
+            .ToArray();
+        return Task.FromResult<
+            IReadOnlyList<GoldLedgerEntry>>(entries);
     }
 
     public Task<int> SaveChangesAsync(

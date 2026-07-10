@@ -24,6 +24,7 @@ public sealed class IdleGuildApiFactory : WebApplicationFactory<Program>
             services.RemoveAll<IHeroUpgradeReceiptRepository>();
             services.RemoveAll<IStageChallengeReceiptRepository>();
             services.RemoveAll<IGoldLedgerRepository>();
+            services.RemoveAll<IGoldLedgerReader>();
             services.RemoveAll<IGameUnitOfWork>();
             services.AddSingleton<InMemoryPlayerGameStateStore>();
             services.AddSingleton<IPlayerGameStateRepository>(
@@ -39,6 +40,9 @@ public sealed class IdleGuildApiFactory : WebApplicationFactory<Program>
                 provider => provider.GetRequiredService<
                     InMemoryPlayerGameStateStore>());
             services.AddSingleton<IGoldLedgerRepository>(
+                provider => provider.GetRequiredService<
+                    InMemoryPlayerGameStateStore>());
+            services.AddSingleton<IGoldLedgerReader>(
                 provider => provider.GetRequiredService<
                     InMemoryPlayerGameStateStore>());
             services.AddSingleton<IGameUnitOfWork>(

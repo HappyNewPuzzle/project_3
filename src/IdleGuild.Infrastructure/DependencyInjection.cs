@@ -33,6 +33,8 @@ public static class DependencyInjection
             StageChallengeReceiptRepository>();
         services.AddScoped<IGoldLedgerRepository,
             GoldLedgerRepository>();
+        services.AddScoped<IGoldLedgerReader,
+            GoldLedgerReader>();
         services.AddScoped<IGameUnitOfWork,
             EfGameUnitOfWork>();
         services.AddSingleton(jwtOptions);

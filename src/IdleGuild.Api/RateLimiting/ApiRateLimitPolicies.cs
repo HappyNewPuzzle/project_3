@@ -12,8 +12,10 @@ public static class ApiRateLimitPolicies
 {
     public const string GuestAccount = "guest-account";
     public const string PlayerMutation = "player-mutation";
+    public const string AdminRead = "admin-read";
     public const int GuestAccountPermitLimit = 5;
     public const int PlayerMutationPermitLimit = 30;
+    public const int AdminReadPermitLimit = 120;
     public static readonly TimeSpan Window = TimeSpan.FromMinutes(1);
 
     /// <summary>IP와 JWT 플레이어를 분리 키로 사용하는 고정 윈도우 정책을 등록합니다.</summary>
@@ -36,6 +38,11 @@ public static class ApiRateLimitPolicies
                 context => CreateFixedWindowPartition(
                     GetPlayerPartitionKey(context),
                     PlayerMutationPermitLimit));
+            options.AddPolicy(
+                AdminRead,
+                context => CreateFixedWindowPartition(
+                    GetPlayerPartitionKey(context),
+                    AdminReadPermitLimit));
         });
 
         return services;

@@ -61,6 +61,8 @@ DB 체크 제약조건은 골드가 음수가 되거나 영웅 레벨과 최고 
 
 DB 제약조건은 `balance_after = balance_before + amount`, 음수가 아닌 잔액, 0이 아닌 증감량을 검사합니다. `(player_id, reason, reference_id)` 유일 인덱스는 같은 기능 요청의 원장 중복을 차단합니다. 자세한 기록 규칙은 [골드 변경 이력 원장](GOLD_LEDGER.md)에 정리되어 있습니다.
 
+관리자 최신순 페이지 조회에는 `(player_id, occurred_at_utc, entry_id)` 인덱스를 사용합니다. 처리 시각이 같은 행도 `entry_id`로 순서를 고정해 커서 페이지 사이의 중복과 누락을 방지합니다.
+
 ## 5. idle_reward_claim_receipts
 
 | 열 | PostgreSQL 형식 | 역할 |
@@ -149,5 +151,7 @@ dotnet tool run dotnet-ef database update `
 `HeroUpgradeConcurrencyTests`는 한 번의 비용만 가진 상태에서 동시 강화가 하나만 성공하고 차감 원장도 하나만 생기는지, 같은 실패 키에는 원장이 생기지 않는지 검증합니다.
 
 `StageProgressionPersistenceTests`는 동시 스테이지 도전이 한 번만 진행되고 체크포인트 원장도 하나만 생기는지와 1/100 골드 잔여값이 DbContext 사이에서 보존되는지 검증합니다.
+
+`GoldLedgerReaderTests`는 관리자 원장 조회가 실제 PostgreSQL에서 플레이어별 최신순으로 정렬되고 커서 이후의 과거 행만 반환하는지 검증합니다.
 
 Docker를 직접 제어할 수 없는 CI 환경에서는 `IDLEGUILD_TEST_POSTGRES_CONNECTION_STRING` 환경 변수로 준비된 테스트 DB를 지정할 수 있습니다.

@@ -30,6 +30,7 @@
 - [서버 고도화 로드맵](Docs/SERVER_HARDENING_ROADMAP.md)
 - [골드 변경 이력 원장](Docs/GOLD_LEDGER.md)
 - [API 요청 속도 제한](Docs/RATE_LIMITING.md)
+- [관리자 조회 API](Docs/ADMIN_API.md)
 - [데모 시나리오](Docs/DEMO_SCENARIO.md)
 - [배포와 운영 설정](Docs/DEPLOYMENT.md)
 - [데이터베이스](Docs/DATABASE.md)
@@ -44,7 +45,7 @@
 
 ## 현재 상태
 
-서버 MVP를 완료했고 서버 고도화를 진행 중입니다. 골드 변경 감사 원장과 IP·플레이어별 Rate Limiting까지 구현했습니다. 다음 서버 작업은 관리자용 조회 API입니다.
+서버 MVP를 완료했고 서버 고도화를 진행 중입니다. 골드 변경 감사 원장, Rate Limiting, 읽기 전용 관리자 상태·원장 조회 API까지 구현했습니다. 다음 서버 작업은 Dockerfile과 배포 자동화 기초입니다.
 
 ## 로컬 실행
 
@@ -87,6 +88,8 @@ Invoke-RestMethod http://localhost:5219/api/v1/system/status
 - Idle Reward: `POST http://localhost:5219/api/v1/rewards/idle/claim`
 - Main Hero Upgrade: `POST http://localhost:5219/api/v1/heroes/main/upgrade`
 - Stage Challenge: `POST http://localhost:5219/api/v1/stages/{stage}/challenge`
+- Admin Player: `GET http://localhost:5219/api/v1/admin/players/{playerId}`
+- Admin Gold Ledger: `GET http://localhost:5219/api/v1/admin/players/{playerId}/gold-ledger`
 - Swagger UI: `http://localhost:5219/swagger`
 
 ## 빠른 데모 흐름

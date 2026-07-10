@@ -1,4 +1,6 @@
 using IdleGuild.Application.Accounts.CreateGuest;
+using IdleGuild.Application.Admin.Players.GetAdminPlayer;
+using IdleGuild.Application.Admin.Players.GetGoldLedgerPage;
 using IdleGuild.Application.GameStates.GetGameState;
 using IdleGuild.Application.Heroes.UpgradeMainHero;
 using IdleGuild.Application.Rewards.ClaimIdleReward;
@@ -19,6 +21,8 @@ public static class DependencyInjection
         services.AddScoped<ClaimIdleRewardHandler>();
         services.AddScoped<UpgradeMainHeroHandler>();
         services.AddScoped<ChallengeStageHandler>();
+        services.AddScoped<GetAdminPlayerHandler>();
+        services.AddScoped<GetGoldLedgerPageHandler>();
 
         return services;
     }

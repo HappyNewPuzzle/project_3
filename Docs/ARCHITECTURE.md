@@ -41,6 +41,7 @@ PostgreSQL
 | Economy | 골드 생산, 방치 보상, 재화 변경과 감사 원장 |
 | Progression | 영웅 레벨과 강화 비용 |
 | Battles | 스테이지 도전과 해금 판정 |
+| Admin | 운영자 권한으로 플레이어 상태와 재화 원장 조회 |
 
 ### 현재 인증 경계
 
@@ -59,6 +60,10 @@ PostgreSQL
 `player_game_states` 테이블은 플레이어 상태와 1/100 골드 생산 잔여값을 저장하고 PostgreSQL의 `xmin`을 동시성 토큰으로 사용합니다. `idle_reward_claim_receipts`, `hero_upgrade_receipts`, `stage_challenge_receipts`는 플레이어와 멱등 키별 최초 판정 결과를 저장합니다. `gold_ledger_entries`는 실제 골드 변경의 전후 잔액, 증감량, 사유와 참조 키를 저장합니다. 상태·영수증·원장은 같은 작업 단위로 원자적으로 반영되며, 동시 수정이나 유일 키 충돌이 발생하면 Application 계층이 최신 상태를 다시 읽어 최대 3회 시도합니다.
 
 골드 원장의 상세 불변식과 기록 대상은 [골드 변경 이력 원장](GOLD_LEDGER.md)에 정리합니다.
+
+### 관리자 읽기 경계
+
+`/api/v1/admin` 경로는 서명된 JWT의 `account_type=admin` Claim을 추가로 요구합니다. 일반 게스트는 403으로 차단되며 관리자 API는 현재 상태 변경 명령을 제공하지 않습니다. 골드 원장은 최신순 키셋 페이지로 조회하고 PostgreSQL 복합 인덱스로 뒷받침합니다. 자세한 내용은 [관리자 조회 API](ADMIN_API.md)에 정리합니다.
 
 ## 6. API 초안
 

@@ -64,10 +64,11 @@ public sealed class GoldLedgerEntryConfiguration :
         builder.HasIndex(entry => new
         {
             entry.PlayerId,
-            entry.OccurredAtUtc
+            entry.OccurredAtUtc,
+            entry.EntryId
         })
             .HasDatabaseName(
-                "ix_gold_ledger_entries_player_occurred_at");
+                "ix_gold_ledger_entries_player_occurred_at_entry");
 
         // 플레이어 삭제 시 해당 플레이어의 골드 감사 이력도 함께 제거합니다.
         builder.HasOne<PlayerGameState>()

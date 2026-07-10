@@ -15,6 +15,7 @@ internal sealed class InMemoryPlayerGameStateRepository :
     IHeroUpgradeReceiptRepository,
     IStageChallengeReceiptRepository,
     IGoldLedgerRepository,
+    IGoldLedgerReader,
     IGameUnitOfWork
 {
     private readonly Dictionary<Guid, PlayerGameState> _states = [];
@@ -102,6 +103,28 @@ internal sealed class InMemoryPlayerGameStateRepository :
     /// <summary>유스케이스가 만든 골드 변경 원장을 테스트에서 확인할 수 있게 보관합니다.</summary>
     public void Add(GoldLedgerEntry entry) =>
         _goldLedgerEntries.Add(entry);
+
+    /// <summary>관리자 Handler 테스트에 최신순 키셋 골드 원장을 제공합니다.</summary>
+    public Task<IReadOnlyList<GoldLedgerEntry>>
+        ListByPlayerAsync(
+            Guid playerId,
+            int take,
+            GoldLedgerPagePosition? before,
+            CancellationToken cancellationToken = default)
+    {
+        var entries = _goldLedgerEntries
+            .Where(entry => entry.PlayerId == playerId)
+            .Where(entry => before is null ||
+                entry.OccurredAtUtc < before.OccurredAtUtc ||
+                (entry.OccurredAtUtc == before.OccurredAtUtc &&
+                 entry.EntryId.CompareTo(before.EntryId) < 0))
+            .OrderByDescending(entry => entry.OccurredAtUtc)
+            .ThenByDescending(entry => entry.EntryId)
+            .Take(take)
+            .ToArray();
+        return Task.FromResult<
+            IReadOnlyList<GoldLedgerEntry>>(entries);
+    }
 
     public Task<int> SaveChangesAsync(
         CancellationToken cancellationToken = default)

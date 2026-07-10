@@ -94,7 +94,13 @@ $env:Jwt__SigningKey = "replace_with_a_random_secret_of_at_least_32_bytes"
 
 이 제한은 포트폴리오에서 숨기지 않고 명시하며, 이후 인증 확장 Step에서 보완할 수 있습니다.
 
-## 7. 테스트 범위
+## 7. 관리자 권한 경계
+
+관리자 API는 일반 JWT 검증에 더해 `account_type=admin` Claim을 요구합니다. 서버가 발급하는 게스트 토큰은 `account_type=guest`이므로 서명이 정상이어도 관리자 경로에서 403을 반환합니다.
+
+공개 관리자 토큰 발급 Endpoint는 제공하지 않으며 신뢰할 수 있는 운영자 인증 시스템에서 발급한다고 가정합니다. 현재 구조와 운영 전 추가할 MFA·전용 Issuer 기준은 [관리자 조회 API](ADMIN_API.md)에 정리되어 있습니다.
+
+## 8. 테스트 범위
 
 - 토큰 없는 게임 상태 요청은 401
 - 정상 게스트 토큰은 본인의 초기 상태 조회

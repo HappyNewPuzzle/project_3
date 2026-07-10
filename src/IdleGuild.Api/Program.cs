@@ -3,6 +3,7 @@ using IdleGuild.Api.Endpoints;
 using IdleGuild.Api.ErrorHandling;
 using IdleGuild.Api.OpenApi;
 using IdleGuild.Api.RateLimiting;
+using IdleGuild.Api.Authorization;
 using IdleGuild.Application;
 using IdleGuild.Infrastructure;
 using IdleGuild.Infrastructure.Authentication;
@@ -89,7 +90,17 @@ builder.Services
             }
         };
     });
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    // 관리자 API는 서명된 JWT 중 명시적인 admin 계정 유형만 허용합니다.
+    options.AddPolicy(
+        AdminAuthorization.PolicyName,
+        policy => policy
+            .RequireAuthenticatedUser()
+            .RequireClaim(
+                AdminAuthorization.AccountTypeClaim,
+                AdminAuthorization.AdminAccountType));
+});
 
 var app = builder.Build();
 
@@ -123,6 +134,7 @@ app.MapGameStateEndpoints();
 app.MapRewardsEndpoints();
 app.MapHeroesEndpoints();
 app.MapStagesEndpoints();
+app.MapAdminEndpoints();
 
 app.Run();
 
