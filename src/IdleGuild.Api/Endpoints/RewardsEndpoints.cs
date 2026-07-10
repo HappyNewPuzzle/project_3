@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using IdleGuild.Api.Authentication;
 using IdleGuild.Api.Contracts;
+using IdleGuild.Api.RateLimiting;
 using IdleGuild.Application.Abstractions.Persistence;
 using IdleGuild.Application.Rewards.ClaimIdleReward;
 
@@ -16,7 +17,9 @@ public static class RewardsEndpoints
         var group = endpoints
             .MapGroup("/api/v1/rewards")
             .WithTags("Rewards")
-            .RequireAuthorization();
+            .RequireAuthorization()
+            .RequireRateLimiting(
+                ApiRateLimitPolicies.PlayerMutation);
 
         group
             .MapPost("/idle/claim", ClaimIdleRewardAsync)
@@ -26,6 +29,7 @@ public static class RewardsEndpoints
             .Produces<IdleRewardClaimResponse>()
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status429TooManyRequests)
             .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status503ServiceUnavailable);
 

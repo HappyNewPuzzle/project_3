@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using IdleGuild.Api.Authentication;
 using IdleGuild.Api.Contracts;
+using IdleGuild.Api.RateLimiting;
 using IdleGuild.Application.Abstractions.Persistence;
 using IdleGuild.Application.Heroes.UpgradeMainHero;
 using IdleGuild.Domain.Heroes;
@@ -17,7 +18,9 @@ public static class HeroesEndpoints
         var group = endpoints
             .MapGroup("/api/v1/heroes")
             .WithTags("Heroes")
-            .RequireAuthorization();
+            .RequireAuthorization()
+            .RequireRateLimiting(
+                ApiRateLimitPolicies.PlayerMutation);
 
         group
             .MapPost("/main/upgrade", UpgradeMainHeroAsync)
@@ -29,6 +32,7 @@ public static class HeroesEndpoints
                 StatusCodes.Status409Conflict)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status429TooManyRequests)
             .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status503ServiceUnavailable);
 

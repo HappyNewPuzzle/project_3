@@ -29,6 +29,7 @@
 - [서버 MVP 완료 정리](Docs/SERVER_MVP_COMPLETE.md)
 - [서버 고도화 로드맵](Docs/SERVER_HARDENING_ROADMAP.md)
 - [골드 변경 이력 원장](Docs/GOLD_LEDGER.md)
+- [API 요청 속도 제한](Docs/RATE_LIMITING.md)
 - [데모 시나리오](Docs/DEMO_SCENARIO.md)
 - [배포와 운영 설정](Docs/DEPLOYMENT.md)
 - [데이터베이스](Docs/DATABASE.md)
@@ -43,7 +44,7 @@
 
 ## 현재 상태
 
-서버 MVP를 완료했고 서버 고도화를 진행 중입니다. Hardening Step 1에서 방치 보상·영웅 강화·스테이지 체크포인트의 골드 변경을 PostgreSQL 감사 원장에 원자적으로 기록했습니다. 다음 서버 작업은 Rate Limiting입니다.
+서버 MVP를 완료했고 서버 고도화를 진행 중입니다. 골드 변경 감사 원장과 IP·플레이어별 Rate Limiting까지 구현했습니다. 다음 서버 작업은 관리자용 조회 API입니다.
 
 ## 로컬 실행
 

@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using IdleGuild.Api.Endpoints;
 using IdleGuild.Api.ErrorHandling;
 using IdleGuild.Api.OpenApi;
+using IdleGuild.Api.RateLimiting;
 using IdleGuild.Application;
 using IdleGuild.Infrastructure;
 using IdleGuild.Infrastructure.Authentication;
@@ -26,6 +27,7 @@ builder.Services.AddOpenApi(options =>
 builder.Services.AddHealthChecks();
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+builder.Services.AddApiRateLimiting();
 builder.Services.AddHttpLogging(options =>
 {
     // 운영 로그에 필요한 최소 HTTP 정보만 남겨 토큰과 Body 노출을 피합니다.
@@ -110,6 +112,7 @@ app.UseHttpLogging();
 
 // 인증 미들웨어가 JWT를 검증한 뒤 Endpoint의 권한 정책을 평가합니다.
 app.UseAuthentication();
+app.UseRateLimiter();
 app.UseAuthorization();
 
 // 시스템, 계정, 상태, 보상, 영웅, 스테이지 Endpoint를 각각 연결합니다.

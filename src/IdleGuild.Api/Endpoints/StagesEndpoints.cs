@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using IdleGuild.Api.Authentication;
 using IdleGuild.Api.Contracts;
+using IdleGuild.Api.RateLimiting;
 using IdleGuild.Application.Abstractions.Persistence;
 using IdleGuild.Application.Stages.ChallengeStage;
 using IdleGuild.Domain.Stages;
@@ -17,7 +18,9 @@ public static class StagesEndpoints
         var group = endpoints
             .MapGroup("/api/v1/stages")
             .WithTags("Stages")
-            .RequireAuthorization();
+            .RequireAuthorization()
+            .RequireRateLimiting(
+                ApiRateLimitPolicies.PlayerMutation);
 
         group
             .MapPost("/{stage:int}/challenge",
@@ -31,6 +34,7 @@ public static class StagesEndpoints
             .ProducesProblem(StatusCodes.Status409Conflict)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status429TooManyRequests)
             .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status503ServiceUnavailable);
 

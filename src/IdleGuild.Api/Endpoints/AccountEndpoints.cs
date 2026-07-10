@@ -1,4 +1,5 @@
 using IdleGuild.Api.Contracts;
+using IdleGuild.Api.RateLimiting;
 using IdleGuild.Application.Accounts.CreateGuest;
 using Microsoft.AspNetCore.Http.HttpResults;
 
@@ -20,8 +21,12 @@ public static class AccountEndpoints
             .WithName("CreateGuestAccount")
             .WithSummary("Creates a guest account and access token.")
             .AllowAnonymous()
+            .RequireRateLimiting(
+                ApiRateLimitPolicies.GuestAccount)
             .Produces<GuestAccountResponse>(
-                StatusCodes.Status201Created);
+                StatusCodes.Status201Created)
+            .ProducesProblem(
+                StatusCodes.Status429TooManyRequests);
 
         return endpoints;
     }
