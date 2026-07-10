@@ -67,6 +67,11 @@ public sealed class StageProgressionPersistenceTests(
             .Where(receipt =>
                 receipt.PlayerId == playerId)
             .ToArrayAsync();
+        var ledgerEntries = await verifyContext
+            .GoldLedgerEntries
+            .AsNoTracking()
+            .Where(entry => entry.PlayerId == playerId)
+            .ToArrayAsync();
 
         Assert.Single(results, result =>
             result!.Outcome ==
@@ -77,6 +82,8 @@ public sealed class StageProgressionPersistenceTests(
         Assert.Equal(2, savedState.HighestStage);
         Assert.Equal(190, savedState.Gold);
         Assert.Equal(2, receipts.Length);
+        var ledger = Assert.Single(ledgerEntries);
+        Assert.Equal(100, ledger.Amount);
     }
 
     // 1/100 골드 잔여값은 DbContext가 바뀌어도 보존되어야 합니다.
@@ -138,6 +145,7 @@ public sealed class StageProgressionPersistenceTests(
                 new PlayerGameStateRepository(context),
                 readGate),
             new StageChallengeReceiptRepository(context),
+            new GoldLedgerRepository(context),
             new EfGameUnitOfWork(context),
             new FixedTimeProvider(now));
 

@@ -112,7 +112,7 @@ Unity 클라이언트와 별개로, 서버를 운영 게임 서버 수준에 가
 
 추천 다음 작업:
 
-- Hardening Step 1. 재화 변경 이력 원장
-- Hardening Step 2. Rate Limiting
+- Hardening Step 1. 재화 변경 이력 원장 — 완료
+- Hardening Step 2. Rate Limiting — 다음 작업
 - Hardening Step 3. 관리자용 조회 API
 - Hardening Step 4. Dockerfile과 배포 자동화 기초

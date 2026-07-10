@@ -1,5 +1,6 @@
 using IdleGuild.Application.Abstractions.Authentication;
 using IdleGuild.Application.Abstractions.Persistence;
+using IdleGuild.Domain.Economy;
 using IdleGuild.Domain.GameStates;
 using IdleGuild.Domain.Heroes;
 using IdleGuild.Domain.Rewards;
@@ -13,6 +14,7 @@ internal sealed class InMemoryPlayerGameStateRepository :
     IIdleRewardClaimRepository,
     IHeroUpgradeReceiptRepository,
     IStageChallengeReceiptRepository,
+    IGoldLedgerRepository,
     IGameUnitOfWork
 {
     private readonly Dictionary<Guid, PlayerGameState> _states = [];
@@ -22,8 +24,12 @@ internal sealed class InMemoryPlayerGameStateRepository :
         _upgradeReceipts = [];
     private readonly Dictionary<(Guid, string), StageChallengeReceipt>
         _stageReceipts = [];
+    private readonly List<GoldLedgerEntry> _goldLedgerEntries = [];
 
     public int SaveCount { get; private set; }
+
+    public IReadOnlyList<GoldLedgerEntry> GoldLedgerEntries =>
+        _goldLedgerEntries;
 
     public void Add(PlayerGameState gameState) =>
         _states.Add(gameState.PlayerId, gameState);
@@ -92,6 +98,10 @@ internal sealed class InMemoryPlayerGameStateRepository :
         _stageReceipts.Add(
             (receipt.PlayerId, receipt.IdempotencyKey),
             receipt);
+
+    /// <summary>유스케이스가 만든 골드 변경 원장을 테스트에서 확인할 수 있게 보관합니다.</summary>
+    public void Add(GoldLedgerEntry entry) =>
+        _goldLedgerEntries.Add(entry);
 
     public Task<int> SaveChangesAsync(
         CancellationToken cancellationToken = default)

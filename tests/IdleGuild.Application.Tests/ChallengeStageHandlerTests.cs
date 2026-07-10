@@ -39,6 +39,7 @@ public sealed class ChallengeStageHandlerTests
         Assert.False(first.IsReplay);
         Assert.True(replay.IsReplay);
         Assert.Equal(1, repository.SaveCount);
+        Assert.Empty(repository.GoldLedgerEntries);
     }
 
     // 하나의 키를 다른 목표 스테이지에 재사용하면 모호한 재생 대신 충돌을 알려야 합니다.
@@ -101,12 +102,18 @@ public sealed class ChallengeStageHandlerTests
         Assert.Equal(5, result.ProductionBonusPercentAfter);
         Assert.Equal(100, result.CheckpointGoldAwarded);
         Assert.Equal(1, repository.SaveCount);
+        var ledger = Assert.Single(
+            repository.GoldLedgerEntries);
+        Assert.Equal(100, ledger.Amount);
+        Assert.Equal(90, ledger.BalanceBefore);
+        Assert.Equal(190, ledger.BalanceAfter);
     }
 
     private static ChallengeStageHandler CreateHandler(
         InMemoryPlayerGameStateRepository repository,
         DateTimeOffset now) =>
         new(
+            repository,
             repository,
             repository,
             repository,

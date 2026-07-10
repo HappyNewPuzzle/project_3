@@ -42,6 +42,11 @@ public sealed class UpgradeMainHeroHandlerTests
         Assert.Equal(2, state.HeroLevel);
         Assert.Equal(90, state.Gold);
         Assert.Equal(1, repository.SaveCount);
+        var ledger = Assert.Single(
+            repository.GoldLedgerEntries);
+        Assert.Equal(-10, ledger.Amount);
+        Assert.Equal(100, ledger.BalanceBefore);
+        Assert.Equal(90, ledger.BalanceAfter);
     }
 
     // 실패한 키는 이후 골드가 생겨도 실패로 재생하고 새 키만 새 상태로 판정해야 합니다.
@@ -68,6 +73,7 @@ public sealed class UpgradeMainHeroHandlerTests
         var replay = await handler.HandleAsync(
             playerId,
             "upgrade-failed");
+        Assert.Empty(repository.GoldLedgerEntries);
         var newRequest = await handler.HandleAsync(
             playerId,
             "upgrade-new");
@@ -84,12 +90,14 @@ public sealed class UpgradeMainHeroHandlerTests
             newRequest.Outcome);
         Assert.Equal(2, state.HeroLevel);
         Assert.Equal(2, repository.SaveCount);
+        Assert.Single(repository.GoldLedgerEntries);
     }
 
     private static UpgradeMainHeroHandler CreateHandler(
         InMemoryPlayerGameStateRepository repository,
         DateTimeOffset now) =>
         new(
+            repository,
             repository,
             repository,
             repository,

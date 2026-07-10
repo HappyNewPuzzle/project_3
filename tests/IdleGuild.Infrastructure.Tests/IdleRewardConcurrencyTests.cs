@@ -59,6 +59,10 @@ public sealed class IdleRewardConcurrencyTests(
             await verifyContext.IdleRewardClaimReceipts
                 .CountAsync(receipt =>
                     receipt.PlayerId == playerId);
+        var ledgerCount =
+            await verifyContext.GoldLedgerEntries
+                .CountAsync(entry =>
+                    entry.PlayerId == playerId);
 
         Assert.All(results, result =>
         {
@@ -70,6 +74,7 @@ public sealed class IdleRewardConcurrencyTests(
             result!.IsReplay);
         Assert.Equal(3_600, savedState.Gold);
         Assert.Equal(1, receiptCount);
+        Assert.Equal(1, ledgerCount);
     }
 
     private static ClaimIdleRewardHandler CreateHandler(
@@ -78,6 +83,7 @@ public sealed class IdleRewardConcurrencyTests(
         new(
             new PlayerGameStateRepository(context),
             new IdleRewardClaimRepository(context),
+            new GoldLedgerRepository(context),
             new EfGameUnitOfWork(context),
             new FixedTimeProvider(now));
 

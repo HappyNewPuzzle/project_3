@@ -66,6 +66,11 @@ public sealed class HeroUpgradeConcurrencyTests(
             .Where(receipt =>
                 receipt.PlayerId == playerId)
             .ToArrayAsync();
+        var ledgerEntries = await verifyContext
+            .GoldLedgerEntries
+            .AsNoTracking()
+            .Where(entry => entry.PlayerId == playerId)
+            .ToArrayAsync();
 
         Assert.Single(results, result =>
             result!.Outcome ==
@@ -76,6 +81,8 @@ public sealed class HeroUpgradeConcurrencyTests(
         Assert.Equal(2, savedState.HeroLevel);
         Assert.Equal(0, savedState.Gold);
         Assert.Equal(2, receipts.Length);
+        var ledger = Assert.Single(ledgerEntries);
+        Assert.Equal(-10, ledger.Amount);
     }
 
     // 상태를 바꾸지 않는 골드 부족 요청도 같은 키라면 영수증 하나만 저장해야 합니다.
@@ -124,6 +131,10 @@ public sealed class HeroUpgradeConcurrencyTests(
             await verifyContext.HeroUpgradeReceipts
                 .CountAsync(receipt =>
                     receipt.PlayerId == playerId);
+        var ledgerCount =
+            await verifyContext.GoldLedgerEntries
+                .CountAsync(entry =>
+                    entry.PlayerId == playerId);
 
         Assert.All(results, result =>
         {
@@ -135,6 +146,7 @@ public sealed class HeroUpgradeConcurrencyTests(
         Assert.Contains(results, result =>
             result!.IsReplay);
         Assert.Equal(1, receiptCount);
+        Assert.Equal(0, ledgerCount);
     }
 
     private static UpgradeMainHeroHandler CreateHandler(
@@ -146,6 +158,7 @@ public sealed class HeroUpgradeConcurrencyTests(
                 new PlayerGameStateRepository(context),
                 readGate),
             new HeroUpgradeReceiptRepository(context),
+            new GoldLedgerRepository(context),
             new EfGameUnitOfWork(context),
             new FixedTimeProvider(now));
 

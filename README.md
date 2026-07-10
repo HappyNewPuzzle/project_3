@@ -28,6 +28,7 @@
 - [Step별 진행 이유와 의사결정](Docs/STEP_DECISIONS.md)
 - [서버 MVP 완료 정리](Docs/SERVER_MVP_COMPLETE.md)
 - [서버 고도화 로드맵](Docs/SERVER_HARDENING_ROADMAP.md)
+- [골드 변경 이력 원장](Docs/GOLD_LEDGER.md)
 - [데모 시나리오](Docs/DEMO_SCENARIO.md)
 - [배포와 운영 설정](Docs/DEPLOYMENT.md)
 - [데이터베이스](Docs/DATABASE.md)
@@ -42,7 +43,7 @@
 
 ## 현재 상태
 
-서버 MVP 완료: 게스트 인증, 방치 보상, 영웅 강화, 스테이지 진행, API 오류 계약, 운영 기본기와 데모 문서까지 정리했습니다. 다음 큰 단계는 Unity 클라이언트입니다.
+서버 MVP를 완료했고 서버 고도화를 진행 중입니다. Hardening Step 1에서 방치 보상·영웅 강화·스테이지 체크포인트의 골드 변경을 PostgreSQL 감사 원장에 원자적으로 기록했습니다. 다음 서버 작업은 Rate Limiting입니다.
 
 ## 로컬 실행
 

@@ -1,4 +1,5 @@
 using IdleGuild.Application.Abstractions.Persistence;
+using IdleGuild.Domain.Economy;
 using IdleGuild.Domain.Requests;
 using IdleGuild.Domain.Rewards;
 
@@ -8,6 +9,7 @@ namespace IdleGuild.Application.Rewards.ClaimIdleReward;
 public sealed class ClaimIdleRewardHandler(
     IPlayerGameStateRepository gameStateRepository,
     IIdleRewardClaimRepository claimRepository,
+    IGoldLedgerRepository goldLedgerRepository,
     IGameUnitOfWork unitOfWork,
     TimeProvider timeProvider)
 {
@@ -74,6 +76,21 @@ public sealed class ClaimIdleRewardHandler(
                 normalizedKey,
                 settlement);
             claimRepository.Add(receipt);
+
+            if (settlement.GoldAwarded > 0)
+            {
+                // 실제 지급된 골드를 영수증과 같은 트랜잭션의 감사 원장에 추가합니다.
+                goldLedgerRepository.Add(
+                    GoldLedgerEntry.Create(
+                        playerId,
+                        GoldLedgerReason.IdleRewardClaim,
+                        settlement.GoldBalanceAfter -
+                        settlement.GoldAwarded,
+                        settlement.GoldAwarded,
+                        settlement.GoldBalanceAfter,
+                        normalizedKey,
+                        settlement.ClaimedAtUtc));
+            }
 
             try
             {

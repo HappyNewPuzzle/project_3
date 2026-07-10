@@ -31,6 +31,8 @@ public static class DependencyInjection
             HeroUpgradeReceiptRepository>();
         services.AddScoped<IStageChallengeReceiptRepository,
             StageChallengeReceiptRepository>();
+        services.AddScoped<IGoldLedgerRepository,
+            GoldLedgerRepository>();
         services.AddScoped<IGameUnitOfWork,
             EfGameUnitOfWork>();
         services.AddSingleton(jwtOptions);

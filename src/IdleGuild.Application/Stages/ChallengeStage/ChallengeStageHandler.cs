@@ -1,4 +1,5 @@
 using IdleGuild.Application.Abstractions.Persistence;
+using IdleGuild.Domain.Economy;
 using IdleGuild.Domain.Requests;
 using IdleGuild.Domain.Stages;
 
@@ -8,6 +9,7 @@ namespace IdleGuild.Application.Stages.ChallengeStage;
 public sealed class ChallengeStageHandler(
     IPlayerGameStateRepository gameStateRepository,
     IStageChallengeReceiptRepository receiptRepository,
+    IGoldLedgerRepository goldLedgerRepository,
     IGameUnitOfWork unitOfWork,
     TimeProvider timeProvider)
 {
@@ -83,6 +85,21 @@ public sealed class ChallengeStageHandler(
                 normalizedKey,
                 settlement);
             receiptRepository.Add(receipt);
+
+            if (settlement.CheckpointGoldAwarded > 0)
+            {
+                // 스테이지 성공 직전 정산된 골드를 별도 원인으로 원장에 기록합니다.
+                goldLedgerRepository.Add(
+                    GoldLedgerEntry.Create(
+                        playerId,
+                        GoldLedgerReason.StageCheckpoint,
+                        settlement.GoldBalanceAfter -
+                        settlement.CheckpointGoldAwarded,
+                        settlement.CheckpointGoldAwarded,
+                        settlement.GoldBalanceAfter,
+                        normalizedKey,
+                        settlement.ProcessedAtUtc));
+            }
 
             try
             {

@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using IdleGuild.Application.Abstractions.Persistence;
+using IdleGuild.Domain.Economy;
 using IdleGuild.Domain.GameStates;
 using IdleGuild.Domain.Heroes;
 using IdleGuild.Domain.Rewards;
@@ -13,6 +14,7 @@ public sealed class InMemoryPlayerGameStateStore :
     IIdleRewardClaimRepository,
     IHeroUpgradeReceiptRepository,
     IStageChallengeReceiptRepository,
+    IGoldLedgerRepository,
     IGameUnitOfWork
 {
     private readonly ConcurrentDictionary<Guid, PlayerGameState> _states = [];
@@ -25,6 +27,9 @@ public sealed class InMemoryPlayerGameStateStore :
     private readonly ConcurrentDictionary<
         (Guid, string),
         StageChallengeReceipt> _stageReceipts = [];
+    private readonly ConcurrentDictionary<
+        (Guid, GoldLedgerReason, string),
+        GoldLedgerEntry> _goldLedgerEntries = [];
 
     public void Add(PlayerGameState gameState)
     {
@@ -115,6 +120,20 @@ public sealed class InMemoryPlayerGameStateStore :
         {
             throw new InvalidOperationException(
                 "Stage challenge receipt already exists.");
+        }
+    }
+
+    /// <summary>API 테스트에서도 같은 기능·참조 키의 원장을 한 번만 보관합니다.</summary>
+    public void Add(GoldLedgerEntry entry)
+    {
+        if (!_goldLedgerEntries.TryAdd(
+                (entry.PlayerId,
+                    entry.Reason,
+                    entry.ReferenceId),
+                entry))
+        {
+            throw new InvalidOperationException(
+                "Gold ledger entry already exists.");
         }
     }
 

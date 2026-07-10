@@ -1,4 +1,5 @@
 using IdleGuild.Application.Rewards.ClaimIdleReward;
+using IdleGuild.Domain.Economy;
 using IdleGuild.Domain.GameStates;
 
 namespace IdleGuild.Application.Tests;
@@ -32,6 +33,41 @@ public sealed class ClaimIdleRewardHandlerTests
         Assert.Equal(7_200, result.GoldBalanceAfter);
         Assert.False(result.IsReplay);
         Assert.Equal(1, repository.SaveCount);
+        var ledger = Assert.Single(
+            repository.GoldLedgerEntries);
+        Assert.Equal(0, ledger.BalanceBefore);
+        Assert.Equal(7_200, ledger.Amount);
+        Assert.Equal(7_200, ledger.BalanceAfter);
+        Assert.Equal(
+            GoldLedgerReason.IdleRewardClaim,
+            ledger.Reason);
+        Assert.Equal("claim-001", ledger.ReferenceId);
+    }
+
+    // 경과 시간이 없어 골드가 변하지 않은 수령은 영수증만 저장하고 원장은 만들지 않아야 합니다.
+    [Fact]
+    public async Task HandleAsync_WithoutGoldChange_DoesNotAddLedger()
+    {
+        var playerId = Guid.NewGuid();
+        var createdAt = new DateTimeOffset(
+            2026, 7, 5, 0, 0, 0, TimeSpan.Zero);
+        var repository =
+            new InMemoryPlayerGameStateRepository();
+        repository.Add(PlayerGameState.Create(
+            playerId,
+            createdAt));
+        var handler = CreateHandler(
+            repository,
+            createdAt);
+
+        var result = await handler.HandleAsync(
+            playerId,
+            "zero-claim");
+
+        Assert.NotNull(result);
+        Assert.Equal(0, result.GoldAwarded);
+        Assert.Empty(repository.GoldLedgerEntries);
+        Assert.Equal(1, repository.SaveCount);
     }
 
     // 같은 멱등 키를 다시 보내면 저장하거나 골드를 추가하지 않고 최초 결과를 반환해야 합니다.
@@ -64,12 +100,14 @@ public sealed class ClaimIdleRewardHandlerTests
         Assert.Equal(first.GoldAwarded, replay.GoldAwarded);
         Assert.Equal(first.GoldBalanceAfter, replay.GoldBalanceAfter);
         Assert.Equal(1, repository.SaveCount);
+        Assert.Single(repository.GoldLedgerEntries);
     }
 
     private static ClaimIdleRewardHandler CreateHandler(
         InMemoryPlayerGameStateRepository repository,
         DateTimeOffset now) =>
         new(
+            repository,
             repository,
             repository,
             repository,

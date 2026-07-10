@@ -1,4 +1,5 @@
 using IdleGuild.Application.Abstractions.Persistence;
+using IdleGuild.Domain.Economy;
 using IdleGuild.Domain.Heroes;
 using IdleGuild.Domain.Requests;
 
@@ -8,6 +9,7 @@ namespace IdleGuild.Application.Heroes.UpgradeMainHero;
 public sealed class UpgradeMainHeroHandler(
     IPlayerGameStateRepository gameStateRepository,
     IHeroUpgradeReceiptRepository receiptRepository,
+    IGoldLedgerRepository goldLedgerRepository,
     IGameUnitOfWork unitOfWork,
     TimeProvider timeProvider)
 {
@@ -74,6 +76,23 @@ public sealed class UpgradeMainHeroHandler(
                 normalizedKey,
                 settlement);
             receiptRepository.Add(receipt);
+
+            if (settlement.Outcome ==
+                HeroUpgradeOutcome.Succeeded)
+            {
+                // 성공한 강화 비용만 음수 금액으로 감사 원장에 함께 기록합니다.
+                goldLedgerRepository.Add(
+                    GoldLedgerEntry.Create(
+                        playerId,
+                        GoldLedgerReason.HeroUpgrade,
+                        checked(
+                            settlement.GoldBalanceAfter +
+                            settlement.GoldCost),
+                        -settlement.GoldCost,
+                        settlement.GoldBalanceAfter,
+                        normalizedKey,
+                        settlement.ProcessedAtUtc));
+            }
 
             try
             {
