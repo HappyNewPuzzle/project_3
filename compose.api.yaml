@@ -1,0 +1,26 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: idle-guild-api:local
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__GameDatabase: "Host=postgres;Port=5432;Database=${POSTGRES_DB:-idleguild};Username=${POSTGRES_USER:-idleguild};Password=${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}"
+      Jwt__Issuer: ${JWT_ISSUER:-IdleGuild.Api}
+      Jwt__Audience: ${JWT_AUDIENCE:-IdleGuild.Client}
+      Jwt__SigningKey: ${JWT_SIGNING_KEY:?Set JWT_SIGNING_KEY in .env}
+      Jwt__AccessTokenLifetimeMinutes: ${JWT_ACCESS_TOKEN_LIFETIME_MINUTES:-1440}
+    ports:
+      - "${API_PORT:-5219}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped

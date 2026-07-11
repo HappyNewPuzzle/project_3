@@ -1,0 +1,22 @@
+# Git과 IDE 메타데이터는 Docker Build Context에 보내지 않습니다.
+.git/
+.agents/
+.codex/
+.github/
+.idea/
+.vs/
+.vscode/
+
+# 빌드 결과와 로컬 비밀 설정을 이미지 입력에서 제외합니다.
+**/bin/
+**/obj/
+.env
+.env.*
+appsettings.Development.json
+
+# API 이미지 게시에 필요하지 않은 문서, 테스트와 Unity 프로젝트를 제외합니다.
+Docs/
+tests/
+UnityClient/
+README.md
+compose*.yaml

@@ -2,7 +2,7 @@
 
 이 문서는 로컬 개발을 넘어 실제 배포 환경에서 확인해야 할 설정과 운영 체크리스트를 정리합니다.
 
-현재 프로젝트는 포트폴리오용 서버 MVP이므로 특정 클라우드에 종속된 배포 스크립트까지 포함하지 않고, 어디에 배포하더라도 필요한 공통 기준을 먼저 정리합니다.
+현재 프로젝트는 특정 클라우드에 종속되지 않는 다단계 Docker 이미지와 Compose 실행 구성을 제공합니다. 상세 명령은 [API 컨테이너 빌드와 실행](CONTAINER_DEPLOYMENT.md)에 정리합니다.
 
 ## 1. 배포 구성 개요
 
@@ -49,6 +49,8 @@ dotnet tool run dotnet-ef database update `
 - Migration 적용 권한과 API 실행 권한을 분리합니다.
 - 배포 전 DB 백업 또는 롤백 계획을 준비합니다.
 - Migration SQL을 사전에 검토합니다.
+- API 컨테이너 시작 시 자동 Migration을 실행하지 않습니다.
+- 배포 작업에서 Migration 성공 후 API 새 버전을 시작합니다.
 
 ## 4. 운영 환경에서 바뀌는 동작
 
@@ -93,6 +95,8 @@ Authorization 헤더, JWT, 요청 Body, 응답 Body는 기록하지 않습니다
 - [ ] `Jwt__SigningKey`를 32바이트 이상 비밀값으로 교체
 - [ ] `Jwt__Issuer`, `Jwt__Audience` 확인
 - [ ] EF Core Migration 적용
+- [ ] 변경 불가능한 버전 또는 커밋 SHA로 이미지 태그 지정
+- [ ] API 컨테이너가 비루트·읽기 전용 설정으로 실행되는지 확인
 - [ ] `/health` 응답 확인
 - [ ] 게스트 생성 API 확인
 - [ ] 보호 API가 토큰 없이 401을 반환하는지 확인
@@ -100,8 +104,7 @@ Authorization 헤더, JWT, 요청 Body, 응답 Body는 기록하지 않습니다
 
 ## 8. 현재 의도적으로 남긴 제한
 
-- 운영용 CI/CD 파이프라인은 아직 포함하지 않았습니다.
-- 컨테이너 이미지 빌드 파일은 배포 대상이 정해진 뒤 추가합니다.
+- 특정 Container Registry와 클라우드용 CI/CD 연결은 아직 포함하지 않았습니다.
 - DB readiness check는 아직 `/health`에 포함하지 않았습니다.
 - 게스트 인증은 학습용 MVP 기준이며, 공개 서비스에서는 OIDC/OAuth 같은 외부 인증 제공자 연동을 권장합니다.
 

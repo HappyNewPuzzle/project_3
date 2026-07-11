@@ -380,3 +380,36 @@
 - API 테스트에서 토큰 없음 401, 게스트 토큰 403, 관리자 조회 성공, 잘못된 커서 400을 검증했습니다.
 - 실제 PostgreSQL에서 플레이어 격리, 최신순 정렬과 커서 조건의 SQL 번역을 검증했습니다.
 - 새 인덱스 Migration을 적용한 전체 76개 테스트가 통과하는지 확인했습니다.
+
+## Hardening Step 4. Dockerfile과 배포 자동화 기초
+
+### 왜 진행했나?
+
+로컬 `dotnet run`은 개발에는 편하지만 배포 서버마다 SDK와 파일 구성이 달라질 수 있습니다. 같은 소스가 어디서든 동일한 실행 단위가 되고, Migration과 API 실행 책임을 분리할 수 있는 컨테이너 기준이 필요했습니다.
+
+### 어떤 문제를 해결했나?
+
+- 배포 환경마다 .NET SDK와 게시 방식이 달라질 수 있는 문제
+- 전체 저장소와 빌드 도구가 운영 이미지에 포함될 수 있는 문제
+- 로컬 비밀값과 Unity·테스트 파일이 Docker Build Context로 전송될 수 있는 문제
+- API 인스턴스 여러 개가 시작하며 동시에 Migration을 실행할 수 있는 문제
+- 컨테이너가 root와 쓰기 가능한 파일시스템으로 불필요하게 넓은 권한을 가질 수 있는 문제
+
+### 어떤 선택을 했나?
+
+- SDK 10.0 Alpine에서 복원·Release 게시하고 ASP.NET Runtime 10.0 Alpine에는 게시 결과만 복사했습니다.
+- 프로젝트 파일 복사와 NuGet 복원을 소스 복사보다 앞에 두어 Docker 레이어 캐시를 활용했습니다.
+- `.dockerignore`로 `.env`, Git, 빌드 결과, 문서, 테스트와 Unity 프로젝트를 제외했습니다.
+- 기존 `compose.yaml`은 PostgreSQL 전용으로 유지하고 `compose.api.yaml`을 조합할 때만 API를 실행하게 했습니다.
+- API는 UID 1654, 읽기 전용 루트, 메모리 `/tmp`, capability 전체 제거와 `no-new-privileges`로 실행했습니다.
+- API 시작 시 자동 Migration을 하지 않고 배포 작업에서 한 번 적용한 뒤 API를 시작하도록 분리했습니다.
+- 비밀값은 이미지 빌드 인수가 아니라 실행 환경 변수로 주입했습니다.
+
+### 어떻게 검증했나?
+
+- 실제 Docker 엔진에서 다단계 이미지를 오류 없이 빌드했습니다.
+- PostgreSQL을 시작하고 EF Core Migration을 별도 단계로 적용했습니다.
+- Production API 컨테이너에서 `/health`가 `Healthy`인지 확인했습니다.
+- 컨테이너 API로 게스트를 생성해 네트워크, JWT 설정과 DB 쓰기를 함께 검증했습니다.
+- Docker Inspect로 비루트 UID 1654, 읽기 전용 루트와 capability 전체 제거를 확인했습니다.
+- 컨테이너 파일 추가 후 실제 PostgreSQL 통합 테스트를 포함한 전체 76개 테스트가 통과하는지 확인했습니다.

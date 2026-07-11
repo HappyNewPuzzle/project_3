@@ -33,6 +33,7 @@
 - [관리자 조회 API](Docs/ADMIN_API.md)
 - [데모 시나리오](Docs/DEMO_SCENARIO.md)
 - [배포와 운영 설정](Docs/DEPLOYMENT.md)
+- [API 컨테이너 빌드와 실행](Docs/CONTAINER_DEPLOYMENT.md)
 - [데이터베이스](Docs/DATABASE.md)
 - [게스트 인증](Docs/AUTHENTICATION.md)
 - [방치 보상](Docs/IDLE_REWARDS.md)
@@ -114,6 +115,8 @@ dotnet test
 ```
 
 PostgreSQL 통합 테스트는 기본적으로 Testcontainers가 일회용 DB를 자동 생성하므로 Docker Desktop이 실행 중이어야 합니다.
+
+API와 PostgreSQL을 모두 컨테이너로 실행하는 순서는 [API 컨테이너 빌드와 실행](Docs/CONTAINER_DEPLOYMENT.md)을 참고합니다.
 
 ## 서버 MVP 범위
 

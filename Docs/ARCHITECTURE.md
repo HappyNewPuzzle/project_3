@@ -98,3 +98,9 @@ PostgreSQL
 익명 게스트 생성은 연결 IP, 인증된 상태 변경은 JWT 플레이어 ID를 기준으로 1분 고정 윈도우 Rate Limit을 적용합니다. 제한 요청은 Application과 DB에 도달하기 전에 429로 종료됩니다.
 
 현재 카운터는 단일 API 프로세스 메모리에 있으며, 다중 인스턴스에서는 API Gateway나 Redis 기반 공유 제한으로 확장해야 합니다. 상세 정책은 [API 요청 속도 제한](RATE_LIMITING.md)에 정리합니다.
+
+## 10. 배포 경계
+
+API는 .NET SDK 빌드 단계와 ASP.NET Runtime 실행 단계를 분리한 Linux 컨테이너로 배포할 수 있습니다. 최종 컨테이너는 비루트 사용자와 읽기 전용 파일시스템으로 실행합니다.
+
+DB Migration은 API 프로세스 시작 책임에 포함하지 않습니다. 배포 작업이 Migration을 한 번 적용한 뒤 API 이미지를 시작해 스키마 변경 권한과 런타임 권한을 분리합니다. 자세한 내용은 [API 컨테이너 빌드와 실행](CONTAINER_DEPLOYMENT.md)에 정리합니다.
