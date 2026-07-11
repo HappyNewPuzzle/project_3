@@ -49,6 +49,8 @@ public sealed class UnityClientBootstrap : MonoBehaviour
             () => StartCoroutine(ClaimIdleReward("idle-claim")),
             () => StartCoroutine(UpgradeMainHero("hero-upgrade")),
             stage => StartCoroutine(ChallengeStage(stage, "stage")),
+            () => StartCoroutine(EquipBronzeSword()),
+            () => StartCoroutine(BuySmallGoldPack()),
             ClearSession);
         // 초기 상태를 로그에 남기고 UI를 한 번 갱신합니다.
         AddLog("Ready. Server: " + apiBaseUrl);
@@ -260,6 +262,61 @@ public sealed class UnityClientBootstrap : MonoBehaviour
         }
     }
 
+    // 보유 장비를 조회하고 청동 검이 있으면 서버에 장착을 요청합니다.
+    private IEnumerator EquipBronzeSword()
+    {
+        EquipmentInventoryResponse inventory = null;
+        yield return RunRequest(api.GetEquipment(apiBaseUrl, result =>
+        {
+            if (HandleFailure(result)) return;
+            inventory = result.response;
+        }));
+
+        if (!lastRequestSucceeded || inventory == null || inventory.items == null) yield break;
+        EquipmentItemResponse bronze = Array.Find(inventory.items, item => item.definitionId == "bronze-sword");
+        if (bronze == null)
+        {
+            AddLog("Bronze Sword is not owned.");
+            yield break;
+        }
+
+        yield return RunRequest(api.Equip(apiBaseUrl, bronze.equipmentId,
+            CreateIdempotencyKey("equip-bronze"), result =>
+            {
+                if (HandleFailure(result)) return;
+                AddLog("Equipment: " + result.response.outcome + ReplayText(result.response.isReplay));
+            }));
+        if (lastRequestSucceeded) yield return GetGameState();
+    }
+
+    // 서버 상품 카탈로그를 확인한 뒤 작은 골드 팩을 모의 구매합니다.
+    private IEnumerator BuySmallGoldPack()
+    {
+        ShopCatalogResponse catalog = null;
+        yield return RunRequest(api.GetShopProducts(apiBaseUrl, result =>
+        {
+            if (HandleFailure(result)) return;
+            catalog = result.response;
+        }));
+
+        if (!lastRequestSucceeded || catalog == null || catalog.products == null) yield break;
+        ShopProductResponse product = Array.Find(catalog.products, item => item.productId == "small-gold-pack");
+        if (product == null)
+        {
+            AddLog("Small Gold Pack is not available.");
+            yield break;
+        }
+
+        yield return RunRequest(api.Purchase(apiBaseUrl, product.productId,
+            CreateIdempotencyKey("shop-small-gold"), result =>
+            {
+                if (HandleFailure(result)) return;
+                AddLog("Mock purchase: +" + result.response.goldAwarded +
+                    " gold, balance " + result.response.goldBalanceAfter + ReplayText(result.response.isReplay));
+            }));
+        if (lastRequestSucceeded) yield return GetGameState();
+    }
+
     // 모든 API 코루틴을 감싸 busy 플래그와 UI 갱신을 공통 처리합니다.
     private IEnumerator RunRequest(IEnumerator request)
     {
@@ -287,7 +344,8 @@ public sealed class UnityClientBootstrap : MonoBehaviour
         }
 
         // 실패이면 HTTP 상태 코드와 서버 오류 제목을 로그에 남깁니다.
-        AddLog("HTTP " + result.statusCode + ": " + result.errorTitle);
+        AddLog("HTTP " + result.statusCode + ": " + result.errorTitle +
+            (string.IsNullOrWhiteSpace(result.traceId) ? string.Empty : " (trace " + result.traceId + ")"));
         return true;
     }
 

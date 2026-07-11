@@ -1,6 +1,6 @@
 # Idle Guild Unity Client Code Overview
 
-이 문서는 Unity 클라이언트의 현재 코드 구조와 서버 MVP API 호출 흐름을 설명합니다. 현재 클라이언트는 실제 전투 게임 화면 이전 단계의 런타임 UI 클라이언트이며, 서버 연동을 검증하는 목적에 맞춰 구성되어 있습니다.
+이 문서는 Unity 클라이언트의 현재 코드 구조와 서버 API 호출 흐름을 설명합니다. 현재 클라이언트는 실제 전투 게임 화면 이전 단계의 런타임 UI 클라이언트이며, 장비·모의 상점·Trace ID를 포함한 서버 연동을 검증합니다.
 
 ## 실행 위치
 
@@ -43,6 +43,8 @@
 | `3. Claim` | 방치 보상 수령 후 상태 재조회 | `POST /api/v1/rewards/idle/claim` |
 | `4. Upgrade` | 영웅 강화 후 상태 재조회 | `POST /api/v1/heroes/main/upgrade` |
 | `5. Challenge Stage` | 입력한 스테이지 도전 후 상태 재조회 | `POST /api/v1/stages/{stage}/challenge` |
+| `6. Equip Bronze` | 장비 목록 조회 후 Bronze Sword 장착 | `GET /api/v1/equipment`, `PUT /api/v1/equipment/{id}/equipped` |
+| `7. Buy 100 Gold (Mock)` | 카탈로그 조회 후 Small Gold Pack 구매 | `GET /api/v1/shop/products`, `POST /api/v1/shop/products/{id}/purchase` |
 | `Clear Saved Session` | 저장된 토큰/playerId 삭제 | 서버 호출 없음 |
 
 ## 인증 처리
@@ -61,6 +63,8 @@
 - `POST /api/v1/rewards/idle/claim`
 - `POST /api/v1/heroes/main/upgrade`
 - `POST /api/v1/stages/{stage}/challenge`
+- `PUT /api/v1/equipment/{equipmentId}/equipped`
+- `POST /api/v1/shop/products/{productId}/purchase`
 
 키 생성 위치는 `UnityClientBootstrap.CreateIdempotencyKey()`입니다.
 
@@ -70,6 +74,7 @@
 - 서버가 `ProblemDetails` JSON을 내려주면 `title`을 로그에 표시합니다.
 - JSON이 아닌 오류 응답이 오면 응답 원문을 로그에 표시합니다.
 - 자동 데모 중 실패가 발생하면 `ShouldContinueDemo()`가 흐름을 중단합니다.
+- 서버의 `X-Trace-Id`를 결과에 보존하고 HTTP 실패 로그에 표시합니다.
 
 ## 현재 한계
 

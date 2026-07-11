@@ -31,6 +31,7 @@
 - [장비 시스템](Docs/EQUIPMENT_SYSTEM.md)
 - [Redis 도입 의사결정](Docs/REDIS_DECISION.md)
 - [모의 상점과 구매 이력](Docs/MOCK_SHOP.md)
+- [Unity 클라이언트 서버 연동](Docs/UNITY_CLIENT_INTEGRATION.md)
 - [골드 변경 이력 원장](Docs/GOLD_LEDGER.md)
 - [API 요청 속도 제한](Docs/RATE_LIMITING.md)
 - [관리자 조회 API](Docs/ADMIN_API.md)
@@ -50,7 +51,7 @@
 
 ## 현재 상태
 
-서버 MVP와 고도화 Step 1~9를 완료했습니다. 운영 기반, 장비, 모의 상점, Redis 도입 기준과 Trace ID·구조화 로그·API 메트릭까지 갖췄습니다. 다음 큰 단계는 Unity 클라이언트 연동입니다.
+서버 MVP와 고도화 Step 1~9를 완료했고 Unity 개발용 UI에 핵심 API, 장비, 모의 상점과 Trace ID를 연동했습니다. 다음 단계는 영웅·몬스터가 보이는 실제 2D 게임 화면과 서버 결과 연출입니다.
 
 ## 로컬 실행
 

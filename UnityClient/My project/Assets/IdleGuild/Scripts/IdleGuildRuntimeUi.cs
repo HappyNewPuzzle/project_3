@@ -38,6 +38,10 @@ public sealed class IdleGuildRuntimeUi
     private Button upgradeHeroButton;
     // 스테이지 도전 버튼입니다.
     private Button challengeStageButton;
+    // 장비 목록 조회 후 청동 검을 장착하는 버튼입니다.
+    private Button equipBronzeButton;
+    // 상점의 작은 골드 팩을 모의 구매하는 버튼입니다.
+    private Button buyGoldButton;
     // 저장된 세션 초기화 버튼입니다.
     private Button clearSessionButton;
 
@@ -52,6 +56,8 @@ public sealed class IdleGuildRuntimeUi
         Action onClaimReward,
         Action onUpgradeHero,
         Action<int> onChallengeStage,
+        Action onEquipBronze,
+        Action onBuyGold,
         Action onClearSession)
     {
         // Unity 6에서는 Arial.ttf 대신 LegacyRuntime.ttf를 기본 폰트로 사용해야 합니다.
@@ -126,6 +132,11 @@ public sealed class IdleGuildRuntimeUi
             onChallengeStage?.Invoke(ParseStageInput());
         });
 
+        // 서버 고도화 기능인 장비와 모의 상점을 네 번째 줄에 배치합니다.
+        GameObject extendedRow = CreateRow(panel.transform, "Extended Actions", 8f, 42f);
+        equipBronzeButton = CreateButton(extendedRow.transform, "6. Equip Bronze", onEquipBronze);
+        buyGoldButton = CreateButton(extendedRow.transform, "7. Buy 100 Gold (Mock)", onBuyGold);
+
         // 테스트 중 토큰이 꼬였을 때 바로 지울 수 있는 세션 초기화 버튼입니다.
         clearSessionButton = CreateButton(panel.transform, "Clear Saved Session", onClearSession);
         // 게임 상태와 로그 표시 영역을 생성합니다.
@@ -173,6 +184,8 @@ public sealed class IdleGuildRuntimeUi
         claimRewardButton.interactable = canUseProtectedActions;
         upgradeHeroButton.interactable = canUseProtectedActions;
         challengeStageButton.interactable = canUseProtectedActions;
+        equipBronzeButton.interactable = canUseProtectedActions;
+        buyGoldButton.interactable = canUseProtectedActions;
         // 세션 초기화와 스테이지 입력은 요청 중이 아닐 때만 허용합니다.
         clearSessionButton.interactable = canUsePublicActions;
         stageInputField.interactable = canUsePublicActions;
@@ -207,6 +220,7 @@ public sealed class IdleGuildRuntimeUi
             "Game State\n" +
             "Gold: " + gameState.gold + "\n" +
             "Hero Level: " + gameState.heroLevel + "\n" +
+            "Hero Power: " + gameState.heroPower + " (equipment +" + gameState.equipmentPowerBonus + ")\n" +
             "Highest Stage: " + gameState.highestStage + "\n" +
             "Production Bonus: " + gameState.productionBonusPercent + "%";
     }

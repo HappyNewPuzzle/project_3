@@ -94,6 +94,33 @@ public sealed class IdleGuildApiClient
             onComplete);
     }
 
+    // 플레이어가 보유한 장비와 현재 장착 상태를 조회합니다.
+    public IEnumerator GetEquipment(string apiBaseUrl, Action<IdleGuildApiResult<EquipmentInventoryResponse>> onComplete)
+    {
+        yield return Send(apiBaseUrl, UnityWebRequest.kHttpVerbGET, "/api/v1/equipment", null, true, onComplete);
+    }
+
+    // 지정한 보유 장비를 장착하고 같은 슬롯의 기존 장비를 교체합니다.
+    public IEnumerator Equip(string apiBaseUrl, string equipmentId, string idempotencyKey, Action<IdleGuildApiResult<ChangeEquipmentResponse>> onComplete)
+    {
+        yield return Send(apiBaseUrl, UnityWebRequest.kHttpVerbPUT,
+            "/api/v1/equipment/" + equipmentId + "/equipped", idempotencyKey, true, onComplete,
+            "{\"isEquipped\":true}");
+    }
+
+    // 서버가 판매 중인 모의 상품 카탈로그를 조회합니다.
+    public IEnumerator GetShopProducts(string apiBaseUrl, Action<IdleGuildApiResult<ShopCatalogResponse>> onComplete)
+    {
+        yield return Send(apiBaseUrl, UnityWebRequest.kHttpVerbGET, "/api/v1/shop/products", null, true, onComplete);
+    }
+
+    // 서버 카탈로그의 상품을 모의 구매하고 골드를 지급받습니다.
+    public IEnumerator Purchase(string apiBaseUrl, string productId, string idempotencyKey, Action<IdleGuildApiResult<ShopPurchaseResponse>> onComplete)
+    {
+        yield return Send(apiBaseUrl, UnityWebRequest.kHttpVerbPOST,
+            "/api/v1/shop/products/" + productId + "/purchase", idempotencyKey, true, onComplete);
+    }
+
     // 모든 HTTP 요청이 공통으로 사용하는 내부 전송 메서드입니다.
     private IEnumerator Send<TResponse>(
         string apiBaseUrl,
@@ -101,7 +128,8 @@ public sealed class IdleGuildApiClient
         string path,
         string idempotencyKey,
         bool includeAuthorization,
-        Action<IdleGuildApiResult<TResponse>> onComplete)
+        Action<IdleGuildApiResult<TResponse>> onComplete,
+        string jsonBody = null)
     {
         // base URL 끝의 슬래시를 정리한 뒤 API path를 붙여 최종 요청 URL을 만듭니다.
         string url = apiBaseUrl.TrimEnd('/') + path;
@@ -113,10 +141,11 @@ public sealed class IdleGuildApiClient
             request.downloadHandler = new DownloadHandlerBuffer();
 
             // POST 요청은 본문이 비어 있어도 UploadHandler가 있어야 안정적으로 전송됩니다.
-            if (method == UnityWebRequest.kHttpVerbPOST)
+            if (method == UnityWebRequest.kHttpVerbPOST || method == UnityWebRequest.kHttpVerbPUT)
             {
                 // 서버 API는 현재 별도 요청 body가 없으므로 빈 byte 배열을 보냅니다.
-                request.uploadHandler = new UploadHandlerRaw(new byte[0]);
+                request.uploadHandler = new UploadHandlerRaw(
+                    string.IsNullOrEmpty(jsonBody) ? new byte[0] : System.Text.Encoding.UTF8.GetBytes(jsonBody));
                 // 서버가 JSON API로 처리하도록 Content-Type을 명시합니다.
                 request.SetRequestHeader("Content-Type", "application/json");
             }
@@ -143,39 +172,46 @@ public sealed class IdleGuildApiClient
 
             // 성공/실패 모두 응답 body를 읽어 이후 처리에 사용합니다.
             string body = request.downloadHandler.text;
+            // 서버 관측성 헤더를 성공과 실패 결과에 모두 보존합니다.
+            string traceId = request.GetResponseHeader("X-Trace-Id");
             // UnityWebRequest가 네트워크 오류나 HTTP 오류로 판단한 경우 실패 결과를 콜백합니다.
             if (request.result != UnityWebRequest.Result.Success)
             {
-                onComplete?.Invoke(IdleGuildApiResult<TResponse>.Failure(request.responseCode, ParseErrorTitle(body)));
+                ProblemDetails problem = ParseProblem(body);
+                onComplete?.Invoke(IdleGuildApiResult<TResponse>.Failure(
+                    request.responseCode,
+                    problem == null || string.IsNullOrWhiteSpace(problem.title)
+                        ? string.IsNullOrWhiteSpace(body) ? request.error : body
+                        : problem.title,
+                    string.IsNullOrWhiteSpace(traceId) ? problem?.traceId : traceId));
                 yield break;
             }
 
             // 성공 응답 JSON을 Unity JsonUtility로 DTO 객체에 매핑합니다.
             TResponse response = JsonUtility.FromJson<TResponse>(body);
             // 호출자에게 HTTP 상태 코드와 파싱된 응답 DTO를 전달합니다.
-            onComplete?.Invoke(IdleGuildApiResult<TResponse>.Success(request.responseCode, response));
+            onComplete?.Invoke(IdleGuildApiResult<TResponse>.Success(request.responseCode, response, traceId));
         }
     }
 
     // ProblemDetails 또는 일반 응답 body에서 사람이 읽을 오류 제목을 추출합니다.
-    private static string ParseErrorTitle(string body)
+    private static ProblemDetails ParseProblem(string body)
     {
         // 응답 body가 비어 있으면 네트워크/서버 레벨 오류로 보고 기본 메시지를 반환합니다.
         if (string.IsNullOrWhiteSpace(body))
         {
-            return "Request failed without response body.";
+            return null;
         }
 
         try
         {
             // 서버 MVP는 오류를 ProblemDetails 형태로 내려주므로 title 필드를 우선 사용합니다.
-            ProblemDetails problem = JsonUtility.FromJson<ProblemDetails>(body);
-            return problem == null || string.IsNullOrWhiteSpace(problem.title) ? body : problem.title;
+            return JsonUtility.FromJson<ProblemDetails>(body);
         }
         catch (Exception)
         {
             // JSON이 아닌 HTML/프록시 오류 등이 오면 원문 body를 그대로 보여줍니다.
-            return body;
+            return null;
         }
     }
 }

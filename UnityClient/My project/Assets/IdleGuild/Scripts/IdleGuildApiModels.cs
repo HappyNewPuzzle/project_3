@@ -10,30 +10,34 @@ public sealed class IdleGuildApiResult<TResponse>
     public long statusCode;
     // 실패 시 화면 로그에 표시할 오류 제목입니다.
     public string errorTitle;
+    // 서버 로그와 클라이언트 오류를 연결하는 응답 Trace ID입니다.
+    public string traceId;
     // 성공 시 서버 응답 JSON이 매핑된 DTO입니다.
     public TResponse response;
 
     // 성공 결과 객체를 생성합니다.
-    public static IdleGuildApiResult<TResponse> Success(long statusCode, TResponse response)
+    public static IdleGuildApiResult<TResponse> Success(long statusCode, TResponse response, string traceId)
     {
         // 호출자가 성공 여부, 상태 코드, 응답 DTO를 한 번에 받을 수 있게 구성합니다.
         return new IdleGuildApiResult<TResponse>
         {
             succeeded = true,
             statusCode = statusCode,
-            response = response
+            response = response,
+            traceId = traceId
         };
     }
 
     // 실패 결과 객체를 생성합니다.
-    public static IdleGuildApiResult<TResponse> Failure(long statusCode, string errorTitle)
+    public static IdleGuildApiResult<TResponse> Failure(long statusCode, string errorTitle, string traceId)
     {
         // 실패 시에는 response 없이 상태 코드와 오류 제목만 채웁니다.
         return new IdleGuildApiResult<TResponse>
         {
             succeeded = false,
             statusCode = statusCode,
-            errorTitle = errorTitle
+            errorTitle = errorTitle,
+            traceId = traceId
         };
     }
 }
@@ -70,6 +74,70 @@ public sealed class GameStateResponse
     public int highestStage;
     // 스테이지 진행으로 얻은 생산 보너스 퍼센트입니다.
     public int productionBonusPercent;
+    // 영웅 레벨과 장착 장비를 합산한 서버 권위 전투력입니다.
+    public int heroPower;
+    // 현재 장착 장비가 제공하는 전투력 합계입니다.
+    public int equipmentPowerBonus;
+}
+
+// GET /api/v1/equipment의 장비 한 개입니다.
+[Serializable]
+public sealed class EquipmentItemResponse
+{
+    public string equipmentId;
+    public string definitionId;
+    public string name;
+    public string slot;
+    public int powerBonus;
+    public bool isEquipped;
+}
+
+// 보유 장비 목록과 장착 보너스 응답입니다.
+[Serializable]
+public sealed class EquipmentInventoryResponse
+{
+    public int equipmentPowerBonus;
+    public EquipmentItemResponse[] items;
+}
+
+// 장비 장착·해제 응답입니다.
+[Serializable]
+public sealed class ChangeEquipmentResponse
+{
+    public string equipmentId;
+    public bool isEquipped;
+    public string outcome;
+    public string replacedEquipmentId;
+    public bool isReplay;
+}
+
+// 상점 카탈로그의 상품 한 개입니다.
+[Serializable]
+public sealed class ShopProductResponse
+{
+    public string productId;
+    public string name;
+    public int mockPrice;
+    public long goldAwarded;
+}
+
+// GET /api/v1/shop/products 응답입니다.
+[Serializable]
+public sealed class ShopCatalogResponse
+{
+    public ShopProductResponse[] products;
+}
+
+// 모의 구매 승인과 골드 지급 응답입니다.
+[Serializable]
+public sealed class ShopPurchaseResponse
+{
+    public string purchaseId;
+    public string productId;
+    public int mockPrice;
+    public long goldAwarded;
+    public long goldBalanceAfter;
+    public bool isReplay;
 }
 
 // POST /api/v1/rewards/idle/claim 응답 DTO입니다.
@@ -120,4 +188,6 @@ public sealed class ProblemDetails
 {
     // 사용자/개발자에게 보여줄 오류 제목입니다.
     public string title;
+    // 오류 Body에도 포함되는 서버 Trace ID입니다.
+    public string traceId;
 }
