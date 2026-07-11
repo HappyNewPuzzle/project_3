@@ -6,6 +6,7 @@ using IdleGuild.Domain.GameStates;
 using IdleGuild.Domain.Heroes;
 using IdleGuild.Domain.Rewards;
 using IdleGuild.Domain.Stages;
+using IdleGuild.Domain.Shop;
 
 namespace IdleGuild.Application.Tests;
 
@@ -19,6 +20,7 @@ internal sealed class InMemoryPlayerGameStateRepository :
     IGoldLedgerReader,
     IPlayerEquipmentRepository,
     IEquipmentChangeReceiptRepository,
+    IShopPurchaseRepository,
     IGameUnitOfWork
 {
     private readonly Dictionary<Guid, PlayerGameState> _states = [];
@@ -33,6 +35,7 @@ internal sealed class InMemoryPlayerGameStateRepository :
     private readonly Dictionary<
         (Guid, string),
         EquipmentChangeReceipt> _equipmentReceipts = [];
+    private readonly Dictionary<(Guid, string), ShopPurchaseReceipt> _shopReceipts = [];
 
     public int SaveCount { get; private set; }
 
@@ -167,6 +170,21 @@ internal sealed class InMemoryPlayerGameStateRepository :
         _equipmentReceipts.Add(
             (receipt.PlayerId, receipt.IdempotencyKey),
             receipt);
+
+    Task<ShopPurchaseReceipt?> IShopPurchaseRepository.FindAsync(Guid playerId, string idempotencyKey,
+        CancellationToken cancellationToken)
+    {
+        _shopReceipts.TryGetValue((playerId, idempotencyKey), out var receipt);
+        return Task.FromResult(receipt);
+    }
+
+    Task<IReadOnlyList<ShopPurchaseReceipt>> IShopPurchaseRepository.ListAsync(Guid playerId,
+        CancellationToken cancellationToken) => Task.FromResult<IReadOnlyList<ShopPurchaseReceipt>>(
+        _shopReceipts.Values.Where(receipt => receipt.PlayerId == playerId)
+            .OrderByDescending(receipt => receipt.PurchasedAtUtc).ToArray());
+
+    void IShopPurchaseRepository.Add(ShopPurchaseReceipt receipt) =>
+        _shopReceipts.Add((receipt.PlayerId, receipt.IdempotencyKey), receipt);
 
     /// <summary>관리자 Handler 테스트에 최신순 키셋 골드 원장을 제공합니다.</summary>
     public Task<IReadOnlyList<GoldLedgerEntry>>

@@ -7,6 +7,9 @@ using IdleGuild.Application.Equipment.GetEquipment;
 using IdleGuild.Application.Heroes.UpgradeMainHero;
 using IdleGuild.Application.Rewards.ClaimIdleReward;
 using IdleGuild.Application.Stages.ChallengeStage;
+using IdleGuild.Application.Shop.GetPurchaseHistory;
+using IdleGuild.Application.Shop.GetShopCatalog;
+using IdleGuild.Application.Shop.PurchaseShopProduct;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace IdleGuild.Application;
@@ -27,6 +30,9 @@ public static class DependencyInjection
         services.AddScoped<GetGoldLedgerPageHandler>();
         services.AddScoped<GetEquipmentHandler>();
         services.AddScoped<ChangeEquipmentHandler>();
+        services.AddScoped<GetShopCatalogHandler>();
+        services.AddScoped<PurchaseShopProductHandler>();
+        services.AddScoped<GetPurchaseHistoryHandler>();
 
         return services;
     }

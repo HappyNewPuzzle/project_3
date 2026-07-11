@@ -42,6 +42,8 @@ public static class DependencyInjection
             PlayerEquipmentRepository>();
         services.AddScoped<IEquipmentChangeReceiptRepository,
             EquipmentChangeReceiptRepository>();
+        services.AddScoped<IShopPurchaseRepository,
+            ShopPurchaseRepository>();
         services.AddScoped<IGameUnitOfWork,
             EfGameUnitOfWork>();
         services.AddSingleton(jwtOptions);

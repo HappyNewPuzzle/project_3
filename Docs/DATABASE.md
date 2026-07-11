@@ -163,3 +163,9 @@ Docker를 직접 제어할 수 없는 CI 환경에서는 `IDLEGUILD_TEST_POSTGRE
 `equipment_change_receipts`는 `(player_id, idempotency_key)`를 기본 키로 사용하고 요청 장비, 요청 상태, 결과, 교체된 장비와 처리 시각을 저장합니다. 장착 상태와 영수증은 같은 트랜잭션에서 저장됩니다.
 
 `AddEquipmentSystem` Migration이 두 테이블, 외래 키, 체크 제약조건과 인덱스를 생성합니다. `EquipmentPersistenceTests`는 실제 PostgreSQL에서 저장 왕복, 슬롯 유일성, 장착 교체와 영수증 저장을 검증합니다.
+
+## 11. shop_purchase_receipts
+
+`shop_purchase_receipts`는 구매 ID, 플레이어 ID, 멱등 키, 상품 ID, 모의 가격, 지급 골드, 지급 후 잔액과 구매 시각을 저장합니다. `(player_id, idempotency_key)` 유일 인덱스가 같은 플레이어의 구매 요청을 한 번만 허용하고, 플레이어·시각 복합 인덱스가 최신순 이력을 지원합니다.
+
+`AddMockShopPurchases` Migration이 테이블과 제약조건을 생성합니다. 골드 상태, 구매 영수증과 `ShopPurchase` 골드 원장은 한 트랜잭션에서 저장됩니다.

@@ -30,6 +30,7 @@
 - [서버 고도화 로드맵](Docs/SERVER_HARDENING_ROADMAP.md)
 - [장비 시스템](Docs/EQUIPMENT_SYSTEM.md)
 - [Redis 도입 의사결정](Docs/REDIS_DECISION.md)
+- [모의 상점과 구매 이력](Docs/MOCK_SHOP.md)
 - [골드 변경 이력 원장](Docs/GOLD_LEDGER.md)
 - [API 요청 속도 제한](Docs/RATE_LIMITING.md)
 - [관리자 조회 API](Docs/ADMIN_API.md)
@@ -49,7 +50,7 @@
 
 ## 현재 상태
 
-서버 MVP를 완료했고 서버 고도화를 진행 중입니다. 운영 기반, 서버 권위형 장비 시스템과 Redis 도입 기준까지 정리했습니다. 현재 규모에서는 Redis 도입을 보류하고 PostgreSQL을 영속 데이터 원본으로 유지합니다. 다음 서버 작업은 모의 상점과 구매 이력입니다.
+서버 MVP를 완료했고 서버 고도화를 진행 중입니다. 운영 기반, 장비 시스템, Redis 도입 기준과 중복 지급을 방어하는 모의 상점까지 구현했습니다. 다음 서버 작업은 관측성 고도화입니다.
 
 ## 로컬 실행
 

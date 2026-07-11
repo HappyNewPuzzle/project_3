@@ -29,6 +29,7 @@ public sealed class IdleGuildApiFactory : WebApplicationFactory<Program>
             services.RemoveAll<IGameUnitOfWork>();
             services.RemoveAll<IPlayerEquipmentRepository>();
             services.RemoveAll<IEquipmentChangeReceiptRepository>();
+            services.RemoveAll<IShopPurchaseRepository>();
             services.RemoveAll<IDatabaseReadinessProbe>();
             services.AddSingleton<InMemoryPlayerGameStateStore>();
             services.AddSingleton<IPlayerGameStateRepository>(
@@ -61,6 +62,8 @@ public sealed class IdleGuildApiFactory : WebApplicationFactory<Program>
             services.AddSingleton<IEquipmentChangeReceiptRepository>(
                 provider => provider.GetRequiredService<
                     InMemoryPlayerGameStateStore>());
+            services.AddSingleton<IShopPurchaseRepository>(
+                provider => provider.GetRequiredService<InMemoryPlayerGameStateStore>());
         });
     }
 }

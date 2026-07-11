@@ -157,6 +157,7 @@ app.MapHeroesEndpoints();
 app.MapStagesEndpoints();
 app.MapAdminEndpoints();
 app.MapEquipmentEndpoints();
+app.MapShopEndpoints();
 
 app.Run();
 

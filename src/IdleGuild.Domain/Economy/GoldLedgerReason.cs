@@ -5,5 +5,6 @@ public enum GoldLedgerReason
 {
     IdleRewardClaim = 1,
     HeroUpgrade = 2,
-    StageCheckpoint = 3
+    StageCheckpoint = 3,
+    ShopPurchase = 4
 }

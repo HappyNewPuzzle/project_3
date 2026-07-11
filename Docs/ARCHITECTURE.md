@@ -114,3 +114,7 @@ DB Migration은 API 프로세스 시작 책임에 포함하지 않습니다. 배
 Equipment 모듈은 코드의 장비 마스터와 PostgreSQL의 플레이어 보유 장비를 분리합니다. 장착 변경은 Application이 소유권과 슬롯을 검사하고, PostgreSQL 부분 유일 인덱스가 플레이어별 같은 슬롯의 중복 장착을 최종 차단합니다. 장착 장비 보너스는 게임 상태 조회와 스테이지 판정에 동일하게 반영합니다.
 
 공개 API는 `GET /api/v1/equipment`와 `PUT /api/v1/equipment/{equipmentId}/equipped`이며 변경 API는 멱등 키와 영수증을 사용합니다. 자세한 규칙은 [장비 시스템](EQUIPMENT_SYSTEM.md)에 정리합니다.
+
+## 13. 모의 상점 경계
+
+Shop 모듈은 서버 상품 카탈로그, 구매 유스케이스와 영구 구매 영수증을 분리합니다. 구매 시 골드 상태, `shop_purchase_receipts`, `ShopPurchase` 골드 원장을 같은 PostgreSQL 트랜잭션으로 저장합니다. 실제 플랫폼 결제는 포함하지 않으며 차이는 [모의 상점과 구매 이력](MOCK_SHOP.md)에 정리합니다.

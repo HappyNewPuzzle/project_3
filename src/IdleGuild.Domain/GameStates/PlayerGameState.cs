@@ -157,6 +157,18 @@ public sealed class PlayerGameState
             processedAtUtc);
     }
 
+    /// <summary>서버가 승인한 상점 상품의 골드를 잔액에 더합니다.</summary>
+    public long GrantShopGold(long amount)
+    {
+        if (amount <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(amount));
+        }
+
+        Gold = checked(Gold + amount);
+        return Gold;
+    }
+
     /// <summary>서버 전투력으로 스테이지를 판정하고 성공 시 생산 구간을 전환합니다.</summary>
     public StageChallengeSettlement ChallengeStage(
         int targetStage,

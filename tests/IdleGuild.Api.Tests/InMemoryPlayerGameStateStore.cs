@@ -6,6 +6,7 @@ using IdleGuild.Domain.GameStates;
 using IdleGuild.Domain.Heroes;
 using IdleGuild.Domain.Rewards;
 using IdleGuild.Domain.Stages;
+using IdleGuild.Domain.Shop;
 
 namespace IdleGuild.Api.Tests;
 
@@ -19,6 +20,7 @@ public sealed class InMemoryPlayerGameStateStore :
     IGoldLedgerReader,
     IPlayerEquipmentRepository,
     IEquipmentChangeReceiptRepository,
+    IShopPurchaseRepository,
     IGameUnitOfWork
 {
     private readonly ConcurrentDictionary<Guid, PlayerGameState> _states = [];
@@ -39,6 +41,7 @@ public sealed class InMemoryPlayerGameStateStore :
     private readonly ConcurrentDictionary<
         (Guid, string),
         EquipmentChangeReceipt> _equipmentReceipts = [];
+    private readonly ConcurrentDictionary<(Guid, string), ShopPurchaseReceipt> _shopReceipts = [];
 
     public void Add(PlayerGameState gameState)
     {
@@ -215,6 +218,24 @@ public sealed class InMemoryPlayerGameStateStore :
             throw new InvalidOperationException(
                 "Equipment receipt already exists.");
         }
+    }
+
+    Task<ShopPurchaseReceipt?> IShopPurchaseRepository.FindAsync(Guid playerId, string idempotencyKey,
+        CancellationToken cancellationToken)
+    {
+        _shopReceipts.TryGetValue((playerId, idempotencyKey), out var receipt);
+        return Task.FromResult(receipt);
+    }
+
+    Task<IReadOnlyList<ShopPurchaseReceipt>> IShopPurchaseRepository.ListAsync(Guid playerId,
+        CancellationToken cancellationToken) => Task.FromResult<IReadOnlyList<ShopPurchaseReceipt>>(
+        _shopReceipts.Values.Where(receipt => receipt.PlayerId == playerId)
+            .OrderByDescending(receipt => receipt.PurchasedAtUtc).ToArray());
+
+    void IShopPurchaseRepository.Add(ShopPurchaseReceipt receipt)
+    {
+        if (!_shopReceipts.TryAdd((receipt.PlayerId, receipt.IdempotencyKey), receipt))
+            throw new InvalidOperationException("Shop purchase receipt already exists.");
     }
 
     /// <summary>관리자 API 테스트에 플레이어별 최신순 원장 페이지를 제공합니다.</summary>

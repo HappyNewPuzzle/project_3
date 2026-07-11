@@ -17,7 +17,7 @@ public sealed class GoldLedgerEntryConfiguration :
         {
             table.HasCheckConstraint(
                 "ck_gold_ledger_entries_reason",
-                "reason >= 1 AND reason <= 3");
+                "reason >= 1 AND reason <= 4");
             table.HasCheckConstraint(
                 "ck_gold_ledger_entries_balances",
                 "balance_before >= 0 AND balance_after >= 0");
