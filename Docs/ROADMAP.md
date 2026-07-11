@@ -120,4 +120,5 @@ Unity 클라이언트와 별개로, 서버를 운영 게임 서버 수준에 가
 - Hardening Step 6. 장비 시스템 설계와 구현 — 완료
 - Hardening Step 7. Redis 도입 후보 검토 — 완료(현재 도입 보류)
 - Hardening Step 8. 모의 상점과 구매 이력 — 완료
-- Hardening Step 9. 관측성 고도화 — 다음 작업
+- Hardening Step 9. 관측성 고도화 — 완료
+- 다음 큰 단계: Unity 클라이언트 연동

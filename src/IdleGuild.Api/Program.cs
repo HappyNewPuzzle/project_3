@@ -5,6 +5,7 @@ using IdleGuild.Api.HealthChecks;
 using IdleGuild.Api.OpenApi;
 using IdleGuild.Api.RateLimiting;
 using IdleGuild.Api.Authorization;
+using IdleGuild.Api.Observability;
 using IdleGuild.Application;
 using IdleGuild.Infrastructure;
 using IdleGuild.Infrastructure.Authentication;
@@ -123,6 +124,9 @@ if (app.Environment.IsDevelopment())
         options.SwaggerEndpoint("/openapi/v1.json", "Idle Guild API v1");
     });
 }
+
+// 예외 처리까지 포함한 최종 상태와 시간을 측정하고 클라이언트에 Trace ID를 반환합니다.
+app.UseMiddleware<ApiObservabilityMiddleware>();
 
 // 처리되지 않은 예외를 500 ProblemDetails로 통일하고 추적 가능한 로그를 남깁니다.
 app.UseExceptionHandler();

@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using IdleGuild.Api.Contracts;
 using IdleGuild.Infrastructure.HealthChecks;
+using IdleGuild.Api.Observability;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -23,6 +24,8 @@ public sealed class SystemEndpointTests(
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Equal("Healthy", await response.Content.ReadAsStringAsync());
+        Assert.True(response.Headers.TryGetValues(ApiTelemetry.TraceHeaderName, out var traceValues));
+        Assert.False(string.IsNullOrWhiteSpace(Assert.Single(traceValues)));
     }
 
     // 준비 상태는 PostgreSQL 연결이 가능할 때만 트래픽 수신 가능으로 응답해야 합니다.
