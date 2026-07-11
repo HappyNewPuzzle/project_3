@@ -73,7 +73,7 @@ dotnet tool run dotnet-ef database update `
 docker compose --env-file .env `
   -f compose.yaml `
   -f compose.api.yaml `
-  up -d --build api
+  up -d --build --wait api
 ```
 
 API는 컨테이너 내부 8080 포트를 사용하고 기본적으로 호스트 `http://localhost:5219`에 연결됩니다.
@@ -82,6 +82,7 @@ API는 컨테이너 내부 8080 포트를 사용하고 기본적으로 호스트
 
 ```powershell
 Invoke-RestMethod http://localhost:5219/health
+Invoke-RestMethod http://localhost:5219/ready
 Invoke-RestMethod -Method Post http://localhost:5219/api/v1/accounts/guest
 ```
 
@@ -123,6 +124,7 @@ API 이미지 배포
 - 임시 파일이 필요한 경우를 위한 메모리 `/tmp`
 - Linux capability 전체 제거
 - `no-new-privileges`
+- PostgreSQL까지 확인하는 `/ready` 기반 Docker `HEALTHCHECK`
 - Production 환경 고정
 - Swagger와 개발용 상세 오류 비활성화
 
@@ -146,7 +148,6 @@ Issuer, Audience, 토큰 유효기간과 포트도 환경별 설정으로 관리
 
 ## 8. 현재 남은 범위
 
-- 컨테이너 `/health`는 API 프로세스 생존만 확인합니다.
-- PostgreSQL 준비 상태를 포함하는 `/ready`는 Hardening Step 5에서 추가합니다.
+- `/ready`는 PostgreSQL 연결만 확인하며 Migration 최신 여부까지 비교하지 않습니다.
 - 특정 Container Registry와 클라우드 배포는 아직 연결하지 않았습니다.
 - 무중단 배포, 이미지 취약점 검사와 서명은 이후 CI/CD 단계에서 추가할 수 있습니다.

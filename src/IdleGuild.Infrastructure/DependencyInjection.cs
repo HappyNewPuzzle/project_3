@@ -1,6 +1,7 @@
 using IdleGuild.Application.Abstractions.Authentication;
 using IdleGuild.Application.Abstractions.Persistence;
 using IdleGuild.Infrastructure.Authentication;
+using IdleGuild.Infrastructure.HealthChecks;
 using IdleGuild.Infrastructure.Persistence;
 using IdleGuild.Infrastructure.Persistence.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -35,6 +36,8 @@ public static class DependencyInjection
             GoldLedgerRepository>();
         services.AddScoped<IGoldLedgerReader,
             GoldLedgerReader>();
+        services.AddScoped<IDatabaseReadinessProbe,
+            PostgreSqlReadinessProbe>();
         services.AddScoped<IGameUnitOfWork,
             EfGameUnitOfWork>();
         services.AddSingleton(jwtOptions);

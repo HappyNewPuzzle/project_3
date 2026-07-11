@@ -1,6 +1,10 @@
 using System.Net;
 using System.Net.Http.Json;
 using IdleGuild.Api.Contracts;
+using IdleGuild.Infrastructure.HealthChecks;
+using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace IdleGuild.Api.Tests;
 
@@ -19,6 +23,47 @@ public sealed class SystemEndpointTests(
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Equal("Healthy", await response.Content.ReadAsStringAsync());
+    }
+
+    // 준비 상태는 PostgreSQL 연결이 가능할 때만 트래픽 수신 가능으로 응답해야 합니다.
+    [Fact]
+    public async Task Ready_WithDatabaseConnection_ReturnsHealthy()
+    {
+        var response = await _client.GetAsync("/ready");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(
+            "Healthy",
+            await response.Content.ReadAsStringAsync());
+    }
+
+    // DB 장애 중에도 프로세스는 살아 있고 준비 상태만 503으로 분리되어야 합니다.
+    [Fact]
+    public async Task DatabaseFailure_OnlyMakesReadyUnhealthy()
+    {
+        using var unavailableFactory = factory
+            .WithWebHostBuilder(builder =>
+                builder.ConfigureTestServices(services =>
+                {
+                    services.RemoveAll<
+                        IDatabaseReadinessProbe>();
+                    services.AddSingleton<
+                        IDatabaseReadinessProbe>(
+                        new StubDatabaseReadinessProbe(
+                            canConnect: false));
+                }));
+        using var client = unavailableFactory.CreateClient();
+
+        var liveness = await client.GetAsync("/health");
+        var readiness = await client.GetAsync("/ready");
+
+        Assert.Equal(HttpStatusCode.OK, liveness.StatusCode);
+        Assert.Equal(
+            HttpStatusCode.ServiceUnavailable,
+            readiness.StatusCode);
+        Assert.Equal(
+            "Unhealthy",
+            await readiness.Content.ReadAsStringAsync());
     }
 
     // 클라이언트가 로컬 시간이 아닌 서버 UTC 시각을 받을 수 있는지 검증합니다.

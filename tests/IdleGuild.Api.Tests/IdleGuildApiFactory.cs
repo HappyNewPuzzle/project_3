@@ -1,4 +1,5 @@
 using IdleGuild.Application.Abstractions.Persistence;
+using IdleGuild.Infrastructure.HealthChecks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
@@ -26,6 +27,7 @@ public sealed class IdleGuildApiFactory : WebApplicationFactory<Program>
             services.RemoveAll<IGoldLedgerRepository>();
             services.RemoveAll<IGoldLedgerReader>();
             services.RemoveAll<IGameUnitOfWork>();
+            services.RemoveAll<IDatabaseReadinessProbe>();
             services.AddSingleton<InMemoryPlayerGameStateStore>();
             services.AddSingleton<IPlayerGameStateRepository>(
                 provider => provider.GetRequiredService<
@@ -48,6 +50,9 @@ public sealed class IdleGuildApiFactory : WebApplicationFactory<Program>
             services.AddSingleton<IGameUnitOfWork>(
                 provider => provider.GetRequiredService<
                     InMemoryPlayerGameStateStore>());
+            services.AddSingleton<IDatabaseReadinessProbe>(
+                new StubDatabaseReadinessProbe(
+                    canConnect: true));
         });
     }
 }

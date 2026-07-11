@@ -413,3 +413,36 @@
 - 컨테이너 API로 게스트를 생성해 네트워크, JWT 설정과 DB 쓰기를 함께 검증했습니다.
 - Docker Inspect로 비루트 UID 1654, 읽기 전용 루트와 capability 전체 제거를 확인했습니다.
 - 컨테이너 파일 추가 후 실제 PostgreSQL 통합 테스트를 포함한 전체 76개 테스트가 통과하는지 확인했습니다.
+
+## Hardening Step 5. DB Readiness Health Check
+
+### 왜 진행했나?
+
+기존 `/health`는 API 프로세스가 HTTP 응답을 만들 수 있는지만 보여 줬습니다. PostgreSQL이 중단된 상태에서도 200이므로 Load Balancer가 실제 게임 요청을 처리할 수 없는 API에 계속 트래픽을 보낼 수 있었습니다.
+
+### 어떤 문제를 해결했나?
+
+- API 프로세스 생존과 DB 요청 처리 가능 여부를 구분할 수 없는 문제
+- DB의 일시 장애 때문에 정상 API 프로세스를 반복 재시작할 수 있는 문제
+- 배포 플랫폼이 새 컨테이너에 트래픽을 보내도 되는 시점을 판단하기 어려운 문제
+- DB 연결 시도가 오래 걸릴 때 Health 요청이 누적될 수 있는 문제
+
+### 어떤 선택을 했나?
+
+- `/health`는 등록 검사를 하나도 실행하지 않는 순수 liveness로 유지했습니다.
+- `/ready`만 `ready` 태그의 PostgreSQL 검사를 실행하게 했습니다.
+- Infrastructure의 `IDatabaseReadinessProbe`로 API 테스트와 실제 EF Core 연결 구현을 분리했습니다.
+- `Database.CanConnectAsync`를 사용해 데이터를 변경하지 않고 실제 연결 가능 여부만 확인했습니다.
+- PostgreSQL 검사는 최대 3초 후 실패하도록 제한했습니다.
+- DB 연결 예외는 일반 500으로 전파하지 않고 readiness `Unhealthy`로 변환했습니다.
+- Docker 이미지의 `HEALTHCHECK`는 `/ready`를 호출하도록 구성했습니다.
+
+### 어떻게 검증했나?
+
+- API 테스트에서 정상 `/ready=200`을 확인했습니다.
+- 실패 probe에서 `/health=200`, `/ready=503`으로 분리되는지 확인했습니다.
+- Testcontainers PostgreSQL에 readiness probe가 실제 연결하는지 검증했습니다.
+- Production 컨테이너가 Docker 상태 `healthy`가 되는지 확인했습니다.
+- PostgreSQL을 실제 중지했을 때 liveness 200과 readiness 503을 확인했습니다.
+- PostgreSQL 재시작 후 같은 API 프로세스의 readiness가 다시 200으로 복구되는지 확인했습니다.
+- 실제 PostgreSQL 통합 테스트를 포함한 전체 79개 테스트가 통과하는지 확인했습니다.

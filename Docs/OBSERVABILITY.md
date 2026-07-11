@@ -50,3 +50,9 @@ Development 환경에서는 학습과 디버깅 편의를 위해 `detail`에 예
 - `src/IdleGuild.Api/ErrorHandling/GlobalExceptionHandler.cs`: 처리되지 않은 예외를 500 `ProblemDetails`로 변환합니다.
 - `src/IdleGuild.Api/Program.cs`: `AddExceptionHandler`, `AddProblemDetails`, `AddHttpLogging`, `UseExceptionHandler`, `UseHttpLogging`을 연결합니다.
 - `tests/IdleGuild.Api.Tests/ErrorHandlingTests.cs`: 강제로 예외를 발생시켜 500 `ProblemDetails`와 `traceId`를 검증합니다.
+
+## 6. Health Check 운영 신호
+
+`/health`는 API 프로세스 생존, `/ready`는 PostgreSQL 연결 준비 상태를 나타냅니다. DB 장애 때 `/ready`는 503이지만 `/health`는 200을 유지해 트래픽 차단과 프로세스 재시작 판단을 분리합니다.
+
+Health Check의 외부 응답에는 연결 문자열이나 예외 메시지를 포함하지 않습니다. 상세 장애 원인은 서버 로그와 향후 Metric에서 확인합니다. 자세한 사용 기준은 [Liveness와 Readiness Health Check](HEALTH_CHECKS.md)에 정리합니다.

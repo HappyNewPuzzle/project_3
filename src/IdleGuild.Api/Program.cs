@@ -1,6 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using IdleGuild.Api.Endpoints;
 using IdleGuild.Api.ErrorHandling;
+using IdleGuild.Api.HealthChecks;
 using IdleGuild.Api.OpenApi;
 using IdleGuild.Api.RateLimiting;
 using IdleGuild.Api.Authorization;
@@ -9,6 +10,8 @@ using IdleGuild.Infrastructure;
 using IdleGuild.Infrastructure.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpLogging;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,7 +28,13 @@ builder.Services.AddOpenApi(options =>
     options.AddOperationTransformer<
         BearerSecurityRequirementTransformer>();
 });
-builder.Services.AddHealthChecks();
+builder.Services
+    .AddHealthChecks()
+    .AddCheck<PostgreSqlReadinessHealthCheck>(
+        "postgresql",
+        failureStatus: HealthStatus.Unhealthy,
+        tags: ["ready"],
+        timeout: TimeSpan.FromSeconds(3));
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddApiRateLimiting();
@@ -126,8 +135,20 @@ app.UseAuthentication();
 app.UseRateLimiter();
 app.UseAuthorization();
 
-// 시스템, 계정, 상태, 보상, 영웅, 스테이지 Endpoint를 각각 연결합니다.
-app.MapHealthChecks("/health");
+// 생존 확인은 외부 의존성을 제외하고 준비 확인에서만 PostgreSQL을 검사합니다.
+app.MapHealthChecks(
+    "/health",
+    new HealthCheckOptions
+    {
+        Predicate = _ => false
+    });
+app.MapHealthChecks(
+    "/ready",
+    new HealthCheckOptions
+    {
+        Predicate = registration =>
+            registration.Tags.Contains("ready")
+    });
 app.MapSystemEndpoints();
 app.MapAccountEndpoints();
 app.MapGameStateEndpoints();

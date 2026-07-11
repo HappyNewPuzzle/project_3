@@ -34,6 +34,7 @@
 - [데모 시나리오](Docs/DEMO_SCENARIO.md)
 - [배포와 운영 설정](Docs/DEPLOYMENT.md)
 - [API 컨테이너 빌드와 실행](Docs/CONTAINER_DEPLOYMENT.md)
+- [Liveness와 Readiness Health Check](Docs/HEALTH_CHECKS.md)
 - [데이터베이스](Docs/DATABASE.md)
 - [게스트 인증](Docs/AUTHENTICATION.md)
 - [방치 보상](Docs/IDLE_REWARDS.md)
@@ -46,7 +47,7 @@
 
 ## 현재 상태
 
-서버 MVP를 완료했고 서버 고도화를 진행 중입니다. 골드 변경 감사 원장, Rate Limiting, 읽기 전용 관리자 상태·원장 조회 API까지 구현했습니다. 다음 서버 작업은 Dockerfile과 배포 자동화 기초입니다.
+서버 MVP를 완료했고 서버 고도화를 진행 중입니다. 골드 원장, Rate Limiting, 관리자 조회, 컨테이너 배포, PostgreSQL readiness까지 구현했습니다. 다음 서버 작업은 장비 시스템 설계와 구현입니다.
 
 ## 로컬 실행
 
@@ -77,12 +78,14 @@ Application started. Press Ctrl+C to shut down.
 
 ```powershell
 Invoke-RestMethod http://localhost:5219/health
+Invoke-RestMethod http://localhost:5219/ready
 Invoke-RestMethod http://localhost:5219/api/v1/system/status
 ```
 
 브라우저나 HTTP Client에서는 다음 주소를 확인할 수 있습니다. URL을 PowerShell에 그대로 입력하면 명령어로 해석되어 오류가 나므로, 브라우저 주소창에 입력하거나 `Invoke-RestMethod`를 사용합니다.
 
 - Health Check: `http://localhost:5219/health`
+- Readiness Check: `http://localhost:5219/ready`
 - System Status: `http://localhost:5219/api/v1/system/status`
 - Create Guest: `POST http://localhost:5219/api/v1/accounts/guest`
 - Game State: `GET http://localhost:5219/api/v1/game-state`

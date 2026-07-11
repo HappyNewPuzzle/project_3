@@ -27,6 +27,10 @@ ENV ASPNETCORE_HTTP_PORTS=8080 \
     DOTNET_EnableDiagnostics=0
 EXPOSE 8080
 
+# 컨테이너 건강 상태는 API뿐 아니라 PostgreSQL까지 준비됐을 때만 healthy가 됩니다.
+HEALTHCHECK --interval=10s --timeout=3s --start-period=10s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://127.0.0.1:8080/ready || exit 1
+
 COPY --from=build --chown=$APP_UID:$APP_UID /app/publish ./
 
 # .NET Runtime 이미지의 비루트 기본 계정으로 서버를 실행합니다.

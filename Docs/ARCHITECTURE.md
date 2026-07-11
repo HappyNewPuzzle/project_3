@@ -104,3 +104,7 @@ PostgreSQL
 API는 .NET SDK 빌드 단계와 ASP.NET Runtime 실행 단계를 분리한 Linux 컨테이너로 배포할 수 있습니다. 최종 컨테이너는 비루트 사용자와 읽기 전용 파일시스템으로 실행합니다.
 
 DB Migration은 API 프로세스 시작 책임에 포함하지 않습니다. 배포 작업이 Migration을 한 번 적용한 뒤 API 이미지를 시작해 스키마 변경 권한과 런타임 권한을 분리합니다. 자세한 내용은 [API 컨테이너 빌드와 실행](CONTAINER_DEPLOYMENT.md)에 정리합니다.
+
+## 11. 생존과 준비 상태
+
+`/health`는 API 프로세스만 검사하고 `/ready`는 EF Core를 통해 PostgreSQL 실제 연결을 검사합니다. DB 장애 중에는 API 프로세스를 재시작하지 않고 readiness만 503으로 바꿔 새 트래픽을 차단합니다. 자세한 내용은 [Liveness와 Readiness Health Check](HEALTH_CHECKS.md)에 정리합니다.

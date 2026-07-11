@@ -67,13 +67,14 @@ Production 환경:
 
 ## 5. Health Check
 
-API 생존 확인은 다음 Endpoint를 사용합니다.
+API 프로세스 생존과 PostgreSQL 요청 처리 준비 상태를 서로 다른 Endpoint로 확인합니다.
 
 ```http
 GET /health
+GET /ready
 ```
 
-현재 `/health`는 API 프로세스 생존 여부를 확인합니다. DB 연결까지 포함한 readiness check는 향후 배포 자동화 단계에서 확장할 수 있습니다.
+`/health`는 외부 의존성을 검사하지 않는 liveness이며 `/ready`는 PostgreSQL 실제 연결을 검사하는 readiness입니다. Load Balancer에는 `/ready`, 프로세스 재시작 판단에는 `/health`를 사용합니다. 자세한 기준은 [Liveness와 Readiness Health Check](HEALTH_CHECKS.md)에 정리합니다.
 
 ## 6. 로그 기준
 
@@ -98,6 +99,7 @@ Authorization 헤더, JWT, 요청 Body, 응답 Body는 기록하지 않습니다
 - [ ] 변경 불가능한 버전 또는 커밋 SHA로 이미지 태그 지정
 - [ ] API 컨테이너가 비루트·읽기 전용 설정으로 실행되는지 확인
 - [ ] `/health` 응답 확인
+- [ ] `/ready`가 PostgreSQL 연결 상태에 따라 200 또는 503인지 확인
 - [ ] 게스트 생성 API 확인
 - [ ] 보호 API가 토큰 없이 401을 반환하는지 확인
 - [ ] 오류 응답에 내부 비밀값이 포함되지 않는지 확인
@@ -105,7 +107,6 @@ Authorization 헤더, JWT, 요청 Body, 응답 Body는 기록하지 않습니다
 ## 8. 현재 의도적으로 남긴 제한
 
 - 특정 Container Registry와 클라우드용 CI/CD 연결은 아직 포함하지 않았습니다.
-- DB readiness check는 아직 `/health`에 포함하지 않았습니다.
 - 게스트 인증은 학습용 MVP 기준이며, 공개 서비스에서는 OIDC/OAuth 같은 외부 인증 제공자 연동을 권장합니다.
 
 이 제한은 숨겨진 결함이 아니라 MVP 경계를 명확히 하기 위한 선택입니다. 이후 클라우드 배포 Step에서 하나씩 확장할 수 있습니다.

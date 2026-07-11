@@ -116,4 +116,5 @@ Unity 클라이언트와 별개로, 서버를 운영 게임 서버 수준에 가
 - Hardening Step 2. Rate Limiting — 완료
 - Hardening Step 3. 관리자용 조회 API — 완료
 - Hardening Step 4. Dockerfile과 배포 자동화 기초 — 완료
-- Hardening Step 5. DB Readiness Health Check — 다음 작업
+- Hardening Step 5. DB Readiness Health Check — 완료
+- Hardening Step 6. 장비 시스템 설계와 구현 — 다음 작업
