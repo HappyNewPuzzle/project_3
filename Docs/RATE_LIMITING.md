@@ -77,6 +77,8 @@ Unity 클라이언트는 다음 원칙으로 처리합니다.
 
 현재 IP는 직접 연결의 `RemoteIpAddress`를 사용합니다. Reverse Proxy 뒤에서 운영할 때는 신뢰할 프록시 범위를 명시한 Forwarded Headers 설정이 먼저 필요합니다. 외부 요청의 `X-Forwarded-For`를 검증 없이 신뢰해서는 안 됩니다.
 
+Redis 도입 여부와 다중 인스턴스 장애 정책은 [Redis 도입 의사결정](REDIS_DECISION.md)에 정리합니다. 현재 단일 인스턴스에서는 메모리 제한기를 유지하며, 수평 확장 시 공유 Rate Limit을 첫 Redis 후보로 재검토합니다.
+
 ## 6. 테스트 기준
 
 - 같은 IP의 게스트 생성이 5회까지 허용되고 다음 요청이 429인지 검증합니다.
