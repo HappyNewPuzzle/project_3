@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using IdleGuild.Application.Abstractions.Persistence;
 using IdleGuild.Domain.Economy;
+using IdleGuild.Domain.Equipment;
 using IdleGuild.Domain.GameStates;
 using IdleGuild.Domain.Heroes;
 using IdleGuild.Domain.Rewards;
@@ -16,6 +17,8 @@ public sealed class InMemoryPlayerGameStateStore :
     IStageChallengeReceiptRepository,
     IGoldLedgerRepository,
     IGoldLedgerReader,
+    IPlayerEquipmentRepository,
+    IEquipmentChangeReceiptRepository,
     IGameUnitOfWork
 {
     private readonly ConcurrentDictionary<Guid, PlayerGameState> _states = [];
@@ -31,6 +34,11 @@ public sealed class InMemoryPlayerGameStateStore :
     private readonly ConcurrentDictionary<
         (Guid, GoldLedgerReason, string),
         GoldLedgerEntry> _goldLedgerEntries = [];
+    private readonly ConcurrentDictionary<Guid, PlayerEquipment>
+        _equipment = [];
+    private readonly ConcurrentDictionary<
+        (Guid, string),
+        EquipmentChangeReceipt> _equipmentReceipts = [];
 
     public void Add(PlayerGameState gameState)
     {
@@ -135,6 +143,77 @@ public sealed class InMemoryPlayerGameStateStore :
         {
             throw new InvalidOperationException(
                 "Gold ledger entry already exists.");
+        }
+    }
+
+    public void Add(PlayerEquipment equipment)
+    {
+        if (!_equipment.TryAdd(
+                equipment.EquipmentId,
+                equipment))
+        {
+            throw new InvalidOperationException(
+                "Equipment already exists.");
+        }
+    }
+
+    public Task<IReadOnlyList<PlayerEquipment>> ListAsync(
+        Guid playerId,
+        CancellationToken cancellationToken = default) =>
+        Task.FromResult<IReadOnlyList<PlayerEquipment>>(
+            _equipment.Values.Where(item =>
+                item.PlayerId == playerId).ToArray());
+
+    public Task<IReadOnlyList<PlayerEquipment>>
+        ListEquippedAsync(
+            Guid playerId,
+            CancellationToken cancellationToken = default) =>
+        Task.FromResult<IReadOnlyList<PlayerEquipment>>(
+            _equipment.Values.Where(item =>
+                item.PlayerId == playerId &&
+                item.IsEquipped).ToArray());
+
+    public Task<PlayerEquipment?> FindForUpdateAsync(
+        Guid playerId,
+        Guid equipmentId,
+        CancellationToken cancellationToken = default)
+    {
+        _equipment.TryGetValue(equipmentId, out var item);
+        return Task.FromResult(
+            item?.PlayerId == playerId ? item : null);
+    }
+
+    public Task<PlayerEquipment?> FindEquippedForUpdateAsync(
+        Guid playerId,
+        EquipmentSlot slot,
+        CancellationToken cancellationToken = default) =>
+        Task.FromResult(_equipment.Values.SingleOrDefault(
+            item =>
+                item.PlayerId == playerId &&
+                item.Slot == slot &&
+                item.IsEquipped));
+
+    Task<EquipmentChangeReceipt?>
+        IEquipmentChangeReceiptRepository.FindAsync(
+            Guid playerId,
+            string idempotencyKey,
+            CancellationToken cancellationToken)
+    {
+        _equipmentReceipts.TryGetValue(
+            (playerId, idempotencyKey),
+            out var receipt);
+        return Task.FromResult(receipt);
+    }
+
+    void IEquipmentChangeReceiptRepository.Add(
+        EquipmentChangeReceipt receipt)
+    {
+        if (!_equipmentReceipts.TryAdd(
+                (receipt.PlayerId, receipt.IdempotencyKey),
+                receipt))
+        {
+            throw new InvalidOperationException(
+                "Equipment receipt already exists.");
         }
     }
 

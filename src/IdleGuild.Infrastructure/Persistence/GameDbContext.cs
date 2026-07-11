@@ -1,4 +1,5 @@
 using IdleGuild.Domain.Economy;
+using IdleGuild.Domain.Equipment;
 using IdleGuild.Domain.GameStates;
 using IdleGuild.Domain.Heroes;
 using IdleGuild.Domain.Rewards;
@@ -17,6 +18,13 @@ public sealed class GameDbContext(
 
     public DbSet<GoldLedgerEntry> GoldLedgerEntries =>
         Set<GoldLedgerEntry>();
+
+    public DbSet<PlayerEquipment> PlayerEquipment =>
+        Set<PlayerEquipment>();
+
+    public DbSet<EquipmentChangeReceipt>
+        EquipmentChangeReceipts =>
+        Set<EquipmentChangeReceipt>();
 
     public DbSet<IdleRewardClaimReceipt> IdleRewardClaimReceipts =>
         Set<IdleRewardClaimReceipt>();

@@ -108,3 +108,9 @@ DB Migration은 API 프로세스 시작 책임에 포함하지 않습니다. 배
 ## 11. 생존과 준비 상태
 
 `/health`는 API 프로세스만 검사하고 `/ready`는 EF Core를 통해 PostgreSQL 실제 연결을 검사합니다. DB 장애 중에는 API 프로세스를 재시작하지 않고 readiness만 503으로 바꿔 새 트래픽을 차단합니다. 자세한 내용은 [Liveness와 Readiness Health Check](HEALTH_CHECKS.md)에 정리합니다.
+
+## 12. 장비 경계
+
+Equipment 모듈은 코드의 장비 마스터와 PostgreSQL의 플레이어 보유 장비를 분리합니다. 장착 변경은 Application이 소유권과 슬롯을 검사하고, PostgreSQL 부분 유일 인덱스가 플레이어별 같은 슬롯의 중복 장착을 최종 차단합니다. 장착 장비 보너스는 게임 상태 조회와 스테이지 판정에 동일하게 반영합니다.
+
+공개 API는 `GET /api/v1/equipment`와 `PUT /api/v1/equipment/{equipmentId}/equipped`이며 변경 API는 멱등 키와 영수증을 사용합니다. 자세한 규칙은 [장비 시스템](EQUIPMENT_SYSTEM.md)에 정리합니다.

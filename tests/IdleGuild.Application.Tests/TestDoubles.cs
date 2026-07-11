@@ -1,6 +1,7 @@
 using IdleGuild.Application.Abstractions.Authentication;
 using IdleGuild.Application.Abstractions.Persistence;
 using IdleGuild.Domain.Economy;
+using IdleGuild.Domain.Equipment;
 using IdleGuild.Domain.GameStates;
 using IdleGuild.Domain.Heroes;
 using IdleGuild.Domain.Rewards;
@@ -16,6 +17,8 @@ internal sealed class InMemoryPlayerGameStateRepository :
     IStageChallengeReceiptRepository,
     IGoldLedgerRepository,
     IGoldLedgerReader,
+    IPlayerEquipmentRepository,
+    IEquipmentChangeReceiptRepository,
     IGameUnitOfWork
 {
     private readonly Dictionary<Guid, PlayerGameState> _states = [];
@@ -26,6 +29,10 @@ internal sealed class InMemoryPlayerGameStateRepository :
     private readonly Dictionary<(Guid, string), StageChallengeReceipt>
         _stageReceipts = [];
     private readonly List<GoldLedgerEntry> _goldLedgerEntries = [];
+    private readonly Dictionary<Guid, PlayerEquipment> _equipment = [];
+    private readonly Dictionary<
+        (Guid, string),
+        EquipmentChangeReceipt> _equipmentReceipts = [];
 
     public int SaveCount { get; private set; }
 
@@ -103,6 +110,63 @@ internal sealed class InMemoryPlayerGameStateRepository :
     /// <summary>유스케이스가 만든 골드 변경 원장을 테스트에서 확인할 수 있게 보관합니다.</summary>
     public void Add(GoldLedgerEntry entry) =>
         _goldLedgerEntries.Add(entry);
+
+    public void Add(PlayerEquipment equipment) =>
+        _equipment.Add(equipment.EquipmentId, equipment);
+
+    public Task<IReadOnlyList<PlayerEquipment>> ListAsync(
+        Guid playerId,
+        CancellationToken cancellationToken = default) =>
+        Task.FromResult<IReadOnlyList<PlayerEquipment>>(
+            _equipment.Values.Where(item =>
+                item.PlayerId == playerId).ToArray());
+
+    public Task<IReadOnlyList<PlayerEquipment>>
+        ListEquippedAsync(
+            Guid playerId,
+            CancellationToken cancellationToken = default) =>
+        Task.FromResult<IReadOnlyList<PlayerEquipment>>(
+            _equipment.Values.Where(item =>
+                item.PlayerId == playerId &&
+                item.IsEquipped).ToArray());
+
+    public Task<PlayerEquipment?> FindForUpdateAsync(
+        Guid playerId,
+        Guid equipmentId,
+        CancellationToken cancellationToken = default)
+    {
+        _equipment.TryGetValue(equipmentId, out var item);
+        return Task.FromResult(
+            item?.PlayerId == playerId ? item : null);
+    }
+
+    public Task<PlayerEquipment?> FindEquippedForUpdateAsync(
+        Guid playerId,
+        EquipmentSlot slot,
+        CancellationToken cancellationToken = default) =>
+        Task.FromResult(_equipment.Values.SingleOrDefault(
+            item =>
+                item.PlayerId == playerId &&
+                item.Slot == slot &&
+                item.IsEquipped));
+
+    Task<EquipmentChangeReceipt?>
+        IEquipmentChangeReceiptRepository.FindAsync(
+            Guid playerId,
+            string idempotencyKey,
+            CancellationToken cancellationToken)
+    {
+        _equipmentReceipts.TryGetValue(
+            (playerId, idempotencyKey),
+            out var receipt);
+        return Task.FromResult(receipt);
+    }
+
+    void IEquipmentChangeReceiptRepository.Add(
+        EquipmentChangeReceipt receipt) =>
+        _equipmentReceipts.Add(
+            (receipt.PlayerId, receipt.IdempotencyKey),
+            receipt);
 
     /// <summary>관리자 Handler 테스트에 최신순 키셋 골드 원장을 제공합니다.</summary>
     public Task<IReadOnlyList<GoldLedgerEntry>>

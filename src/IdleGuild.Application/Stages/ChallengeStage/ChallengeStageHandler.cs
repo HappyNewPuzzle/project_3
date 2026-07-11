@@ -1,5 +1,6 @@
 using IdleGuild.Application.Abstractions.Persistence;
 using IdleGuild.Domain.Economy;
+using IdleGuild.Domain.Equipment;
 using IdleGuild.Domain.Requests;
 using IdleGuild.Domain.Stages;
 
@@ -9,6 +10,7 @@ namespace IdleGuild.Application.Stages.ChallengeStage;
 public sealed class ChallengeStageHandler(
     IPlayerGameStateRepository gameStateRepository,
     IStageChallengeReceiptRepository receiptRepository,
+    IPlayerEquipmentRepository equipmentRepository,
     IGoldLedgerRepository goldLedgerRepository,
     IGameUnitOfWork unitOfWork,
     TimeProvider timeProvider)
@@ -77,8 +79,16 @@ public sealed class ChallengeStageHandler(
                 return null;
             }
 
+            var equipped = await equipmentRepository
+                .ListEquippedAsync(
+                    playerId,
+                    cancellationToken);
+            var equipmentPowerBonus = EquipmentCatalog
+                .CalculateEquippedPowerBonus(equipped);
+
             var settlement = gameState.ChallengeStage(
                 targetStage,
+                equipmentPowerBonus,
                 processedAtUtc);
             var receipt = StageChallengeReceipt.Create(
                 playerId,

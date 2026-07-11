@@ -14,7 +14,9 @@ public static class StageChallengePolicy
     public const int MaxStage = 32;
 
     /// <summary>영웅 레벨로 서버 권위 전투력을 계산합니다.</summary>
-    public static int CalculateHeroPower(int heroLevel)
+    public static int CalculateHeroPower(
+        int heroLevel,
+        int equipmentPowerBonus = 0)
     {
         if (heroLevel < 1 ||
             heroLevel > HeroUpgradePolicy.MaxHeroLevel)
@@ -23,8 +25,15 @@ public static class StageChallengePolicy
                 nameof(heroLevel));
         }
 
+        if (equipmentPowerBonus < 0)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(equipmentPowerBonus));
+        }
+
         return checked(
-            heroLevel * BaseHeroPowerPerLevel);
+            (heroLevel * BaseHeroPowerPerLevel) +
+            equipmentPowerBonus);
     }
 
     /// <summary>지정 스테이지의 요구 전투력을 정확한 정수 연산으로 계산합니다.</summary>

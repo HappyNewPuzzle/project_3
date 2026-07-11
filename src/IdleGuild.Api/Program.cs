@@ -156,6 +156,7 @@ app.MapRewardsEndpoints();
 app.MapHeroesEndpoints();
 app.MapStagesEndpoints();
 app.MapAdminEndpoints();
+app.MapEquipmentEndpoints();
 
 app.Run();
 

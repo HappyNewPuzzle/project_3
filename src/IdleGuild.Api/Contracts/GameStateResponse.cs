@@ -5,6 +5,8 @@ public sealed record GameStateResponse(
     Guid PlayerId,
     long Gold,
     int HeroLevel,
+    int HeroPower,
+    int EquipmentPowerBonus,
     int HighestStage,
     int ProductionBonusPercent,
     int IdleRewardRemainderHundredths,

@@ -38,6 +38,10 @@ public static class DependencyInjection
             GoldLedgerReader>();
         services.AddScoped<IDatabaseReadinessProbe,
             PostgreSqlReadinessProbe>();
+        services.AddScoped<IPlayerEquipmentRepository,
+            PlayerEquipmentRepository>();
+        services.AddScoped<IEquipmentChangeReceiptRepository,
+            EquipmentChangeReceiptRepository>();
         services.AddScoped<IGameUnitOfWork,
             EfGameUnitOfWork>();
         services.AddSingleton(jwtOptions);

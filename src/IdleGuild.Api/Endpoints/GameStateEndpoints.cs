@@ -54,6 +54,8 @@ public static class GameStateEndpoints
                 result.PlayerId,
                 result.Gold,
                 result.HeroLevel,
+                result.HeroPower,
+                result.EquipmentPowerBonus,
                 result.HighestStage,
                 result.ProductionBonusPercent,
                 result.IdleRewardRemainderHundredths,

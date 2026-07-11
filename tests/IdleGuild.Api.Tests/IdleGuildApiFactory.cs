@@ -27,6 +27,8 @@ public sealed class IdleGuildApiFactory : WebApplicationFactory<Program>
             services.RemoveAll<IGoldLedgerRepository>();
             services.RemoveAll<IGoldLedgerReader>();
             services.RemoveAll<IGameUnitOfWork>();
+            services.RemoveAll<IPlayerEquipmentRepository>();
+            services.RemoveAll<IEquipmentChangeReceiptRepository>();
             services.RemoveAll<IDatabaseReadinessProbe>();
             services.AddSingleton<InMemoryPlayerGameStateStore>();
             services.AddSingleton<IPlayerGameStateRepository>(
@@ -53,6 +55,12 @@ public sealed class IdleGuildApiFactory : WebApplicationFactory<Program>
             services.AddSingleton<IDatabaseReadinessProbe>(
                 new StubDatabaseReadinessProbe(
                     canConnect: true));
+            services.AddSingleton<IPlayerEquipmentRepository>(
+                provider => provider.GetRequiredService<
+                    InMemoryPlayerGameStateStore>());
+            services.AddSingleton<IEquipmentChangeReceiptRepository>(
+                provider => provider.GetRequiredService<
+                    InMemoryPlayerGameStateStore>());
         });
     }
 }

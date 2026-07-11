@@ -18,7 +18,9 @@ public sealed class GetGameStateHandlerTests
         repository.Add(PlayerGameState.Create(
             playerId,
             now));
-        var handler = new GetGameStateHandler(repository);
+        var handler = new GetGameStateHandler(
+            repository,
+            repository);
 
         var result = await handler.HandleAsync(playerId);
 
@@ -26,6 +28,8 @@ public sealed class GetGameStateHandlerTests
         Assert.Equal(playerId, result.PlayerId);
         Assert.Equal(0, result.Gold);
         Assert.Equal(1, result.HeroLevel);
+        Assert.Equal(10, result.HeroPower);
+        Assert.Equal(0, result.EquipmentPowerBonus);
         Assert.Equal(1, result.HighestStage);
         Assert.Equal(0, result.ProductionBonusPercent);
         Assert.Equal(0, result.IdleRewardRemainderHundredths);
@@ -38,7 +42,9 @@ public sealed class GetGameStateHandlerTests
     {
         var repository =
             new InMemoryPlayerGameStateRepository();
-        var handler = new GetGameStateHandler(repository);
+        var handler = new GetGameStateHandler(
+            repository,
+            repository);
 
         var result = await handler.HandleAsync(
             Guid.NewGuid());

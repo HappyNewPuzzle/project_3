@@ -20,6 +20,7 @@ public sealed class CreateGuestAccountHandlerTests
         var handler = new CreateGuestAccountHandler(
             repository,
             repository,
+            repository,
             tokenIssuer,
             new StubTimeProvider(now));
 
@@ -35,5 +36,9 @@ public sealed class CreateGuestAccountHandlerTests
         Assert.NotNull(saved);
         Assert.Equal(now, saved.CreatedAtUtc);
         Assert.Equal(0, saved.Gold);
+        var equipment = await repository.ListAsync(
+            result.PlayerId);
+        Assert.Equal(2, equipment.Count);
+        Assert.Single(equipment, item => item.IsEquipped);
     }
 }

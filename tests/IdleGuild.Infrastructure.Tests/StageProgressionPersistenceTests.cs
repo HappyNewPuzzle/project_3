@@ -145,6 +145,7 @@ public sealed class StageProgressionPersistenceTests(
                 new PlayerGameStateRepository(context),
                 readGate),
             new StageChallengeReceiptRepository(context),
+            new PlayerEquipmentRepository(context),
             new GoldLedgerRepository(context),
             new EfGameUnitOfWork(context),
             new FixedTimeProvider(now));

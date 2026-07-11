@@ -117,6 +117,7 @@ public sealed class ChallengeStageHandlerTests
             repository,
             repository,
             repository,
+            repository,
             new StubTimeProvider(now));
 
     private static DateTimeOffset Utc(int hour) =>

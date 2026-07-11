@@ -28,6 +28,7 @@
 - [Step별 진행 이유와 의사결정](Docs/STEP_DECISIONS.md)
 - [서버 MVP 완료 정리](Docs/SERVER_MVP_COMPLETE.md)
 - [서버 고도화 로드맵](Docs/SERVER_HARDENING_ROADMAP.md)
+- [장비 시스템](Docs/EQUIPMENT_SYSTEM.md)
 - [골드 변경 이력 원장](Docs/GOLD_LEDGER.md)
 - [API 요청 속도 제한](Docs/RATE_LIMITING.md)
 - [관리자 조회 API](Docs/ADMIN_API.md)
@@ -47,7 +48,7 @@
 
 ## 현재 상태
 
-서버 MVP를 완료했고 서버 고도화를 진행 중입니다. 골드 원장, Rate Limiting, 관리자 조회, 컨테이너 배포, PostgreSQL readiness까지 구현했습니다. 다음 서버 작업은 장비 시스템 설계와 구현입니다.
+서버 MVP를 완료했고 서버 고도화를 진행 중입니다. 골드 원장, Rate Limiting, 관리자 조회, 컨테이너 배포, PostgreSQL readiness와 서버 권위형 장비 시스템까지 구현했습니다. 다음 서버 작업은 Redis 도입 후보 검토입니다.
 
 ## 로컬 실행
 

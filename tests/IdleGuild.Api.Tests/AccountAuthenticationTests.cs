@@ -37,6 +37,8 @@ public sealed class AccountAuthenticationTests(
         Assert.Equal(guest.PlayerId, state.PlayerId);
         Assert.Equal(0, state.Gold);
         Assert.Equal(1, state.HeroLevel);
+        Assert.Equal(11, state.HeroPower);
+        Assert.Equal(1, state.EquipmentPowerBonus);
         Assert.Equal(1, state.HighestStage);
         Assert.Equal(0, state.ProductionBonusPercent);
     }

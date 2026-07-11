@@ -155,3 +155,11 @@ dotnet tool run dotnet-ef database update `
 `GoldLedgerReaderTests`는 관리자 원장 조회가 실제 PostgreSQL에서 플레이어별 최신순으로 정렬되고 커서 이후의 과거 행만 반환하는지 검증합니다.
 
 Docker를 직접 제어할 수 없는 CI 환경에서는 `IDLEGUILD_TEST_POSTGRES_CONNECTION_STRING` 환경 변수로 준비된 테스트 DB를 지정할 수 있습니다.
+
+## 10. player_equipment와 equipment_change_receipts
+
+`player_equipment`는 장비 인스턴스 ID, 플레이어 ID, 마스터 코드, 슬롯, 장착 여부, 획득 시각과 PostgreSQL `xmin`을 저장합니다. `(player_id, slot) WHERE is_equipped` 부분 유일 인덱스는 한 플레이어가 같은 슬롯에 두 장비를 동시에 장착하지 못하게 합니다.
+
+`equipment_change_receipts`는 `(player_id, idempotency_key)`를 기본 키로 사용하고 요청 장비, 요청 상태, 결과, 교체된 장비와 처리 시각을 저장합니다. 장착 상태와 영수증은 같은 트랜잭션에서 저장됩니다.
+
+`AddEquipmentSystem` Migration이 두 테이블, 외래 키, 체크 제약조건과 인덱스를 생성합니다. `EquipmentPersistenceTests`는 실제 PostgreSQL에서 저장 왕복, 슬롯 유일성, 장착 교체와 영수증 저장을 검증합니다.

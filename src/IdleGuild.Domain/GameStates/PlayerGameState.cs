@@ -160,6 +160,16 @@ public sealed class PlayerGameState
     /// <summary>서버 전투력으로 스테이지를 판정하고 성공 시 생산 구간을 전환합니다.</summary>
     public StageChallengeSettlement ChallengeStage(
         int targetStage,
+        DateTimeOffset requestedAt) =>
+        ChallengeStage(
+            targetStage,
+            equipmentPowerBonus: 0,
+            requestedAt);
+
+    /// <summary>서버가 조회한 장착 장비 보너스를 포함해 스테이지 결과를 판정합니다.</summary>
+    public StageChallengeSettlement ChallengeStage(
+        int targetStage,
+        int equipmentPowerBonus,
         DateTimeOffset requestedAt)
     {
         StageChallengePolicy.ValidateStage(targetStage);
@@ -175,7 +185,8 @@ public sealed class PlayerGameState
         var previousHighestStage = HighestStage;
         var heroPower =
             StageChallengePolicy.CalculateHeroPower(
-                HeroLevel);
+                HeroLevel,
+                equipmentPowerBonus);
         var requiredPower =
             StageChallengePolicy.CalculateRequiredPower(
                 targetStage);
