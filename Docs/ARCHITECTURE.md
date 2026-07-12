@@ -42,6 +42,8 @@ PostgreSQL
 | Progression | 영웅 레벨과 강화 비용 |
 | Battles | 스테이지 도전과 해금 판정 |
 | Admin | 운영자 권한으로 플레이어 상태와 재화 원장 조회 |
+| Equipment | 장비 마스터, 보유 인스턴스, 장착과 전투력 보너스 |
+| Shop | 서버 상품 카탈로그, 모의 구매와 구매 영수증 |
 
 ### 현재 인증 경계
 
@@ -65,7 +67,7 @@ PostgreSQL
 
 `/api/v1/admin` 경로는 서명된 JWT의 `account_type=admin` Claim을 추가로 요구합니다. 일반 게스트는 403으로 차단되며 관리자 API는 현재 상태 변경 명령을 제공하지 않습니다. 골드 원장은 최신순 키셋 페이지로 조회하고 PostgreSQL 복합 인덱스로 뒷받침합니다. 자세한 내용은 [관리자 조회 API](ADMIN_API.md)에 정리합니다.
 
-## 6. API 초안
+## 6. 현재 API
 
 요청·응답 모델은 기능별 DTO로 유지하고, 일반 오류는 `ProblemDetails`로 반환합니다. 게임 규칙상 실패한 판정은 클라이언트가 그대로 표시하고 재시도 정책을 세울 수 있도록 기능 응답 DTO의 `outcome`으로 표현합니다.
 
@@ -76,6 +78,13 @@ PostgreSQL
 | `POST` | `/api/v1/rewards/idle/claim` | 방치 보상 수령 |
 | `POST` | `/api/v1/heroes/main/upgrade` | 주 영웅 강화 |
 | `POST` | `/api/v1/stages/{stage}/challenge` | 스테이지 도전 |
+| `GET` | `/api/v1/equipment` | 보유 장비와 장착 보너스 조회 |
+| `PUT` | `/api/v1/equipment/{equipmentId}/equipped` | 장비 장착 또는 해제 |
+| `GET` | `/api/v1/shop/products` | 모의 상품 카탈로그 조회 |
+| `POST` | `/api/v1/shop/products/{productId}/purchase` | 멱등 모의 구매 |
+| `GET` | `/api/v1/shop/purchases` | 구매 이력 조회 |
+| `GET` | `/api/v1/admin/players/{playerId}` | 관리자 플레이어 상태 조회 |
+| `GET` | `/api/v1/admin/players/{playerId}/gold-ledger` | 관리자 골드 원장 조회 |
 
 자세한 실패 응답 규칙은 [API 오류 계약](API_ERRORS.md)에 정리합니다.
 
@@ -89,9 +98,9 @@ PostgreSQL
 
 ## 8. 운영 관측성
 
-서버는 요청 메서드, 경로, 응답 상태 코드, 소요 시간만 로그로 남깁니다. Authorization 헤더나 Body는 기록하지 않아 토큰과 사용자 데이터가 로그에 섞이지 않게 합니다.
+서버는 요청 메서드, Route Template, 응답 상태 코드, 소요 시간, Trace ID와 인증 플레이어 ID를 구조화 로그로 남깁니다. Authorization 헤더, Body와 멱등 키는 기록하지 않아 토큰과 요청 데이터가 로그에 섞이지 않게 합니다.
 
-처리되지 않은 예외는 전역 예외 처리기가 서버 로그에 남기고 클라이언트에는 `traceId`가 포함된 500 `ProblemDetails`를 반환합니다. 자세한 내용은 [로깅과 예외 처리](OBSERVABILITY.md)에 정리합니다.
+처리되지 않은 예외는 전역 예외 처리기가 서버 로그에 남기고 클라이언트에는 `traceId`가 포함된 500 `ProblemDetails`를 반환합니다. 모든 응답은 `X-Trace-Id` 헤더를 포함하고, 요청 수·5xx·응답 시간은 .NET Meter로 측정합니다. 자세한 내용은 [로깅, 메트릭과 예외 처리](OBSERVABILITY.md)에 정리합니다.
 
 ## 9. 요청 남용 방어
 

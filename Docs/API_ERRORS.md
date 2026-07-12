@@ -39,7 +39,7 @@
 
 ## 4. 멱등 키 오류
 
-보상 수령, 영웅 강화, 스테이지 도전은 모두 `Idempotency-Key` 헤더가 필요합니다.
+보상 수령, 영웅 강화, 스테이지 도전, 장비 변경과 모의 구매는 모두 `Idempotency-Key` 헤더가 필요합니다.
 
 ```http
 Idempotency-Key: claim-20260707-001

@@ -1,6 +1,6 @@
 # 프로젝트 폴더 및 파일 구조
 
-이 문서는 `project3` 저장소에 있는 폴더와 파일의 역할, 생성 이유, 수정 시점을 설명합니다. 현재 프로젝트는 서버 권위형 방치형 게임을 위한 ASP.NET Core 서버이며, PostgreSQL 영속성, 게스트 JWT 인증, 멱등한 방치 보상까지 구현되어 있습니다.
+이 문서는 `project3` 저장소에 있는 폴더와 파일의 역할, 생성 이유, 수정 시점을 설명합니다. 현재 프로젝트는 ASP.NET Core·PostgreSQL 서버 고도화 Step 1~9와 Unity 개발용 클라이언트 API 연동까지 구현되어 있습니다. 뒤쪽의 Step별 추가 설명은 당시 변경 이유를 보존한 기록이며, 현재 상태는 이 문서 상단과 기능별 전용 문서를 우선합니다.
 
 ## 1. 가장 먼저 이해할 구조
 
@@ -17,7 +17,13 @@ project3
 │  ├─ IdleGuild.Application.Tests/
 │  ├─ IdleGuild.Domain.Tests/
 │  └─ IdleGuild.Infrastructure.Tests/
+├─ UnityClient/My project/        Unity 6000.3 Universal 2D 클라이언트
 ├─ compose.yaml                   로컬 PostgreSQL 실행 환경
+├─ compose.api.yaml               API 컨테이너 조합 설정
+├─ Dockerfile                     API 운영 이미지 빌드
+├─ Directory.Build.props          .NET 공통 빌드 규칙
+├─ global.json                    사용할 .NET SDK 버전
+├─ dotnet-tools.json              저장소 로컬 EF Core 도구
 ├─ IdleGuild.sln                  전체 .NET 프로젝트 묶음
 └─ README.md                      프로젝트 시작 안내
 ```
@@ -305,9 +311,27 @@ API liveness와 PostgreSQL readiness의 차이, 상태 코드, Docker·Kubernete
 
 게스트 생성과 인증된 상태 변경 API의 제한량, 분리 키, 429 오류 계약과 다중 서버 확장 조건을 설명합니다. Rate Limit 수치나 프록시·Redis 구성이 달라질 때 수정합니다.
 
+### 현재 추가 문서
+
+| 문서 | 역할 |
+| --- | --- |
+| `API_STRUCTURE.md` | 현재 `IdleGuild.Api`의 모든 폴더와 파일 설명 |
+| `API_ERRORS.md` | ProblemDetails, 멱등 키와 HTTP 오류 계약 |
+| `GOLD_LEDGER.md` | 골드 변경 감사 원장 규칙 |
+| `HERO_UPGRADES.md` | 영웅 강화 공식과 멱등 처리 |
+| `IDLE_REWARDS.md` | 방치 시간 계산과 보상 수령 |
+| `STAGE_PROGRESSION.md` | 스테이지 판정과 진행 저장 |
+| `EQUIPMENT_SYSTEM.md` | 장비 마스터·보유·장착과 전투력 |
+| `MOCK_SHOP.md` | 모의 상품 구매와 실제 결제의 경계 |
+| `REDIS_DECISION.md` | Redis 도입 보류 이유와 재검토 기준 |
+| `OBSERVABILITY.md` | Trace ID, 로그, 메트릭과 장애 조사 |
+| `UNITY_CLIENT_INTEGRATION.md` | Unity 실행 순서와 최신 서버 연동 |
+
 ## 5. `src/IdleGuild.Api/`
 
 HTTP 요청을 받아 Application 또는 Infrastructure에 전달하고 HTTP 응답으로 변환하는 프로젝트입니다. 게임 규칙을 직접 구현하는 장소가 아닙니다.
+
+> 최신 기준: 이 절은 초기 MVP의 학습 기록을 포함합니다. 장비, 모의 상점, Health Check와 관측성까지 포함한 현재 전체 폴더·파일 설명은 [IdleGuild.Api 폴더와 파일 구조](API_STRUCTURE.md)를 기준으로 읽어주세요.
 
 ### `IdleGuild.Api.csproj`
 

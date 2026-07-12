@@ -13,7 +13,7 @@
 
 ## 기술 구성
 
-- Client: Unity / C# (서버 MVP 이후 별도 진행)
+- Client: Unity 6000.3 / C# / Universal 2D
 - Server: ASP.NET Core Web API
 - Database: PostgreSQL
 - ORM: Entity Framework Core
@@ -25,6 +25,7 @@
 
 - [게임 설계](Docs/GAME_DESIGN.md)
 - [서버 아키텍처](Docs/ARCHITECTURE.md)
+- [IdleGuild.Api 폴더와 파일 구조](Docs/API_STRUCTURE.md)
 - [Step별 진행 이유와 의사결정](Docs/STEP_DECISIONS.md)
 - [서버 MVP 완료 정리](Docs/SERVER_MVP_COMPLETE.md)
 - [서버 고도화 로드맵](Docs/SERVER_HARDENING_ROADMAP.md)
