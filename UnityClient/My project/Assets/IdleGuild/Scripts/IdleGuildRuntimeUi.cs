@@ -89,8 +89,11 @@ public sealed class IdleGuildRuntimeUi
         // 어두운 반투명 배경 패널을 만들어 텍스트 가독성을 확보합니다.
         GameObject panel = CreatePanel(canvasObject.transform, "Panel", new Color(0.09f, 0.11f, 0.14f, 0.94f));
         RectTransform panelRect = panel.GetComponent<RectTransform>();
-        Stretch(panelRect);
-        panelRect.offsetMin = new Vector2(28f, 28f);
+        panelRect.anchorMin = new Vector2(1f, 0f);
+        panelRect.anchorMax = new Vector2(1f, 1f);
+        panelRect.pivot = new Vector2(1f, 0.5f);
+        panelRect.sizeDelta = new Vector2(500f, 0f);
+        panelRect.offsetMin = new Vector2(-528f, 28f);
         panelRect.offsetMax = new Vector2(-28f, -28f);
 
         // VerticalLayoutGroup으로 텍스트와 버튼을 위에서 아래로 자동 배치합니다.

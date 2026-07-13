@@ -18,6 +18,7 @@ public sealed class UnityClientBootstrap : MonoBehaviour
     private IdleGuildApiClient api;
     // Play 시 코드로 생성되는 버튼/텍스트 기반 런타임 UI입니다.
     private IdleGuildRuntimeUi ui;
+    private IdleGuildGameWorld gameWorld;
     // 스테이지 입력의 기본값이며, 수동 도전 UI에 전달됩니다.
     private string stageInput = "2";
     // 서버 요청이 진행 중인지 표시해서 중복 클릭을 막는 상태값입니다.
@@ -38,6 +39,8 @@ public sealed class UnityClientBootstrap : MonoBehaviour
         api = new IdleGuildApiClient(() => session.AccessToken);
         // UI 생성과 버튼 콜백 연결을 전담 객체에 맡겨 Bootstrap의 책임을 줄입니다.
         ui = new IdleGuildRuntimeUi();
+        gameWorld = new IdleGuildGameWorld(transform, this);
+        gameWorld.Build();
         // 각 버튼이 눌렸을 때 실행할 코루틴/액션을 런타임 UI에 연결합니다.
         ui.Build(
             transform,
@@ -253,6 +256,7 @@ public sealed class UnityClientBootstrap : MonoBehaviour
 
                 // 도전 결과와 최고 스테이지, 생산 보너스 변화를 로그에 남깁니다.
                 AddLog("Stage " + stage + ": " + result.response.outcome + ", highest " + result.response.highestStageAfter + ", bonus " + result.response.productionBonusPercentAfter + "%" + ReplayText(result.response.isReplay));
+                gameWorld.PlayStageChallenge(stage, result.response.outcome);
             }));
 
         // 수동 도전일 때는 최종 상태를 다시 조회해 화면에 반영합니다.
