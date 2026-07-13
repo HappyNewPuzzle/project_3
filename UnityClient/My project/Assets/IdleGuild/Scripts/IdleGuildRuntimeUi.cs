@@ -232,7 +232,7 @@ public sealed class IdleGuildRuntimeUi
     private static void EnsureEventSystem()
     {
         // 씬에 이미 EventSystem이 있으면 중복 생성하지 않습니다.
-        if (UnityEngine.Object.FindObjectOfType<EventSystem>() != null)
+        if (UnityEngine.Object.FindFirstObjectByType<EventSystem>() != null)
         {
             return;
         }

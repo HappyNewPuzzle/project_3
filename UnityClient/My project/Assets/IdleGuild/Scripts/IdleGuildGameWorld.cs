@@ -6,11 +6,17 @@ public sealed class IdleGuildGameWorld
     // Sprite Sheet는 가로 4프레임, 세로 4개 애니메이션 행으로 구성됩니다.
     private const int SheetColumns = 4;
     private const int SheetRows = 4;
-    // 각 행의 의미를 숫자 대신 이름으로 사용하기 위한 상수입니다.
-    private const int IdleRow = 0;
-    private const int RunRow = 1;
-    private const int AttackRow = 2;
-    private const int HitRow = 3;
+    // Animator Controller와 Editor 빌더가 공통으로 사용하는 int 파라미터 이름입니다.
+    private static readonly int AnimationStateParameter = Animator.StringToHash("State");
+
+    // Sprite Sheet 행과 Animator 상태 값을 같은 순서로 유지하는 애니메이션 상태입니다.
+    private enum ActorAnimationState
+    {
+        Idle = 0,
+        Run = 1,
+        Attack = 2,
+        Hit = 3
+    }
 
     private readonly Transform parent;
     private readonly MonoBehaviour coroutineHost;
@@ -19,6 +25,8 @@ public sealed class IdleGuildGameWorld
     private Transform monster;
     private SpriteRenderer heroRenderer;
     private SpriteRenderer monsterRenderer;
+    private Animator heroAnimator;
+    private Animator monsterAnimator;
     // Resources 폴더의 PNG에서 잘라낸 영웅/몬스터 애니메이션 프레임입니다.
     private Sprite[] heroFrames;
     private Sprite[] monsterFrames;
@@ -64,37 +72,49 @@ public sealed class IdleGuildGameWorld
         heroRenderer.flipX = false;
         monster.gameObject.SetActive(true);
         monsterRenderer.color = Color.white;
-        monsterAnimationRoutine = coroutineHost.StartCoroutine(
-            PlayAnimation(monsterRenderer, monsterFrames, IdleRow, 0.16f, true));
+        StartMonsterLoop(ActorAnimationState.Idle, 0.16f);
 
         // Run 행을 반복 재생하면서 영웅의 Transform을 몬스터 앞으로 이동시킵니다.
         Vector3 attackPoint = monsterHome + new Vector3(-1.1f, 0f, 0f);
-        heroAnimationRoutine = coroutineHost.StartCoroutine(
-            PlayAnimation(heroRenderer, heroFrames, RunRow, 0.09f, true));
+        StartHeroLoop(ActorAnimationState.Run, 0.09f);
         yield return MoveTo(hero, attackPoint, 0.55f);
         StopHeroAnimation();
 
-        // Attack 행 네 프레임을 한 번 재생해 실제 이미지 기반 공격 동작을 보여줍니다.
-        yield return PlayAnimation(heroRenderer, heroFrames, AttackRow, 0.10f, false);
+        // Animator의 Attack 상태를 한 번 재생하고 클립 길이만큼 기다립니다.
+        yield return PlayActorOnce(
+            heroAnimator,
+            heroRenderer,
+            heroFrames,
+            ActorAnimationState.Attack,
+            0.10f);
 
         if (string.Equals(outcome, "succeeded", System.StringComparison.OrdinalIgnoreCase))
         {
             // 승리하면 슬라임의 Hit 행을 재생한 뒤 밀려나며 사라지게 합니다.
             StopMonsterAnimation();
-            yield return PlayAnimation(monsterRenderer, monsterFrames, HitRow, 0.10f, false);
+            yield return PlayActorOnce(
+                monsterAnimator,
+                monsterRenderer,
+                monsterFrames,
+                ActorAnimationState.Hit,
+                0.10f);
             yield return KnockOutMonster();
         }
         else
         {
             // 실패하면 영웅의 Hit 행을 재생하고 원래 공격 위치로 튕겨 돌아옵니다.
-            yield return PlayAnimation(heroRenderer, heroFrames, HitRow, 0.10f, false);
+            yield return PlayActorOnce(
+                heroAnimator,
+                heroRenderer,
+                heroFrames,
+                ActorAnimationState.Hit,
+                0.10f);
             yield return BumpBack(hero);
         }
 
         // 복귀할 때는 왼쪽을 보도록 flipX를 켜고 Run 행을 다시 반복합니다.
         heroRenderer.flipX = true;
-        heroAnimationRoutine = coroutineHost.StartCoroutine(
-            PlayAnimation(heroRenderer, heroFrames, RunRow, 0.09f, true));
+        StartHeroLoop(ActorAnimationState.Run, 0.09f);
         yield return MoveTo(hero, heroHome, 0.45f);
         StopHeroAnimation();
         heroRenderer.flipX = false;
@@ -108,7 +128,7 @@ public sealed class IdleGuildGameWorld
     private static IEnumerator PlayAnimation(
         SpriteRenderer renderer,
         Sprite[] frames,
-        int row,
+        ActorAnimationState state,
         float frameDuration,
         bool loop)
     {
@@ -119,7 +139,7 @@ public sealed class IdleGuildGameWorld
             yield break;
         }
 
-        int firstFrame = row * SheetColumns;
+        int firstFrame = (int)state * SheetColumns;
         do
         {
             for (int column = 0; column < SheetColumns; column++)
@@ -131,18 +151,72 @@ public sealed class IdleGuildGameWorld
         while (loop);
     }
 
+    // Animator 애셋이 있으면 Controller 상태를, 없으면 Coroutine 프레임을 한 번 재생합니다.
+    private static IEnumerator PlayActorOnce(
+        Animator animator,
+        SpriteRenderer renderer,
+        Sprite[] frames,
+        ActorAnimationState state,
+        float fallbackFrameDuration)
+    {
+        if (HasAnimatorController(animator))
+        {
+            SetAnimatorState(animator, state);
+            yield return new WaitForSeconds(fallbackFrameDuration * SheetColumns);
+            yield break;
+        }
+
+        yield return PlayAnimation(renderer, frames, state, fallbackFrameDuration, false);
+    }
+
     // 영웅과 활성 상태인 몬스터의 대기 동작을 시작합니다.
     private void StartIdleAnimations()
     {
         StopActorAnimations();
-        heroAnimationRoutine = coroutineHost.StartCoroutine(
-            PlayAnimation(heroRenderer, heroFrames, IdleRow, 0.18f, true));
+        StartHeroLoop(ActorAnimationState.Idle, 0.18f);
 
         if (monster.gameObject.activeSelf)
         {
-            monsterAnimationRoutine = coroutineHost.StartCoroutine(
-                PlayAnimation(monsterRenderer, monsterFrames, IdleRow, 0.18f, true));
+            StartMonsterLoop(ActorAnimationState.Idle, 0.18f);
         }
+    }
+
+    // 영웅의 반복 상태를 Animator 또는 fallback Coroutine으로 시작합니다.
+    private void StartHeroLoop(ActorAnimationState state, float fallbackFrameDuration)
+    {
+        StopHeroAnimation();
+        if (HasAnimatorController(heroAnimator))
+        {
+            SetAnimatorState(heroAnimator, state);
+            return;
+        }
+
+        heroAnimationRoutine = coroutineHost.StartCoroutine(
+            PlayAnimation(heroRenderer, heroFrames, state, fallbackFrameDuration, true));
+    }
+
+    // 몬스터의 반복 상태를 Animator 또는 fallback Coroutine으로 시작합니다.
+    private void StartMonsterLoop(ActorAnimationState state, float fallbackFrameDuration)
+    {
+        StopMonsterAnimation();
+        if (HasAnimatorController(monsterAnimator))
+        {
+            SetAnimatorState(monsterAnimator, state);
+            return;
+        }
+
+        monsterAnimationRoutine = coroutineHost.StartCoroutine(
+            PlayAnimation(monsterRenderer, monsterFrames, state, fallbackFrameDuration, true));
+    }
+
+    private static bool HasAnimatorController(Animator animator)
+    {
+        return animator != null && animator.runtimeAnimatorController != null;
+    }
+
+    private static void SetAnimatorState(Animator animator, ActorAnimationState state)
+    {
+        animator.SetInteger(AnimationStateParameter, (int)state);
     }
 
     // 현재 캐릭터 애니메이션 코루틴을 모두 안전하게 중지합니다.
@@ -250,6 +324,10 @@ public sealed class IdleGuildGameWorld
         heroRenderer = CreateActor("Pixel Hero", heroHome, heroSprite, 5);
         monsterRenderer = CreateActor("Training Slime", monsterHome, monsterSprite, 5);
 
+        // Resources에 생성된 Controller를 각 캐릭터의 Animator 컴포넌트에 연결합니다.
+        heroAnimator = CreateAnimator(heroRenderer.gameObject, "Animations/Hero/HeroAnimator");
+        monsterAnimator = CreateAnimator(monsterRenderer.gameObject, "Animations/Slime/SlimeAnimator");
+
         hero = heroRenderer.transform;
         monster = monsterRenderer.transform;
     }
@@ -257,6 +335,14 @@ public sealed class IdleGuildGameWorld
     // Resources의 4x4 PNG를 위에서 아래, 왼쪽에서 오른쪽 순서의 Sprite 배열로 나눕니다.
     private static Sprite[] LoadSpriteSheet(string resourcePath)
     {
+        // Editor 빌더가 분할한 Sprite 하위 애셋이 있으면 이름 규칙대로 먼저 불러옵니다.
+        Sprite[] importedFrames = LoadImportedSpriteFrames(resourcePath);
+        if (importedFrames != null)
+        {
+            return importedFrames;
+        }
+
+        // Animator 애셋 생성 전에도 동작하도록 Texture를 런타임에 나누는 fallback을 유지합니다.
         Texture2D texture = Resources.Load<Texture2D>(resourcePath);
         if (texture == null)
         {
@@ -291,6 +377,54 @@ public sealed class IdleGuildGameWorld
         }
 
         return frames;
+    }
+
+    // Multiple Sprite Import로 생성된 하위 Sprite를 상태 행/열 순서의 배열로 정렬합니다.
+    private static Sprite[] LoadImportedSpriteFrames(string resourcePath)
+    {
+        Sprite[] sprites = Resources.LoadAll<Sprite>(resourcePath);
+        if (sprites == null || sprites.Length != SheetColumns * SheetRows)
+        {
+            return null;
+        }
+
+        string characterName = resourcePath.EndsWith("hero-spritesheet") ? "hero" : "slime";
+        string[] stateNames = { "idle", "run", "attack", "hit" };
+        Sprite[] orderedFrames = new Sprite[SheetColumns * SheetRows];
+
+        for (int row = 0; row < SheetRows; row++)
+        {
+            for (int column = 0; column < SheetColumns; column++)
+            {
+                string expectedName = characterName + "_" + stateNames[row] + "_" + column;
+                Sprite frame = System.Array.Find(sprites, sprite => sprite.name == expectedName);
+                if (frame == null)
+                {
+                    Debug.LogWarning("Imported Sprite frame was not found: " + expectedName);
+                    return null;
+                }
+
+                orderedFrames[row * SheetColumns + column] = frame;
+            }
+        }
+
+        return orderedFrames;
+    }
+
+    // 캐릭터 GameObject에 Animator를 붙이고 Resources의 Controller를 할당합니다.
+    private static Animator CreateAnimator(GameObject actor, string controllerResourcePath)
+    {
+        Animator animator = actor.AddComponent<Animator>();
+        animator.runtimeAnimatorController = Resources.Load<RuntimeAnimatorController>(controllerResourcePath);
+        animator.applyRootMotion = false;
+
+        if (animator.runtimeAnimatorController == null)
+        {
+            animator.enabled = false;
+            Debug.LogWarning("Animator Controller was not found in Resources: " + controllerResourcePath);
+        }
+
+        return animator;
     }
 
     private SpriteRenderer CreateActor(string objectName, Vector3 position, Sprite sprite, int sortingOrder)
