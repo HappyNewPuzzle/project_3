@@ -121,6 +121,8 @@ Mock API      실제 HTTP API
 | `IdleGuildSession.cs` | 토큰과 플레이어 ID를 `PlayerPrefs`에 저장/복원 | `Load()`, `Save()`, `Clear()` |
 | `IdleGuildRuntimeUi.cs` | 실행 중 Canvas, 텍스트, 버튼, 입력 필드를 코드로 생성 | `Build()`, `Refresh()` |
 | `IdleGuildGameWorld.cs` | 배경, 캐릭터, Animator 상태와 전투 이동 순서 제어 | `Build()`, `PlayCombat()` |
+| `IdleGuildBattlePresentation.cs` | 서버 승패를 HUD용 체력/데미지 연출 데이터로 변환 | `Create()` |
+| `IdleGuildWorldHealthBar.cs` | 캐릭터를 따라다니는 Sprite 기반 체력 바 | `SetHealth()` |
 | `Editor/IdleGuildAnimationAssetBuilder.cs` | Sprite 분할, Clip과 Controller 생성 자동화 | `RebuildAnimationAssets()` |
 | `Resources/Sprites/*.png` | 영웅과 슬라임의 4x4 애니메이션 Sprite Sheet | 각 행의 Idle/Run/Attack/Hit 프레임 |
 | `Resources/Animations` | 영웅/슬라임 Animation Clip과 Animator Controller | `HeroAnimator`, `SlimeAnimator` |
@@ -224,6 +226,30 @@ Animator:  Idle / Run / Attack / Hit Sprite 프레임 재생
 ```
 
 `IdleGuildAnimationAssetBuilder`는 반복 작업을 자동화하는 Editor 전용 코드입니다. `Assets/IdleGuild/Editor` 폴더의 코드는 게임 빌드에 포함되지 않고 Unity Editor에서만 실행됩니다. Unity 상단 메뉴의 `Idle Guild > Rebuild Character Animation Assets`로 애셋을 다시 만들 수 있습니다.
+
+### 월드 공간 HUD와 전투 연출 데이터
+
+체력 바는 Canvas UI가 아니라 캐릭터 GameObject 아래에 붙는 `SpriteRenderer` 오브젝트입니다. 부모가 움직이면 자식 Transform도 함께 움직이므로 영웅이 달려갈 때 체력 바도 자동으로 따라갑니다.
+
+현재 HP 비율은 다음처럼 계산합니다.
+
+```text
+HP 비율 = 현재 HP / 최대 HP
+Fill 폭 = 전체 체력 바 폭 x HP 비율
+```
+
+Sprite의 Pivot이 중앙이므로 폭만 줄이면 양쪽에서 동시에 작아집니다. `IdleGuildWorldHealthBar.SetHealth()`는 Fill 중심도 함께 왼쪽으로 이동시켜 체력이 오른쪽에서 왼쪽 방향으로 줄어드는 것처럼 보이게 합니다.
+
+현재 서버의 스테이지 API는 `succeeded` 또는 `failed` 같은 결과를 반환하지만 상세 HP와 공격 로그는 반환하지 않습니다. 따라서 다음 두 데이터를 구분해야 합니다.
+
+| 데이터 | 출처 | 용도 |
+| --- | --- | --- |
+| 스테이지 승패 | 서버 API | 실제 진행 상태와 최고 스테이지 결정 |
+| HP와 데미지 숫자 | `IdleGuildBattlePresentation` | 현재 프로토타입의 화면 연출 |
+
+클라이언트가 보여주는 데미지 숫자로 서버의 골드, 스테이지, 영웅 레벨을 변경하면 안 됩니다. 향후 서버가 실제 전투 로그를 제공하면 Presentation 모델의 임시 계산을 서버 값 매핑으로 교체할 수 있습니다.
+
+데미지 팝업은 `TextMesh`를 월드 위치에 만들고 Coroutine으로 위쪽 이동과 alpha 감소를 수행합니다. 타격 이펙트는 1x1 Sprite 여덟 개를 원형 방향으로 이동시킨 후 제거합니다. 둘 다 전투가 끝난 뒤 남지 않는 일회성 오브젝트입니다.
 
 ## 7. 서버 API 기능 흐름
 
@@ -374,15 +400,52 @@ Play 확인 방법:
 - 영웅 이동 방향 전환 시 Sprite가 왼쪽을 향했다가 복귀 후 오른쪽을 향해야 합니다.
 - 같은 Stage를 여러 번 실행해도 Animator 상태와 캐릭터 위치가 초기화되어야 합니다.
 
+### Step 9: 전투 HUD와 타격 피드백
+
+- 영웅과 슬라임 머리 위에 월드 공간 체력 바를 추가했습니다.
+- 공격 시 체력 바가 부드럽게 감소하고 데미지 숫자가 위로 떠오릅니다.
+- 주황/노랑 픽셀 타격 플래시가 공격 지점에서 퍼집니다.
+- 화면 상단에 현재 Stage를, 전투 후에는 `VICTORY` 또는 `DEFEAT`를 표시합니다.
+- 실패 시 슬라임의 Attack 애니메이션과 영웅 피격/체력 감소를 추가했습니다.
+- 서버 승패와 클라이언트 연출용 HP를 `IdleGuildBattlePresentation`으로 분리했습니다.
+- 코드 생성 Sprite를 Full Rect Mesh로 바꿔 Sliced Renderer 경고를 제거했습니다.
+- 학습 개념: World Space HUD, 부모/자식 Transform, HP 정규화, TextMesh, alpha, 일회성 이펙트, Presentation 모델.
+
+Play 확인 방법:
+
+1. Unity에서 `MainScene`을 열고 Play를 누릅니다.
+2. Mock 모드에서 `Guest Login`, `Claim`, `Upgrade`를 순서대로 실행합니다.
+3. Stage `2`에 도전해 승리 연출을 확인합니다.
+4. 영웅이 공격할 때 슬라임 체력 바가 0까지 줄어드는지 확인합니다.
+5. 슬라임 위에 노란 데미지 숫자와 픽셀 타격 이펙트가 나타나는지 확인합니다.
+6. 화면 상단에 `STAGE 2`, 전투 후 `VICTORY`가 표시되는지 확인합니다.
+7. 영웅을 강화하지 않은 새 Mock 실행에서 더 높은 Stage에 도전해 패배 연출도 확인합니다.
+8. 패배 시 슬라임이 반격하고 영웅 체력 바, 붉은 데미지 숫자, `DEFEAT`가 표시되는지 확인합니다.
+
+Hierarchy 학습 방법:
+
+1. Play 중 `Pixel Hero` 왼쪽 화살표를 열어 `Hero Health Bar` 자식을 확인합니다.
+2. `Hero Health Bar` 아래에 `Background`와 `Fill`이 있는지 확인합니다.
+3. 전투 중 `Fill`의 Scale X와 Position X가 함께 변하는지 Inspector에서 관찰합니다.
+4. 공격 순간 생성되는 `Damage Popup`, `Hit Effect`가 잠시 후 자동 삭제되는지 확인합니다.
+
+정상 동작 기준:
+
+- 체력 바가 캐릭터를 따라 움직이고 캐릭터 크기에 따라 과도하게 확대되지 않아야 합니다.
+- 데미지 숫자와 타격 픽셀이 캐릭터 뒤가 아니라 앞에 보여야 합니다.
+- 승리 시 몬스터 HP가 0, 패배 시 영웅 HP가 0이 되어야 합니다.
+- 다음 도전을 시작하면 양쪽 체력과 Stage 표시가 새 값으로 초기화되어야 합니다.
+- Console에 Sprite Tiling, Font, Animator 관련 오류나 경고가 없어야 합니다.
+
 ## 10. 다음 학습 Step
 
-다음 단계에서는 전투 장면에 실제 게임 정보와 반응을 추가합니다.
+다음 단계에서는 런타임 코드로 생성하는 오브젝트를 Unity Prefab과 Scene 편집 구조로 옮기기 시작합니다.
 
-1. 영웅과 몬스터 체력 바를 추가합니다.
-2. 공격 순간 데미지 숫자와 타격 이펙트를 표시합니다.
-3. 스테이지 번호와 승리/패배 결과를 게임 화면에 표시합니다.
-4. 서버 결과와 시각 연출 데이터를 분리합니다.
-5. 런타임 생성 오브젝트를 Prefab 구조로 옮기기 시작합니다.
+1. 영웅과 슬라임 GameObject를 Prefab으로 만듭니다.
+2. 체력 바를 재사용 가능한 Prefab 구조로 만듭니다.
+3. `MainScene`에서 카메라, 배경, 전투 위치를 직접 편집합니다.
+4. 코드 생성 방식과 Inspector 참조 방식의 차이를 배웁니다.
+5. 런타임 fallback을 유지하면서 Prefab 기반 로딩으로 전환합니다.
 
 이 Step부터는 Unity Editor에서 직접 만드는 작업과 C# 코드 작업을 함께 진행합니다. 각 작업 후에는 이 문서의 Step 기록, 직접 실행 절차, 정상 동작 기준을 함께 갱신합니다.
 

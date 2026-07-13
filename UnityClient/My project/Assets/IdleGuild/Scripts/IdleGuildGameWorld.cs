@@ -27,6 +27,11 @@ public sealed class IdleGuildGameWorld
     private SpriteRenderer monsterRenderer;
     private Animator heroAnimator;
     private Animator monsterAnimator;
+    private IdleGuildWorldHealthBar heroHealthBar;
+    private IdleGuildWorldHealthBar monsterHealthBar;
+    private TextMesh stageText;
+    private TextMesh resultText;
+    private Sprite hudPixelSprite;
     // Resources 폴더의 PNG에서 잘라낸 영웅/몬스터 애니메이션 프레임입니다.
     private Sprite[] heroFrames;
     private Sprite[] monsterFrames;
@@ -50,6 +55,7 @@ public sealed class IdleGuildGameWorld
         CreateCameraBackdrop();
         CreateGround();
         CreateActors();
+        CreateBattleHud();
         StartIdleAnimations();
     }
 
@@ -65,6 +71,8 @@ public sealed class IdleGuildGameWorld
 
     private IEnumerator PlayCombat(int stage, string outcome)
     {
+        // 서버 결과를 HUD와 전투 연출에서 사용할 클라이언트 전용 표시 데이터로 변환합니다.
+        IdleGuildBattlePresentation presentation = IdleGuildBattlePresentation.Create(stage, outcome);
         // 이전 Idle 애니메이션을 멈추고 전투 시작 상태로 되돌립니다.
         StopActorAnimations();
         hero.position = heroHome;
@@ -72,6 +80,7 @@ public sealed class IdleGuildGameWorld
         heroRenderer.flipX = false;
         monster.gameObject.SetActive(true);
         monsterRenderer.color = Color.white;
+        PrepareBattleHud(presentation);
         StartMonsterLoop(ActorAnimationState.Idle, 0.16f);
 
         // Run 행을 반복 재생하면서 영웅의 Transform을 몬스터 앞으로 이동시킵니다.
@@ -88,21 +97,52 @@ public sealed class IdleGuildGameWorld
             ActorAnimationState.Attack,
             0.10f);
 
-        if (string.Equals(outcome, "succeeded", System.StringComparison.OrdinalIgnoreCase))
+        // 공격 결과를 체력 바, 데미지 숫자, 타격 플래시에 동시에 반영합니다.
+        coroutineHost.StartCoroutine(ShowDamagePopup(
+            monster.position + new Vector3(0f, 1.4f, 0f),
+            presentation.DamageToMonster,
+            new Color(1f, 0.82f, 0.2f, 1f)));
+        coroutineHost.StartCoroutine(PlayHitEffect(monster.position + new Vector3(0f, 0.8f, 0f)));
+        yield return AnimateHealth(
+            monsterHealthBar,
+            presentation.MonsterMaxHealth,
+            presentation.MonsterHealthAfter,
+            presentation.MonsterMaxHealth,
+            0.28f);
+
+        StopMonsterAnimation();
+        yield return PlayActorOnce(
+            monsterAnimator,
+            monsterRenderer,
+            monsterFrames,
+            ActorAnimationState.Hit,
+            0.10f);
+
+        if (presentation.IsVictory)
         {
-            // 승리하면 슬라임의 Hit 행을 재생한 뒤 밀려나며 사라지게 합니다.
-            StopMonsterAnimation();
-            yield return PlayActorOnce(
-                monsterAnimator,
-                monsterRenderer,
-                monsterFrames,
-                ActorAnimationState.Hit,
-                0.10f);
+            // 승리하면 체력이 0이 된 슬라임이 밀려나며 사라집니다.
             yield return KnockOutMonster();
         }
         else
         {
-            // 실패하면 영웅의 Hit 행을 재생하고 원래 공격 위치로 튕겨 돌아옵니다.
+            // 실패하면 살아남은 슬라임이 반격하고 영웅 체력과 피격 연출을 갱신합니다.
+            yield return PlayActorOnce(
+                monsterAnimator,
+                monsterRenderer,
+                monsterFrames,
+                ActorAnimationState.Attack,
+                0.10f);
+            coroutineHost.StartCoroutine(ShowDamagePopup(
+                hero.position + new Vector3(0f, 1.5f, 0f),
+                presentation.DamageToHero,
+                new Color(1f, 0.36f, 0.3f, 1f)));
+            coroutineHost.StartCoroutine(PlayHitEffect(hero.position + new Vector3(0f, 0.9f, 0f)));
+            yield return AnimateHealth(
+                heroHealthBar,
+                presentation.HeroMaxHealth,
+                presentation.HeroHealthAfter,
+                presentation.HeroMaxHealth,
+                0.28f);
             yield return PlayActorOnce(
                 heroAnimator,
                 heroRenderer,
@@ -111,6 +151,8 @@ public sealed class IdleGuildGameWorld
                 0.10f);
             yield return BumpBack(hero);
         }
+
+        ShowBattleResult(presentation);
 
         // 복귀할 때는 왼쪽을 보도록 flipX를 켜고 Run 행을 다시 반복합니다.
         heroRenderer.flipX = true;
@@ -122,6 +164,125 @@ public sealed class IdleGuildGameWorld
         // 전투가 끝나면 살아 있는 캐릭터를 다시 Idle 애니메이션으로 전환합니다.
         StartIdleAnimations();
         combatRoutine = null;
+    }
+
+    // 전투 시작 시 스테이지 제목과 양쪽 체력을 초기 상태로 되돌립니다.
+    private void PrepareBattleHud(IdleGuildBattlePresentation presentation)
+    {
+        stageText.text = presentation.StageLabel;
+        resultText.gameObject.SetActive(false);
+        heroHealthBar.SetHealth(presentation.HeroMaxHealth, presentation.HeroMaxHealth);
+        monsterHealthBar.SetHealth(presentation.MonsterMaxHealth, presentation.MonsterMaxHealth);
+    }
+
+    // 서버 승패 결과를 화면 중앙의 결과 텍스트로 표시합니다.
+    private void ShowBattleResult(IdleGuildBattlePresentation presentation)
+    {
+        resultText.text = presentation.ResultLabel;
+        resultText.color = presentation.IsVictory
+            ? new Color(1f, 0.84f, 0.28f, 1f)
+            : new Color(1f, 0.38f, 0.34f, 1f);
+        resultText.gameObject.SetActive(true);
+    }
+
+    // 체력 바를 시작 HP에서 목표 HP까지 부드럽게 감소시킵니다.
+    private static IEnumerator AnimateHealth(
+        IdleGuildWorldHealthBar healthBar,
+        int fromHealth,
+        int toHealth,
+        int maxHealth,
+        float duration)
+    {
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float progress = Mathf.Clamp01(elapsed / duration);
+            int currentHealth = Mathf.RoundToInt(Mathf.Lerp(fromHealth, toHealth, progress));
+            healthBar.SetHealth(currentHealth, maxHealth);
+            yield return null;
+        }
+
+        healthBar.SetHealth(toHealth, maxHealth);
+    }
+
+    // 공격 위치에서 데미지 숫자가 위로 떠오르며 사라지는 연출입니다.
+    private IEnumerator ShowDamagePopup(Vector3 worldPosition, int damage, Color color)
+    {
+        TextMesh popup = CreateWorldText(
+            "Damage Popup",
+            "-" + damage,
+            worldPosition,
+            0.13f,
+            40,
+            color,
+            32);
+
+        float elapsed = 0f;
+        const float duration = 0.7f;
+        Vector3 start = popup.transform.position;
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float progress = Mathf.Clamp01(elapsed / duration);
+            popup.transform.position = start + new Vector3(0f, 0.65f * progress, 0f);
+            popup.color = new Color(color.r, color.g, color.b, 1f - progress);
+            yield return null;
+        }
+
+        Object.Destroy(popup.gameObject);
+    }
+
+    // 작은 사각 Sprite들이 공격 지점에서 퍼져 나가는 타격 플래시입니다.
+    private IEnumerator PlayHitEffect(Vector3 worldPosition)
+    {
+        const int particleCount = 8;
+        GameObject effectRoot = new GameObject("Hit Effect");
+        effectRoot.transform.SetParent(parent, false);
+        effectRoot.transform.position = worldPosition;
+        Transform[] particles = new Transform[particleCount];
+        SpriteRenderer[] renderers = new SpriteRenderer[particleCount];
+        Vector3[] directions = new Vector3[particleCount];
+
+        for (int index = 0; index < particleCount; index++)
+        {
+            float angle = index * Mathf.PI * 2f / particleCount;
+            GameObject particle = new GameObject("Hit Pixel " + index);
+            particle.transform.SetParent(effectRoot.transform, false);
+            particle.transform.localScale = new Vector3(0.16f, 0.16f, 1f);
+            particles[index] = particle.transform;
+
+            SpriteRenderer renderer = particle.AddComponent<SpriteRenderer>();
+            renderer.sprite = hudPixelSprite;
+            renderer.color = index % 2 == 0
+                ? new Color(1f, 0.9f, 0.25f, 1f)
+                : new Color(1f, 0.45f, 0.18f, 1f);
+            renderer.sortingOrder = 28;
+            renderers[index] = renderer;
+
+            // 현재 위치와 분리된 단위 방향을 저장해 중심에서 바깥쪽으로만 이동시킵니다.
+            directions[index] = new Vector3(Mathf.Cos(angle), Mathf.Sin(angle), 0f);
+            particle.transform.localPosition = directions[index] * 0.12f;
+        }
+
+        float elapsed = 0f;
+        const float duration = 0.34f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float progress = Mathf.Clamp01(elapsed / duration);
+            for (int index = 0; index < particleCount; index++)
+            {
+                particles[index].localPosition = directions[index] * (0.12f + 0.58f * progress);
+                Color particleColor = renderers[index].color;
+                particleColor.a = 1f - progress;
+                renderers[index].color = particleColor;
+            }
+
+            yield return null;
+        }
+
+        Object.Destroy(effectRoot);
     }
 
     // 지정한 Sprite Sheet 행의 네 프레임을 순서대로 재생합니다.
@@ -332,6 +493,71 @@ public sealed class IdleGuildGameWorld
         monster = monsterRenderer.transform;
     }
 
+    // 체력 바와 스테이지/결과 텍스트 등 전투 중 계속 사용하는 HUD를 생성합니다.
+    private void CreateBattleHud()
+    {
+        // PPU 1을 사용해 체력 바의 Transform 크기가 월드 단위와 직접 일치하게 합니다.
+        hudPixelSprite = CreateSolidSprite("HUD Pixel", 1, 1, Color.white, 1f);
+        heroHealthBar = new IdleGuildWorldHealthBar(
+            hero,
+            hudPixelSprite,
+            "Hero Health Bar",
+            new Color(0.18f, 0.78f, 0.42f, 1f));
+        monsterHealthBar = new IdleGuildWorldHealthBar(
+            monster,
+            hudPixelSprite,
+            "Monster Health Bar",
+            new Color(0.92f, 0.26f, 0.25f, 1f));
+
+        stageText = CreateWorldText(
+            "Stage Label",
+            "STAGE READY",
+            new Vector3(0f, 2.55f, 0f),
+            0.12f,
+            34,
+            new Color(0.9f, 0.93f, 0.96f, 1f),
+            24);
+        resultText = CreateWorldText(
+            "Battle Result",
+            string.Empty,
+            new Vector3(0f, 1.9f, 0f),
+            0.16f,
+            44,
+            Color.white,
+            25);
+        resultText.gameObject.SetActive(false);
+    }
+
+    // 월드 공간에 정렬 순서를 가진 TextMesh를 생성합니다.
+    private TextMesh CreateWorldText(
+        string objectName,
+        string value,
+        Vector3 position,
+        float characterSize,
+        int fontSize,
+        Color color,
+        int sortingOrder)
+    {
+        GameObject textObject = new GameObject(objectName);
+        textObject.transform.SetParent(parent, false);
+        textObject.transform.position = position;
+
+        TextMesh textMesh = textObject.AddComponent<TextMesh>();
+        Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        textMesh.font = font;
+        textMesh.text = value;
+        textMesh.fontSize = fontSize;
+        textMesh.characterSize = characterSize;
+        textMesh.anchor = TextAnchor.MiddleCenter;
+        textMesh.alignment = TextAlignment.Center;
+        textMesh.color = color;
+
+        MeshRenderer renderer = textObject.GetComponent<MeshRenderer>();
+        renderer.sharedMaterial = font.material;
+        renderer.sortingOrder = sortingOrder;
+        return textMesh;
+    }
+
     // Resources의 4x4 PNG를 위에서 아래, 왼쪽에서 오른쪽 순서의 Sprite 배열로 나눕니다.
     private static Sprite[] LoadSpriteSheet(string resourcePath)
     {
@@ -475,11 +701,16 @@ public sealed class IdleGuildGameWorld
         return ToSprite(texture);
     }
 
-    private static Sprite CreateSolidSprite(string textureName, int width, int height, Color color)
+    private static Sprite CreateSolidSprite(
+        string textureName,
+        int width,
+        int height,
+        Color color,
+        float pixelsPerUnit = 16f)
     {
         Texture2D texture = CreatePixelTexture(width, height, color);
         texture.name = textureName;
-        return ToSprite(texture);
+        return ToSprite(texture, pixelsPerUnit);
     }
 
     private static Texture2D CreatePixelTexture(int width, int height, Color fill)
@@ -511,9 +742,16 @@ public sealed class IdleGuildGameWorld
         texture.Apply();
     }
 
-    private static Sprite ToSprite(Texture2D texture)
+    private static Sprite ToSprite(Texture2D texture, float pixelsPerUnit = 16f)
     {
-        return Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0f), 16f);
+        // FullRect Mesh를 사용하면 Sliced SpriteRenderer에서 Tiling 경고가 발생하지 않습니다.
+        return Sprite.Create(
+            texture,
+            new Rect(0, 0, texture.width, texture.height),
+            new Vector2(0.5f, 0f),
+            pixelsPerUnit,
+            0,
+            SpriteMeshType.FullRect);
     }
 
     private static float Smooth(float t)
