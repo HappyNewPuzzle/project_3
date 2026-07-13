@@ -3,8 +3,22 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.Networking;
 
+public interface IIdleGuildApiClient
+{
+    IEnumerator GetSystemStatus(string apiBaseUrl, Action<IdleGuildApiResult<SystemStatusResponse>> onComplete);
+    IEnumerator GuestLogin(string apiBaseUrl, Action<IdleGuildApiResult<GuestLoginResponse>> onComplete);
+    IEnumerator GetGameState(string apiBaseUrl, Action<IdleGuildApiResult<GameStateResponse>> onComplete);
+    IEnumerator ClaimIdleReward(string apiBaseUrl, string idempotencyKey, Action<IdleGuildApiResult<ClaimIdleRewardResponse>> onComplete);
+    IEnumerator UpgradeMainHero(string apiBaseUrl, string idempotencyKey, Action<IdleGuildApiResult<UpgradeHeroResponse>> onComplete);
+    IEnumerator ChallengeStage(string apiBaseUrl, int stage, string idempotencyKey, Action<IdleGuildApiResult<ChallengeStageResponse>> onComplete);
+    IEnumerator GetEquipment(string apiBaseUrl, Action<IdleGuildApiResult<EquipmentInventoryResponse>> onComplete);
+    IEnumerator Equip(string apiBaseUrl, string equipmentId, string idempotencyKey, Action<IdleGuildApiResult<ChangeEquipmentResponse>> onComplete);
+    IEnumerator GetShopProducts(string apiBaseUrl, Action<IdleGuildApiResult<ShopCatalogResponse>> onComplete);
+    IEnumerator Purchase(string apiBaseUrl, string productId, string idempotencyKey, Action<IdleGuildApiResult<ShopPurchaseResponse>> onComplete);
+}
+
 // Idle Guild 서버 MVP HTTP API를 UnityWebRequest 코루틴으로 호출하는 전담 클라이언트입니다.
-public sealed class IdleGuildApiClient
+public sealed class IdleGuildApiClient : IIdleGuildApiClient
 {
     // 요청 직전에 최신 accessToken을 가져오기 위한 함수입니다.
     private readonly Func<string> getAccessToken;

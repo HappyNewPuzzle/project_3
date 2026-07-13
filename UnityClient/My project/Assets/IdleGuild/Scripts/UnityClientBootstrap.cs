@@ -8,6 +8,7 @@ public sealed class UnityClientBootstrap : MonoBehaviour
 {
     // Unity Inspector에서 바꿀 수 있는 서버 주소이며, 로컬 서버 기본 포트는 5219입니다.
     [SerializeField] private string apiBaseUrl = "http://localhost:5219";
+    [SerializeField] private bool useMockApi = true;
 
     // 게스트 로그인 토큰과 playerId를 PlayerPrefs에 저장하고 불러오는 세션 객체입니다.
     private readonly IdleGuildSession session = new IdleGuildSession();
@@ -15,7 +16,7 @@ public sealed class UnityClientBootstrap : MonoBehaviour
     private readonly StringBuilder log = new StringBuilder();
 
     // HTTP 요청을 실제로 보내는 API 클라이언트입니다.
-    private IdleGuildApiClient api;
+    private IIdleGuildApiClient api;
     // Play 시 코드로 생성되는 버튼/텍스트 기반 런타임 UI입니다.
     private IdleGuildRuntimeUi ui;
     private IdleGuildGameWorld gameWorld;
@@ -36,7 +37,14 @@ public sealed class UnityClientBootstrap : MonoBehaviour
         // 이전 Play에서 저장된 게스트 토큰과 playerId를 복원합니다.
         session.Load();
         // API 클라이언트가 요청 직전에 최신 토큰을 읽을 수 있도록 세션 접근 함수를 넘깁니다.
-        api = new IdleGuildApiClient(() => session.AccessToken);
+        if (useMockApi)
+        {
+            api = new IdleGuildMockApiClient();
+        }
+        else
+        {
+            api = new IdleGuildApiClient(() => session.AccessToken);
+        }
         // UI 생성과 버튼 콜백 연결을 전담 객체에 맡겨 Bootstrap의 책임을 줄입니다.
         ui = new IdleGuildRuntimeUi();
         gameWorld = new IdleGuildGameWorld(transform, this);
@@ -56,7 +64,7 @@ public sealed class UnityClientBootstrap : MonoBehaviour
             () => StartCoroutine(BuySmallGoldPack()),
             ClearSession);
         // 초기 상태를 로그에 남기고 UI를 한 번 갱신합니다.
-        AddLog("Ready. Server: " + apiBaseUrl);
+        AddLog("Ready. Mode: " + (useMockApi ? "Mock API" : "Server API") + ", Server: " + apiBaseUrl);
     }
 
     // 서버가 살아 있는지 확인하는 공개 상태 API를 호출합니다.
