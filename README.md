@@ -43,6 +43,7 @@
 - [데이터베이스](Docs/DATABASE.md)
 - [게스트 인증](Docs/AUTHENTICATION.md)
 - [방치 보상](Docs/IDLE_REWARDS.md)
+- [선택 영웅 저장과 방치 보상 미리보기](Docs/PLAYER_PROFILE_AND_IDLE_PREVIEW.md)
 - [영웅 강화](Docs/HERO_UPGRADES.md)
 - [스테이지 진행](Docs/STAGE_PROGRESSION.md)
 - [API 오류 계약](Docs/API_ERRORS.md)

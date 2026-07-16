@@ -31,6 +31,7 @@ public sealed class GetGameStateHandlerTests
         Assert.Equal(10, result.HeroPower);
         Assert.Equal(0, result.EquipmentPowerBonus);
         Assert.Equal(1, result.HighestStage);
+        Assert.Equal(SelectedHeroPolicy.DefaultHeroId, result.SelectedHeroId);
         Assert.Equal(0, result.ProductionBonusPercent);
         Assert.Equal(0, result.IdleRewardRemainderHundredths);
         Assert.Equal(now, result.LastIdleRewardClaimedAtUtc);

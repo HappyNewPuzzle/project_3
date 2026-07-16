@@ -96,6 +96,8 @@ public sealed class SystemEndpointTests(
         Assert.Contains("/api/v1/accounts/guest", document, StringComparison.Ordinal);
         Assert.Contains("/api/v1/game-state", document, StringComparison.Ordinal);
         Assert.Contains("/api/v1/rewards/idle/claim", document, StringComparison.Ordinal);
+        Assert.Contains("/api/v1/rewards/idle/preview", document, StringComparison.Ordinal);
+        Assert.Contains("/api/v1/profile/selected-hero", document, StringComparison.Ordinal);
         Assert.Contains("/api/v1/heroes/main/upgrade", document, StringComparison.Ordinal);
         Assert.Contains("/api/v1/stages/{stage}/challenge", document, StringComparison.Ordinal);
         Assert.Contains("/api/v1/equipment", document, StringComparison.Ordinal);

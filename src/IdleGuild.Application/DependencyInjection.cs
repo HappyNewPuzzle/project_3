@@ -7,6 +7,8 @@ using IdleGuild.Application.Equipment.ChangeEquipment;
 using IdleGuild.Application.Equipment.GetEquipment;
 using IdleGuild.Application.Heroes.UpgradeMainHero;
 using IdleGuild.Application.Rewards.ClaimIdleReward;
+using IdleGuild.Application.Rewards.PreviewIdleReward;
+using IdleGuild.Application.Profiles.UpdateSelectedHero;
 using IdleGuild.Application.Stages.ChallengeStage;
 using IdleGuild.Application.Shop.GetPurchaseHistory;
 using IdleGuild.Application.Shop.GetShopCatalog;
@@ -26,6 +28,8 @@ public static class DependencyInjection
         services.AddScoped<GetGameStateHandler>();
         services.AddScoped<SyncProgressionHandler>();
         services.AddScoped<ClaimIdleRewardHandler>();
+        services.AddScoped<PreviewIdleRewardHandler>();
+        services.AddScoped<UpdateSelectedHeroHandler>();
         services.AddScoped<UpgradeMainHeroHandler>();
         services.AddScoped<ChallengeStageHandler>();
         services.AddScoped<GetAdminPlayerHandler>();

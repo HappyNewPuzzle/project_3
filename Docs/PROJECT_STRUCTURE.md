@@ -320,6 +320,7 @@ API liveness와 PostgreSQL readiness의 차이, 상태 코드, Docker·Kubernete
 | `GOLD_LEDGER.md` | 골드 변경 감사 원장 규칙 |
 | `HERO_UPGRADES.md` | 영웅 강화 공식과 멱등 처리 |
 | `IDLE_REWARDS.md` | 방치 시간 계산과 보상 수령 |
+| `PLAYER_PROFILE_AND_IDLE_PREVIEW.md` | 선택 영웅 저장, 읽기 전용 보상 미리보기와 Unity 계약 |
 | `STAGE_PROGRESSION.md` | 스테이지 판정과 진행 저장 |
 | `EQUIPMENT_SYSTEM.md` | 장비 마스터·보유·장착과 전투력 |
 | `MOCK_SHOP.md` | 모의 상품 구매와 실제 결제의 경계 |

@@ -19,6 +19,7 @@ public sealed record GetGameStateResult(
     int SkillOneLevel,
     int SkillTwoLevel,
     int SkillThreeLevel,
+    string SelectedHeroId,
     int ProductionBonusPercent,
     int IdleRewardRemainderHundredths,
     DateTimeOffset LastIdleRewardClaimedAtUtc);

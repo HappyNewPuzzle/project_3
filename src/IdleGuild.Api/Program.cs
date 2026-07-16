@@ -156,6 +156,7 @@ app.MapHealthChecks(
 app.MapSystemEndpoints();
 app.MapAccountEndpoints();
 app.MapGameStateEndpoints();
+app.MapProfileEndpoints();
 app.MapRewardsEndpoints();
 app.MapHeroesEndpoints();
 app.MapStagesEndpoints();

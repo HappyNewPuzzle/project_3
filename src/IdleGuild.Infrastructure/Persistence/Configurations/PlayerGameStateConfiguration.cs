@@ -26,6 +26,9 @@ public sealed class PlayerGameStateConfiguration :
             table.HasCheckConstraint(
                 "ck_player_game_states_idle_reward_remainder",
                 "idle_reward_remainder_hundredths >= 0 AND idle_reward_remainder_hundredths < 100");
+            table.HasCheckConstraint(
+                "ck_player_game_states_selected_hero",
+                "selected_hero_id IN ('girl', 'black_cat', 'classic')");
         });
 
         builder.HasKey(state => state.PlayerId)
@@ -45,6 +48,12 @@ public sealed class PlayerGameStateConfiguration :
 
         builder.Property(state => state.HighestStage)
             .HasColumnName("highest_stage")
+            .IsRequired();
+
+        builder.Property(state => state.SelectedHeroId)
+            .HasColumnName("selected_hero_id")
+            .HasMaxLength(SelectedHeroPolicy.MaxHeroIdLength)
+            .HasDefaultValue(SelectedHeroPolicy.DefaultHeroId)
             .IsRequired();
 
         builder.Property(state => state.AttackLevel).HasColumnName("attack_level").HasDefaultValue(1).IsRequired();

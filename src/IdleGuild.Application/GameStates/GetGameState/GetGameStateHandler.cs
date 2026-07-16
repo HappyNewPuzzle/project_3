@@ -50,6 +50,7 @@ public sealed class GetGameStateHandler(
                 gameState.SkillOneLevel,
                 gameState.SkillTwoLevel,
                 gameState.SkillThreeLevel,
+                gameState.SelectedHeroId,
                 StageChallengePolicy
                     .CalculateProductionBonusPercent(
                         gameState.HighestStage),

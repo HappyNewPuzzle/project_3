@@ -4,6 +4,7 @@ using IdleGuild.Api.Contracts;
 using IdleGuild.Api.RateLimiting;
 using IdleGuild.Application.Abstractions.Persistence;
 using IdleGuild.Application.Rewards.ClaimIdleReward;
+using IdleGuild.Application.Rewards.PreviewIdleReward;
 
 namespace IdleGuild.Api.Endpoints;
 
@@ -33,7 +34,37 @@ public static class RewardsEndpoints
             .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status503ServiceUnavailable);
 
+        group.MapGet("/idle/preview", PreviewIdleRewardAsync)
+            .WithName("PreviewIdleReward")
+            .WithSummary("Previews server-authoritative idle rewards without changing state.")
+            .DisableRateLimiting()
+            .Produces<IdleRewardPreviewResponse>()
+            .Produces(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status404NotFound);
+
         return endpoints;
+    }
+
+    private static async Task<IResult> PreviewIdleRewardAsync(
+        ClaimsPrincipal user,
+        PreviewIdleRewardHandler handler,
+        CancellationToken cancellationToken)
+    {
+        if (!user.TryGetPlayerId(out var playerId))
+        {
+            return TypedResults.Unauthorized();
+        }
+
+        var result = await handler.HandleAsync(playerId, cancellationToken);
+        return result is null
+            ? EndpointProblemResults.NotFound(
+                "Game state was not found.",
+                "Create a guest account before previewing idle rewards.")
+            : TypedResults.Ok(new IdleRewardPreviewResponse(
+                result.ElapsedSeconds,
+                result.ClaimableGold,
+                result.MaximumAccumulationSeconds,
+                result.CalculatedAtUtc));
     }
 
     // JWT의 플레이어와 요청 헤더의 멱등 키만 사용해 보상을 정산합니다.

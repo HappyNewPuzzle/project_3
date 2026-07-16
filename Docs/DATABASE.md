@@ -39,12 +39,15 @@ Domain 객체는 PostgreSQL을 알지 못합니다. 열 이름, 제약조건, `x
 | `gold` | `bigint` | 보유 골드 |
 | `hero_level` | `integer` | 주 영웅 레벨 |
 | `highest_stage` | `integer` | 최고 도달 스테이지 |
+| `selected_hero_id` | `varchar(32)` | 선택 영웅 문자열 ID, 기본값 `girl` |
 | `created_at_utc` | `timestamp with time zone` | 생성 시각 |
 | `last_idle_reward_claimed_at_utc` | `timestamp with time zone` | 마지막 방치 보상 정산 시각 |
 | `idle_reward_remainder_hundredths` | `integer` | 다음 정산으로 이월할 1/100 골드 |
 | `xmin` | `xid` | PostgreSQL이 갱신하는 동시성 토큰 |
 
 DB 체크 제약조건은 골드가 음수가 되거나 영웅 레벨과 최고 스테이지가 1보다 작아지는 것을 차단합니다.
+
+`selected_hero_id`는 `girl`, `black_cat`, `classic`만 허용합니다. `20260716225618_AddSelectedHero` Migration은 기존 행과 신규 행의 기본값을 모두 `girl`로 보장합니다.
 
 ## 4. gold_ledger_entries
 

@@ -105,6 +105,7 @@ public static class GameStateEndpoints
                 result.SkillOneLevel,
                 result.SkillTwoLevel,
                 result.SkillThreeLevel,
+                result.SelectedHeroId,
                 result.ProductionBonusPercent,
                 result.IdleRewardRemainderHundredths,
                 result.LastIdleRewardClaimedAtUtc));

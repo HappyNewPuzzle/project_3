@@ -62,3 +62,9 @@ Idempotency-Key: claim-20260705-001
 - Infrastructure: EF 저장소, `xmin`, 복합 기본키, PostgreSQL 오류 변환
 - API: JWT 사용자 확인, `Idempotency-Key` 검증, HTTP 응답 변환
 - Tests: 규칙 경계값, 같은 키 재요청, 실제 DB 동시 요청 검증
+
+## 6. 상태를 변경하지 않는 미리보기
+
+`GET /api/v1/rewards/idle/preview`는 JWT로 인증한 플레이어의 현재 수령 가능량을 서버 UTC 시각으로 계산합니다. 수령 API와 같은 `PlayerGameState.PreviewIdleReward` 및 `IdleRewardPolicy`를 사용하므로 같은 시각의 `claimableGold`와 실제 `goldAwarded`가 일치합니다.
+
+미리보기는 읽기 전용 조회만 수행하며 골드, 마지막 수령 시각, 1/100 골드 remainder, 영수증과 원장을 저장하지 않습니다. 상세 계약과 Unity 연동은 [선택 영웅 저장과 방치 보상 미리보기](PLAYER_PROFILE_AND_IDLE_PREVIEW.md)를 참고합니다.

@@ -93,6 +93,13 @@ PostgreSQL
 - 핵심 계산 규칙은 단위 테스트로 검증한다.
 - PostgreSQL이 필요한 저장 동작은 통합 테스트로 검증한다.
 - 공개 API는 OpenAPI 문서에서 실행할 수 있어야 한다.
+
+## 선택 영웅과 방치 보상 미리보기 경계
+
+- 선택 영웅은 Unity enum 숫자가 아닌 `girl`, `black_cat`, `classic` 문자열 ID로 Domain과 PostgreSQL에 저장합니다.
+- 선택 변경은 Application의 기존 `PlayerGameState` 갱신·`xmin` 충돌 재시도 패턴을 사용합니다.
+- 방치 보상 미리보기는 읽기 전용 저장소 조회와 서버 `TimeProvider`만 사용하며 `SaveChanges`를 호출하지 않습니다.
+- 미리보기와 수령은 Domain의 같은 `IdleRewardPolicy`를 사용해 같은 시각의 계산 결과를 일치시킵니다.
 - 비밀값은 저장소에 커밋하지 않고 환경 변수로 주입한다.
 - 각 Step은 실행 또는 테스트 가능한 상태에서 커밋한다.
 

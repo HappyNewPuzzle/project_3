@@ -32,6 +32,7 @@ public sealed class PlayerGameState
         SkillOneLevel = 1;
         SkillTwoLevel = 1;
         SkillThreeLevel = 1;
+        SelectedHeroId = SelectedHeroPolicy.DefaultHeroId;
     }
 
     public Guid PlayerId { get; private set; }
@@ -53,6 +54,13 @@ public sealed class PlayerGameState
     public int SkillOneLevel { get; private set; }
     public int SkillTwoLevel { get; private set; }
     public int SkillThreeLevel { get; private set; }
+
+    public string SelectedHeroId { get; private set; } =
+        SelectedHeroPolicy.DefaultHeroId;
+
+    /// <summary>서버가 지원하는 문자열 ID로 선택 영웅을 변경합니다.</summary>
+    public void SelectHero(string selectedHeroId) =>
+        SelectedHeroId = SelectedHeroPolicy.Validate(selectedHeroId);
 
     public void SynchronizeProgression(
         int attackLevel,
@@ -133,13 +141,8 @@ public sealed class PlayerGameState
             LastIdleRewardClaimedAtUtc
             ? LastIdleRewardClaimedAtUtc
             : requestedAtUtc;
-        var elapsed = claimedAtUtc -
-            LastIdleRewardClaimedAtUtc;
-        var elapsedWholeSeconds =
-            elapsed.Ticks / TimeSpan.TicksPerSecond;
-        var accumulatedSeconds = (int)Math.Min(
-            elapsedWholeSeconds,
-            IdleRewardPolicy.MaxAccumulationSeconds);
+        var preview = PreviewIdleReward(claimedAtUtc);
+        var accumulatedSeconds = preview.ElapsedSeconds;
         var calculation = IdleRewardPolicy.CalculateGold(
             accumulatedSeconds,
             HighestStage,
@@ -157,6 +160,36 @@ public sealed class PlayerGameState
             calculation.RemainderHundredths,
             calculation.ProductionPercent,
             claimedAtUtc);
+    }
+
+    /// <summary>골드와 정산 시각·잔여값을 바꾸지 않고 현재 수령 가능량을 계산합니다.</summary>
+    public IdleRewardPreview PreviewIdleReward(
+        DateTimeOffset requestedAt)
+    {
+        if (requestedAt == default)
+        {
+            throw new ArgumentException(
+                "Preview time must be provided.",
+                nameof(requestedAt));
+        }
+
+        var calculatedAtUtc = requestedAt.ToUniversalTime();
+        var elapsed = calculatedAtUtc <= LastIdleRewardClaimedAtUtc
+            ? TimeSpan.Zero
+            : calculatedAtUtc - LastIdleRewardClaimedAtUtc;
+        var elapsedSeconds = (int)Math.Min(
+            elapsed.Ticks / TimeSpan.TicksPerSecond,
+            IdleRewardPolicy.MaxAccumulationSeconds);
+        var calculation = IdleRewardPolicy.CalculateGold(
+            elapsedSeconds,
+            HighestStage,
+            IdleRewardRemainderHundredths);
+
+        return new IdleRewardPreview(
+            elapsedSeconds,
+            calculation.GoldAwarded,
+            IdleRewardPolicy.MaxAccumulationSeconds,
+            calculatedAtUtc);
     }
 
     /// <summary>서버가 계산한 비용을 검사해 주 영웅을 한 레벨 강화합니다.</summary>

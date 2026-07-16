@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using IdleGuild.Api.Contracts;
+using IdleGuild.Domain.GameStates;
 
 namespace IdleGuild.Api.Tests;
 
@@ -40,6 +41,7 @@ public sealed class AccountAuthenticationTests(
         Assert.Equal(11, state.HeroPower);
         Assert.Equal(1, state.EquipmentPowerBonus);
         Assert.Equal(1, state.HighestStage);
+        Assert.Equal(SelectedHeroPolicy.DefaultHeroId, state.SelectedHeroId);
         Assert.Equal(0, state.ProductionBonusPercent);
     }
 
