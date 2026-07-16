@@ -174,8 +174,14 @@ public sealed class IdleGuildGameWorld
                 ? progression.AttackDamage * progression.Balance.bossHealthInAttacks + progression.Stage * progression.Balance.bossHealthPerStage
                 : progression.AttackDamage * progression.Balance.regularMonsterHealthInAttacks;
             int health = maxHealth;
+            int heroMaxHealth = Mathf.Max(30, progression.AttackDamage * 8 + progression.Stage * 6);
+            int heroHealth = heroMaxHealth;
+            bool heroDefeated = false;
             float bossDeadline = Time.time + progression.Balance.bossTimeLimitSeconds;
-            float nextBossAttack = Time.time + progression.Balance.bossAttackIntervalSeconds;
+            float enemyAttackInterval = boss
+                ? progression.Balance.bossAttackIntervalSeconds
+                : Mathf.Max(1.4f, progression.Balance.bossAttackIntervalSeconds * 0.65f);
+            float nextEnemyAttack = Time.time + (boss ? 0.9f : 0.55f);
             stageText.text = (boss ? "BOSS " : "") + regionNames[regionIndex] + " " + progression.Stage;
             monster.gameObject.SetActive(true);
             monster.localScale = boss ? new Vector3(3.15f, 3.15f, 1f) : new Vector3(2.15f, 2.15f, 1f);
@@ -188,6 +194,7 @@ public sealed class IdleGuildGameWorld
             monster.position = monsterHome + new Vector3(0.7f, 0f, 0f);
             monsterRenderer.color = new Color(1f, 1f, 1f, 0f);
             monsterHealthBar.SetHealth(health, maxHealth);
+            heroHealthBar.SetHealth(heroHealth, heroMaxHealth);
             idleHud.SetBoss(true, health, maxHealth, boss ? progression.Balance.bossTimeLimitSeconds : -1f);
 
             if (monsterAnimator.enabled)
@@ -219,10 +226,18 @@ public sealed class IdleGuildGameWorld
                     if (health <= 0) break;
                 }
 
-                if (boss && Time.time >= nextBossAttack)
+                if (Time.time >= nextEnemyAttack)
                 {
-                    yield return BossAttackPattern();
-                    nextBossAttack = Time.time + progression.Balance.bossAttackIntervalSeconds;
+                    int enemyDamage = Mathf.Max(1, progression.Stage * (boss ? 3 : 2));
+                    yield return EnemyAttackPattern(boss, enemyDamage);
+                    heroHealth = Mathf.Max(0, heroHealth - enemyDamage);
+                    heroHealthBar.SetHealth(heroHealth, heroMaxHealth);
+                    if (heroHealth <= 0)
+                    {
+                        heroDefeated = true;
+                        break;
+                    }
+                    nextEnemyAttack = Time.time + enemyAttackInterval;
                 }
 
                 StopHeroAnimation();
@@ -235,7 +250,10 @@ public sealed class IdleGuildGameWorld
                 IdleGuildReleaseServices.PlayEffect(critical ? 760f : 520f);
                 health = Mathf.Max(0, health - damage);
                 monsterHealthBar.SetHealth(health, maxHealth);
-                StartActorState(monsterRenderer, monsterAnimator, monsterFrames, ActorAnimationState.Hit, 0.065f);
+                if (monsterAnimator.enabled)
+                {
+                    StartActorState(monsterRenderer, monsterAnimator, monsterFrames, ActorAnimationState.Hit, 0.065f);
+                }
                 coroutineHost.StartCoroutine(PlayHitEffect(monster.position + new Vector3(0f, 0.45f, 0f)));
                 coroutineHost.StartCoroutine(ShowDamagePopup(
                     monster.position + new Vector3(0f, 0.7f, 0f),
@@ -254,6 +272,18 @@ public sealed class IdleGuildGameWorld
             }
 
             idleHud.SetBoss(false, 0, 1, 0f);
+            if (heroDefeated)
+            {
+                idleHud.ShowToast("주인공 패배 - 잠시 후 다시 도전합니다");
+                yield return PlayActorOnce(heroAnimator, heroRenderer, heroFrames, ActorAnimationState.Hit, 0.08f);
+                yield return BumpBack(hero);
+                yield return RetreatMonster();
+                hero.position = heroHome;
+                heroHealthBar.SetHealth(heroMaxHealth, heroMaxHealth);
+                StartHeroLoop(ActorAnimationState.Run, 0.075f);
+                yield return new WaitForSeconds(0.65f);
+                continue;
+            }
             if (health > 0)
             {
                 if (boss)
@@ -755,17 +785,43 @@ public sealed class IdleGuildGameWorld
         Object.Destroy(star.gameObject);
     }
 
-    private IEnumerator BossAttackPattern()
+    private IEnumerator EnemyAttackPattern(bool boss, int damage)
     {
-        idleHud.ShowToast("BOSS ATTACK!");
-        StartActorState(monsterRenderer, monsterAnimator, monsterFrames, ActorAnimationState.Attack, 0.07f);
+        if (boss) idleHud.ShowToast("BOSS ATTACK!");
+        if (monsterAnimator.enabled)
+        {
+            StartActorState(monsterRenderer, monsterAnimator, monsterFrames, ActorAnimationState.Attack, 0.07f);
+        }
         Vector3 origin = monster.position;
-        yield return MoveTo(monster, origin + Vector3.left * 0.45f, 0.15f);
-        coroutineHost.StartCoroutine(ShakeCamera(0.13f));
-        coroutineHost.StartCoroutine(ShowDamagePopup(hero.position + Vector3.up * 0.65f, Mathf.Max(1, progression.Stage * 2), new Color(1f, 0.3f, 0.25f, 1f)));
+        yield return MoveTo(monster, origin + Vector3.left * (boss ? 0.52f : 0.32f), 0.14f);
+        StartActorState(heroRenderer, heroAnimator, heroFrames, ActorAnimationState.Hit, 0.07f);
+        IdleGuildReleaseServices.PlayEffect(boss ? 185f : 235f);
+        coroutineHost.StartCoroutine(ShakeCamera(boss ? 0.13f : 0.07f));
+        coroutineHost.StartCoroutine(ShowDamagePopup(hero.position + Vector3.up * 0.65f, damage, new Color(1f, 0.3f, 0.25f, 1f)));
         yield return BumpBack(hero);
-        yield return MoveTo(monster, origin, 0.2f);
-        StartMonsterLoop(ActorAnimationState.Idle, 0.12f);
+        yield return MoveTo(monster, origin, 0.18f);
+        if (monsterAnimator.enabled)
+        {
+            StartMonsterLoop(ActorAnimationState.Idle, 0.12f);
+        }
+    }
+
+    private IEnumerator RetreatMonster()
+    {
+        Vector3 start = monster.position;
+        Color startColor = monsterRenderer.color;
+        float elapsed = 0f;
+        const float duration = 0.35f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / duration);
+            monster.position = Vector3.Lerp(start, monsterHome + Vector3.right * 0.8f, t);
+            monsterRenderer.color = new Color(startColor.r, startColor.g, startColor.b, 1f - t);
+            yield return null;
+        }
+        monster.gameObject.SetActive(false);
+        monsterRenderer.color = Color.white;
     }
 
     private IEnumerator ScrollRoad()
