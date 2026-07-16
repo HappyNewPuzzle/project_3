@@ -55,7 +55,7 @@ public sealed class IdleGuildGameWorld
     private Vector3 backdropOrigin;
     private SpriteRenderer backdropRenderer;
     private int pendingSkillDamage;
-    private int activeSkillType;
+    private bool skillAnimationPlaying;
 
     public IdleGuildGameWorld(
         Transform parent,
@@ -124,14 +124,14 @@ public sealed class IdleGuildGameWorld
 
     public void ActivateSkill(int skillType)
     {
-        activeSkillType = Mathf.Clamp(skillType, 0, 2);
+        int selectedSkill = Mathf.Clamp(skillType, 0, 2);
         int[] multipliers = progression.Balance.skillDamageMultipliers;
-        float levelBonus = 1f + (progression.GetSkillLevel(activeSkillType) - 1) * 0.18f;
-        float characterBonus = useBlackCatHero && activeSkillType == 1 ? 1.35f :
-            useAlternateCharacters && activeSkillType == 0 ? 1.25f :
-            !useAlternateCharacters && activeSkillType == 2 ? 1.3f : 1f;
-        pendingSkillDamage += Mathf.RoundToInt(progression.AttackDamage * multipliers[activeSkillType] * levelBonus * characterBonus);
-        coroutineHost.StartCoroutine(PlaySkillEffect());
+        float levelBonus = 1f + (progression.GetSkillLevel(selectedSkill) - 1) * 0.18f;
+        float characterBonus = useBlackCatHero && selectedSkill == 1 ? 1.35f :
+            useAlternateCharacters && selectedSkill == 0 ? 1.25f :
+            !useAlternateCharacters && selectedSkill == 2 ? 1.3f : 1f;
+        pendingSkillDamage += Mathf.RoundToInt(progression.AttackDamage * multipliers[selectedSkill] * levelBonus * characterBonus);
+        coroutineHost.StartCoroutine(PlaySkillAnimation(selectedSkill));
     }
 
     private void StopAutoHunt()
@@ -224,6 +224,13 @@ public sealed class IdleGuildGameWorld
                     coroutineHost.StartCoroutine(ShowDamagePopup(monster.position + Vector3.up, skillDamage, new Color(0.35f, 0.9f, 1f, 1f)));
                     idleHud.SetBoss(true, health, maxHealth, boss ? Mathf.Max(0f, bossDeadline - Time.time) : -1f);
                     if (health <= 0) break;
+                }
+
+                // 스킬 연출 중에는 일반 공격과 적 공격이 캐릭터 모션을 덮어쓰지 않게 기다립니다.
+                if (skillAnimationPlaying)
+                {
+                    yield return null;
+                    continue;
                 }
 
                 if (Time.time >= nextEnemyAttack)
@@ -745,44 +752,134 @@ public sealed class IdleGuildGameWorld
         cameraTransform.position = origin;
     }
 
-    private IEnumerator PlaySkillEffect()
+    private IEnumerator PlaySkillAnimation(int skillType)
     {
+        while (skillAnimationPlaying)
+        {
+            yield return null;
+        }
+
+        skillAnimationPlaying = true;
+        StopHeroAnimation();
+        Vector3 originalPosition = hero.position;
+        Vector3 originalScale = hero.localScale;
+        Color originalColor = heroRenderer.color;
+        StartActorState(heroRenderer, heroAnimator, heroFrames, ActorAnimationState.Attack, 0.06f);
+
+        if (skillType == 0)
+        {
+            yield return PlayStarBurst(originalPosition, originalScale);
+        }
+        else if (skillType == 1)
+        {
+            yield return PlaySwiftStrike(originalPosition);
+        }
+        else
+        {
+            yield return PlayGuardianLight(originalPosition, originalScale);
+        }
+
+        hero.position = originalPosition;
+        hero.localScale = originalScale;
+        heroRenderer.color = originalColor;
+        skillAnimationPlaying = false;
+        StartHeroLoop(autoHuntRoutine != null ? ActorAnimationState.Run : ActorAnimationState.Idle, 0.075f);
+    }
+
+    private IEnumerator PlayStarBurst(Vector3 origin, Vector3 originalScale)
+    {
+        IdleGuildReleaseServices.PlayEffect(880f);
         const int count = 18;
         for (int index = 0; index < count; index++)
         {
             float angle = index * Mathf.PI * 2f / count;
-            GameObject star = new GameObject("Skill Star " + index);
-            star.transform.SetParent(parent, false);
-            star.transform.position = hero.position + new Vector3(Mathf.Cos(angle), Mathf.Sin(angle), 0f) * 0.7f;
-            star.transform.localScale = Vector3.one * 0.13f;
-            SpriteRenderer renderer = star.AddComponent<SpriteRenderer>();
-            renderer.sprite = hudPixelSprite;
-            Color[] skillColors = { new Color(0.3f, 0.95f, 1f, 1f), new Color(1f, 0.85f, 0.2f, 1f), new Color(0.4f, 1f, 0.55f, 1f) };
-            renderer.color = index % 2 == 0 ? skillColors[activeSkillType] : Color.white;
-            renderer.sortingOrder = 35;
-            coroutineHost.StartCoroutine(FlySkillStar(star.transform, renderer));
+            Vector3 start = origin + new Vector3(Mathf.Cos(angle), Mathf.Sin(angle), 0f) * 0.72f;
+            CreateSkillParticle("Star Burst", start, 0.13f,
+                index % 2 == 0 ? new Color(0.3f, 0.95f, 1f, 1f) : Color.white,
+                monster.gameObject.activeSelf ? monster.position + Vector3.up * 0.45f : start + Vector3.right * 3f,
+                0.38f);
         }
 
+        yield return MoveTo(hero, origin + Vector3.up * 0.18f, 0.12f);
+        hero.localScale = originalScale * 1.12f;
         yield return ShakeCamera(0.16f);
+        yield return MoveTo(hero, origin, 0.14f);
     }
 
-    private IEnumerator FlySkillStar(Transform star, SpriteRenderer renderer)
+    private IEnumerator PlaySwiftStrike(Vector3 origin)
     {
-        Vector3 start = star.position;
-        Vector3 destination = monster.gameObject.activeSelf ? monster.position + Vector3.up * 0.45f : start + Vector3.right * 3f;
+        IdleGuildReleaseServices.PlayEffect(1060f);
+        Vector3 destination = monster.gameObject.activeSelf
+            ? new Vector3(monster.position.x - 0.75f, origin.y, origin.z)
+            : origin + Vector3.right * 2.2f;
+        for (int index = 0; index < 4; index++)
+        {
+            CreateSkillParticle("Swift Afterimage", origin + Vector3.right * index * 0.28f, 0.32f,
+                new Color(1f, 0.8f, 0.2f, 0.7f), destination, 0.22f + index * 0.025f);
+        }
+
+        yield return MoveTo(hero, destination, 0.13f);
+        coroutineHost.StartCoroutine(ShakeCamera(0.12f));
+        yield return new WaitForSeconds(0.08f);
+        yield return MoveTo(hero, origin, 0.17f);
+    }
+
+    private IEnumerator PlayGuardianLight(Vector3 origin, Vector3 originalScale)
+    {
+        IdleGuildReleaseServices.PlayEffect(640f);
+        const int count = 16;
+        for (int index = 0; index < count; index++)
+        {
+            float angle = index * Mathf.PI * 2f / count;
+            Vector3 direction = new Vector3(Mathf.Cos(angle), Mathf.Sin(angle), 0f);
+            Vector3 start = origin + direction * 0.28f;
+            CreateSkillParticle("Guardian Aura", start, 0.16f,
+                index % 2 == 0 ? new Color(0.4f, 1f, 0.55f, 0.9f) : new Color(1f, 0.95f, 0.45f, 0.9f),
+                origin + direction * 1.15f, 0.48f);
+        }
+
         float elapsed = 0f;
-        while (elapsed < 0.35f)
+        const float duration = 0.48f;
+        while (elapsed < duration)
         {
             elapsed += Time.deltaTime;
-            float t = Mathf.Clamp01(elapsed / 0.35f);
-            star.position = Vector3.Lerp(start, destination, t);
+            float pulse = 1f + Mathf.Sin(elapsed * 28f) * 0.07f;
+            hero.localScale = originalScale * pulse;
+            heroRenderer.color = Color.Lerp(Color.white, new Color(0.55f, 1f, 0.65f, 1f), Mathf.PingPong(elapsed * 4f, 0.45f));
+            yield return null;
+        }
+    }
+
+    private void CreateSkillParticle(string objectName, Vector3 start, float scale, Color color, Vector3 destination, float duration)
+    {
+        GameObject particle = new GameObject(objectName);
+        particle.transform.SetParent(parent, false);
+        particle.transform.position = start;
+        particle.transform.localScale = Vector3.one * scale;
+        SpriteRenderer renderer = particle.AddComponent<SpriteRenderer>();
+        renderer.sprite = hudPixelSprite;
+        renderer.color = color;
+        renderer.sortingOrder = 35;
+        coroutineHost.StartCoroutine(FlySkillParticle(particle.transform, renderer, destination, duration));
+    }
+
+    private IEnumerator FlySkillParticle(Transform particle, SpriteRenderer renderer, Vector3 destination, float duration)
+    {
+        Vector3 start = particle.position;
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / duration);
+            particle.position = Vector3.Lerp(start, destination, Smooth(t));
+            particle.localScale = Vector3.one * Mathf.Lerp(particle.localScale.x, 0.04f, t);
             Color color = renderer.color;
             color.a = 1f - t;
             renderer.color = color;
             yield return null;
         }
 
-        Object.Destroy(star.gameObject);
+        Object.Destroy(particle.gameObject);
     }
 
     private IEnumerator EnemyAttackPattern(bool boss, int damage)
