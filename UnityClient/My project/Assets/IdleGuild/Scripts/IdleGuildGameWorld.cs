@@ -56,6 +56,7 @@ public sealed class IdleGuildGameWorld
     private Vector3 backdropOrigin;
     private SpriteRenderer backdropRenderer;
     private int pendingSkillDamage;
+    private int pendingSkillType;
     private bool skillAnimationPlaying;
 
     public IdleGuildGameWorld(
@@ -137,8 +138,8 @@ public sealed class IdleGuildGameWorld
         float characterBonus = useBlackCatHero && selectedSkill == 1 ? 1.35f :
             useAlternateCharacters && selectedSkill == 0 ? 1.25f :
             !useAlternateCharacters && selectedSkill == 2 ? 1.3f : 1f;
-        pendingSkillDamage += Mathf.RoundToInt(progression.AttackDamage * multipliers[selectedSkill] * levelBonus * characterBonus);
-        coroutineHost.StartCoroutine(PlaySkillAnimation(selectedSkill));
+        int skillDamage = Mathf.RoundToInt(progression.AttackDamage * multipliers[selectedSkill] * levelBonus * characterBonus);
+        coroutineHost.StartCoroutine(PlaySkillAnimation(selectedSkill, skillDamage));
     }
 
     private void StopAutoHunt()
@@ -225,10 +226,24 @@ public sealed class IdleGuildGameWorld
                 if (pendingSkillDamage > 0)
                 {
                     int skillDamage = pendingSkillDamage;
+                    int skillType = pendingSkillType;
                     pendingSkillDamage = 0;
                     health = Mathf.Max(0, health - skillDamage);
                     monsterHealthBar.SetHealth(health, maxHealth);
-                    coroutineHost.StartCoroutine(ShowDamagePopup(monster.position + Vector3.up, skillDamage, new Color(0.35f, 0.9f, 1f, 1f)));
+                    Color[] skillDamageColors =
+                    {
+                        new Color(0.3f, 0.95f, 1f, 1f),
+                        new Color(1f, 0.78f, 0.12f, 1f),
+                        new Color(0.45f, 1f, 0.5f, 1f)
+                    };
+                    Color damageColor = skillDamageColors[Mathf.Clamp(skillType, 0, skillDamageColors.Length - 1)];
+                    if (monsterAnimator.enabled)
+                    {
+                        StartActorState(monsterRenderer, monsterAnimator, monsterFrames, ActorAnimationState.Hit, 0.055f);
+                    }
+                    coroutineHost.StartCoroutine(PlayHitEffect(monster.position + new Vector3(0f, 0.5f, 0f)));
+                    coroutineHost.StartCoroutine(ShowDamagePopup(monster.position + Vector3.up, skillDamage, damageColor));
+                    coroutineHost.StartCoroutine(ShakeCamera(skillType == 1 ? 0.16f : 0.11f));
                     idleHud.SetBoss(true, health, maxHealth, boss ? Mathf.Max(0f, bossDeadline - Time.time) : -1f);
                     if (health <= 0) break;
                 }
@@ -759,7 +774,7 @@ public sealed class IdleGuildGameWorld
         cameraTransform.position = origin;
     }
 
-    private IEnumerator PlaySkillAnimation(int skillType)
+    private IEnumerator PlaySkillAnimation(int skillType, int skillDamage)
     {
         while (skillAnimationPlaying)
         {
@@ -775,15 +790,15 @@ public sealed class IdleGuildGameWorld
 
         if (skillType == 0)
         {
-            yield return PlayStarBurst(originalPosition, originalScale);
+            yield return PlayStarBurst(originalPosition, originalScale, skillDamage);
         }
         else if (skillType == 1)
         {
-            yield return PlaySwiftStrike(originalPosition);
+            yield return PlaySwiftStrike(originalPosition, skillDamage);
         }
         else
         {
-            yield return PlayGuardianLight(originalPosition, originalScale);
+            yield return PlayGuardianLight(originalPosition, originalScale, skillDamage);
         }
 
         hero.position = originalPosition;
@@ -793,7 +808,7 @@ public sealed class IdleGuildGameWorld
         StartHeroLoop(autoHuntRoutine != null ? ActorAnimationState.Run : ActorAnimationState.Idle, 0.075f);
     }
 
-    private IEnumerator PlayStarBurst(Vector3 origin, Vector3 originalScale)
+    private IEnumerator PlayStarBurst(Vector3 origin, Vector3 originalScale, int skillDamage)
     {
         IdleGuildReleaseServices.PlayEffect(880f);
         Vector3 impactPosition = monster.gameObject.activeSelf
@@ -813,11 +828,12 @@ public sealed class IdleGuildGameWorld
 
         yield return MoveTo(hero, origin + Vector3.up * 0.18f, 0.12f);
         hero.localScale = originalScale * 1.12f;
+        QueueSkillImpact(0, skillDamage);
         yield return ShakeCamera(0.16f);
         yield return MoveTo(hero, origin, 0.14f);
     }
 
-    private IEnumerator PlaySwiftStrike(Vector3 origin)
+    private IEnumerator PlaySwiftStrike(Vector3 origin, int skillDamage)
     {
         IdleGuildReleaseServices.PlayEffect(1060f);
         Vector3 destination = monster.gameObject.activeSelf
@@ -831,12 +847,13 @@ public sealed class IdleGuildGameWorld
 
         yield return MoveTo(hero, destination, 0.13f);
         ShowLargeSkillEffect(1, destination + new Vector3(0.65f, 0.45f, 0f), 3f, 0.44f, -35f);
+        QueueSkillImpact(1, skillDamage);
         coroutineHost.StartCoroutine(ShakeCamera(0.12f));
         yield return new WaitForSeconds(0.08f);
         yield return MoveTo(hero, origin, 0.17f);
     }
 
-    private IEnumerator PlayGuardianLight(Vector3 origin, Vector3 originalScale)
+    private IEnumerator PlayGuardianLight(Vector3 origin, Vector3 originalScale, int skillDamage)
     {
         IdleGuildReleaseServices.PlayEffect(640f);
         ShowLargeSkillEffect(2, origin + Vector3.up * 0.55f, 3.3f, 0.62f, 22f);
@@ -851,6 +868,9 @@ public sealed class IdleGuildGameWorld
                 origin + direction * 1.15f, 0.48f);
         }
 
+        yield return new WaitForSeconds(0.12f);
+        QueueSkillImpact(2, skillDamage);
+
         float elapsed = 0f;
         const float duration = 0.48f;
         while (elapsed < duration)
@@ -861,6 +881,12 @@ public sealed class IdleGuildGameWorld
             heroRenderer.color = Color.Lerp(Color.white, new Color(0.55f, 1f, 0.65f, 1f), Mathf.PingPong(elapsed * 4f, 0.45f));
             yield return null;
         }
+    }
+
+    private void QueueSkillImpact(int skillType, int damage)
+    {
+        pendingSkillType = Mathf.Clamp(skillType, 0, 2);
+        pendingSkillDamage += Mathf.Max(1, damage);
     }
 
     private void CreateSkillParticle(string objectName, Vector3 start, float scale, Color color, Vector3 destination, float duration)
