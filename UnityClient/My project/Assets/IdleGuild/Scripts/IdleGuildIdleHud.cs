@@ -16,6 +16,7 @@ public sealed class IdleGuildIdleHud : MonoBehaviour
     private GameObject bossPanel;
     private Text toastText;
     private Text growthText;
+    private GameObject growthPanel;
     private GameObject characterPanel;
     private GameObject equipmentPanel;
     private GameObject offlinePanel;
@@ -72,15 +73,18 @@ public sealed class IdleGuildIdleHud : MonoBehaviour
         bossFill.fillMethod = Image.FillMethod.Horizontal;
         bossPanel.SetActive(false);
 
-        GameObject growth = Panel(transform, "Growth", new Color(0.04f, 0.07f, 0.1f, 0.9f));
-        SetRect(growth, new Vector2(0.02f, 0.15f), new Vector2(0.32f, 0.40f), Vector2.zero, Vector2.zero);
-        VerticalLayoutGroup growthLayout = growth.AddComponent<VerticalLayoutGroup>();
+        growthPanel = Panel(transform, "Growth", new Color(0.04f, 0.07f, 0.1f, 0.97f));
+        SetRect(growthPanel, new Vector2(0.32f, 0.25f), new Vector2(0.68f, 0.72f), Vector2.zero, Vector2.zero);
+        VerticalLayoutGroup growthLayout = growthPanel.AddComponent<VerticalLayoutGroup>();
         growthLayout.padding = new RectOffset(12, 12, 9, 9);
         growthLayout.spacing = 5f;
-        growthText = Label(growth.transform, "", 17, FontStyle.Bold);
-        Button(growth.transform, "공격력 강화", () => TryUpgrade(progression.UpgradeAttack, "공격력이 상승했습니다!"));
-        Button(growth.transform, "공격속도 강화", () => TryUpgrade(progression.UpgradeSpeed, "공격속도가 상승했습니다!"));
-        Button(growth.transform, "치명타 강화", () => TryUpgrade(progression.UpgradeCritical, "치명타 확률이 상승했습니다!"));
+        Label(growthPanel.transform, "영웅 성장", 23, FontStyle.Bold);
+        growthText = Label(growthPanel.transform, "", 17, FontStyle.Bold);
+        Button(growthPanel.transform, "공격력 강화", () => TryUpgrade(progression.UpgradeAttack, "공격력이 상승했습니다!"));
+        Button(growthPanel.transform, "공격속도 강화", () => TryUpgrade(progression.UpgradeSpeed, "공격속도가 상승했습니다!"));
+        Button(growthPanel.transform, "치명타 강화", () => TryUpgrade(progression.UpgradeCritical, "치명타 확률이 상승했습니다!"));
+        Button(growthPanel.transform, "닫기", CloseAllPanels);
+        growthPanel.SetActive(false);
 
         GameObject bottom = Panel(transform, "Bottom Menu", new Color(0.04f, 0.08f, 0.12f, 0.94f));
         SetRect(bottom, new Vector2(0.02f, 0.02f), new Vector2(0.98f, 0.14f), Vector2.zero, Vector2.zero);
@@ -90,6 +94,7 @@ public sealed class IdleGuildIdleHud : MonoBehaviour
         bottomLayout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
         bottomLayout.constraintCount = 4;
         bottomLayout.cellSize = new Vector2(285f, 34f);
+        Button(bottom.transform, "성장", ToggleGrowthPanel);
         Button(bottom.transform, "영웅", ToggleCharacterPanel);
         Button(bottom.transform, "장비", ToggleEquipmentPanel);
         Button(bottom.transform, "스킬", ToggleSkillPanel);
@@ -99,7 +104,7 @@ public sealed class IdleGuildIdleHud : MonoBehaviour
         Button(bottom.transform, "임무", ToggleMissionPanel);
 
         characterPanel = Panel(transform, "Character Selection", new Color(0.05f, 0.09f, 0.14f, 0.96f));
-        SetRect(characterPanel, new Vector2(0.34f, 0.13f), new Vector2(0.66f, 0.36f), Vector2.zero, Vector2.zero);
+        SetRect(characterPanel, new Vector2(0.33f, 0.27f), new Vector2(0.67f, 0.70f), Vector2.zero, Vector2.zero);
         VerticalLayoutGroup characterLayout = characterPanel.AddComponent<VerticalLayoutGroup>();
         characterLayout.padding = new RectOffset(14, 14, 10, 10);
         characterLayout.spacing = 7f;
@@ -107,10 +112,11 @@ public sealed class IdleGuildIdleHud : MonoBehaviour
         Button(characterPanel.transform, "소녀", onSelectGirl);
         Button(characterPanel.transform, "검은 고양이", onSelectCat);
         Button(characterPanel.transform, "클래식", onSelectClassic);
+        Button(characterPanel.transform, "닫기", CloseAllPanels);
         characterPanel.SetActive(false);
 
         equipmentPanel = Panel(transform, "Equipment Inventory", new Color(0.05f, 0.09f, 0.14f, 0.97f));
-        SetRect(equipmentPanel, new Vector2(0.67f, 0.13f), new Vector2(0.97f, 0.39f), Vector2.zero, Vector2.zero);
+        SetRect(equipmentPanel, new Vector2(0.28f, 0.17f), new Vector2(0.72f, 0.82f), Vector2.zero, Vector2.zero);
         VerticalLayoutGroup equipmentLayout = equipmentPanel.AddComponent<VerticalLayoutGroup>();
         equipmentLayout.padding = new RectOffset(14, 14, 10, 10);
         equipmentLayout.spacing = 7f;
@@ -121,10 +127,11 @@ public sealed class IdleGuildIdleHud : MonoBehaviour
         Button(equipmentPanel.transform, "여분 장비 분해", () => TryUpgrade(progression.DisassembleSpareEquipment, "장비 재료를 획득했습니다"));
         Button(equipmentPanel.transform, "동일 장비 3개 합성", () => TryUpgrade(progression.FuseEquipment, "장비 등급이 상승했습니다"));
         Button(equipmentPanel.transform, "환생", () => TryUpgrade(progression.Prestige, "환생 완료! 영구 공격력이 상승했습니다"));
+        Button(equipmentPanel.transform, "닫기", CloseAllPanels);
         equipmentPanel.SetActive(false);
 
         skillPanel = Panel(transform, "Skill Loadout", new Color(0.05f, 0.09f, 0.14f, 0.97f));
-        SetRect(skillPanel, new Vector2(0.34f, 0.13f), new Vector2(0.66f, 0.39f), Vector2.zero, Vector2.zero);
+        SetRect(skillPanel, new Vector2(0.28f, 0.14f), new Vector2(0.72f, 0.84f), Vector2.zero, Vector2.zero);
         VerticalLayoutGroup skillLayout = skillPanel.AddComponent<VerticalLayoutGroup>();
         skillLayout.padding = new RectOffset(14, 14, 10, 10);
         skillLayout.spacing = 7f;
@@ -135,10 +142,11 @@ public sealed class IdleGuildIdleHud : MonoBehaviour
         Button(skillPanel.transform, "STAR BURST 강화", () => TryUpgrade(() => progression.UpgradeSkill(0), "스킬 레벨이 올랐습니다"));
         Button(skillPanel.transform, "SWIFT STRIKE 강화", () => TryUpgrade(() => progression.UpgradeSkill(1), "스킬 레벨이 올랐습니다"));
         Button(skillPanel.transform, "GUARDIAN LIGHT 강화", () => TryUpgrade(() => progression.UpgradeSkill(2), "스킬 레벨이 올랐습니다"));
+        Button(skillPanel.transform, "닫기", CloseAllPanels);
         skillPanel.SetActive(false);
 
         settingsPanel = Panel(transform, "Settings and Rewards", new Color(0.05f, 0.09f, 0.14f, 0.97f));
-        SetRect(settingsPanel, new Vector2(0.34f, 0.38f), new Vector2(0.66f, 0.72f), Vector2.zero, Vector2.zero);
+        SetRect(settingsPanel, new Vector2(0.33f, 0.27f), new Vector2(0.67f, 0.72f), Vector2.zero, Vector2.zero);
         VerticalLayoutGroup settingsLayout = settingsPanel.AddComponent<VerticalLayoutGroup>();
         settingsLayout.padding = new RectOffset(14, 14, 10, 10);
         settingsLayout.spacing = 7f;
@@ -146,10 +154,11 @@ public sealed class IdleGuildIdleHud : MonoBehaviour
         Button(settingsPanel.transform, "사운드 켜기/끄기", () => { IdleGuildReleaseServices.ToggleSound(); ShowToast(IdleGuildReleaseServices.SoundEnabled ? "사운드 ON" : "사운드 OFF"); });
         Button(settingsPanel.transform, "오늘의 출석 보상", () => TryUpgrade(progression.ClaimDailyAttendance, "출석 보상을 받았습니다"));
         Button(settingsPanel.transform, "우편함 환영 보상", () => TryUpgrade(progression.ClaimWelcomeMail, "우편 보상을 받았습니다"));
+        Button(settingsPanel.transform, "닫기", CloseAllPanels);
         settingsPanel.SetActive(false);
 
         missionPanel = Panel(transform, "Missions", new Color(0.05f, 0.09f, 0.14f, 0.98f));
-        SetRect(missionPanel, new Vector2(0.66f, 0.40f), new Vector2(0.97f, 0.76f), Vector2.zero, Vector2.zero);
+        SetRect(missionPanel, new Vector2(0.28f, 0.12f), new Vector2(0.72f, 0.84f), Vector2.zero, Vector2.zero);
         VerticalLayoutGroup missionLayout = missionPanel.AddComponent<VerticalLayoutGroup>();
         missionLayout.padding = new RectOffset(14, 14, 10, 10);
         missionLayout.spacing = 6f;
@@ -161,6 +170,7 @@ public sealed class IdleGuildIdleHud : MonoBehaviour
         Button(missionPanel.transform, "누적 처치 업적", () => ClaimAchievement(0));
         Button(missionPanel.transform, "스테이지 10 업적", () => ClaimAchievement(1));
         Button(missionPanel.transform, "장비 5개 업적", () => ClaimAchievement(2));
+        Button(missionPanel.transform, "닫기", CloseAllPanels);
         missionPanel.SetActive(false);
 
         skillCooldownText = Label(transform, "", 20, FontStyle.Bold);
@@ -208,6 +218,7 @@ public sealed class IdleGuildIdleHud : MonoBehaviour
     public void ShowToast(string message)
     {
         StopAllCoroutines();
+        if (toastText != null) toastText.transform.SetAsLastSibling();
         StartCoroutine(Toast(message));
     }
 
@@ -224,14 +235,19 @@ public sealed class IdleGuildIdleHud : MonoBehaviour
         ShowToast(action() ? success : "골드가 부족합니다");
     }
 
+    private void ToggleGrowthPanel()
+    {
+        ToggleExclusivePanel(growthPanel);
+    }
+
     private void ToggleCharacterPanel()
     {
-        characterPanel.SetActive(!characterPanel.activeSelf);
+        ToggleExclusivePanel(characterPanel);
     }
 
     private void ToggleEquipmentPanel()
     {
-        equipmentPanel.SetActive(!equipmentPanel.activeSelf);
+        ToggleExclusivePanel(equipmentPanel);
     }
 
     private void UseSkill(int skillIndex)
@@ -249,17 +265,36 @@ public sealed class IdleGuildIdleHud : MonoBehaviour
 
     private void ToggleSkillPanel()
     {
-        skillPanel.SetActive(!skillPanel.activeSelf);
+        ToggleExclusivePanel(skillPanel);
     }
 
     private void ToggleSettingsPanel()
     {
-        settingsPanel.SetActive(!settingsPanel.activeSelf);
+        ToggleExclusivePanel(settingsPanel);
     }
 
     private void ToggleMissionPanel()
     {
-        missionPanel.SetActive(!missionPanel.activeSelf);
+        ToggleExclusivePanel(missionPanel);
+    }
+
+    private void ToggleExclusivePanel(GameObject target)
+    {
+        bool shouldOpen = target != null && !target.activeSelf;
+        CloseAllPanels();
+        if (!shouldOpen) return;
+        target.SetActive(true);
+        target.transform.SetAsLastSibling();
+    }
+
+    private void CloseAllPanels()
+    {
+        if (growthPanel != null) growthPanel.SetActive(false);
+        if (characterPanel != null) characterPanel.SetActive(false);
+        if (equipmentPanel != null) equipmentPanel.SetActive(false);
+        if (skillPanel != null) skillPanel.SetActive(false);
+        if (settingsPanel != null) settingsPanel.SetActive(false);
+        if (missionPanel != null) missionPanel.SetActive(false);
     }
 
     private void ClaimMission(int mission)
