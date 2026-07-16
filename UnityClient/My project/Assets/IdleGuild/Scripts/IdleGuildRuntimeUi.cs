@@ -8,6 +8,7 @@ using UnityEngine.UI;
 // Play 시 Canvas와 버튼을 코드로 만들어 디버그/데모 UI를 제공하는 클래스입니다.
 public sealed class IdleGuildRuntimeUi
 {
+    private GameObject rootObject;
     // Unity 6에서 사용할 수 있는 기본 런타임 폰트입니다.
     private Font uiFont;
     // 서버 주소를 표시하는 텍스트입니다.
@@ -58,6 +59,9 @@ public sealed class IdleGuildRuntimeUi
         Action<int> onChallengeStage,
         Action onEquipBronze,
         Action onBuyGold,
+        Action onSelectGirl,
+        Action onSelectCat,
+        Action onSelectClassic,
         Action onClearSession)
     {
         // Unity 6에서는 Arial.ttf 대신 LegacyRuntime.ttf를 기본 폰트로 사용해야 합니다.
@@ -65,22 +69,27 @@ public sealed class IdleGuildRuntimeUi
         // 버튼 클릭을 처리할 EventSystem이 없으면 새 Input System용으로 생성합니다.
         EnsureEventSystem();
 
-        // 화면 전체를 덮는 Canvas 오브젝트를 만듭니다.
-        GameObject canvasObject = new GameObject("IdleGuild Runtime UI");
+        // Canvas Prefab을 우선 복제하고, 아직 생성되지 않았다면 기존 코드 방식으로 만듭니다.
+        GameObject canvasPrefab = Resources.Load<GameObject>("Prefabs/UI/RuntimeCanvas");
+        GameObject canvasObject = canvasPrefab != null
+            ? UnityEngine.Object.Instantiate(canvasPrefab, parent)
+            : new GameObject("IdleGuild Runtime UI");
+        canvasObject.name = "IdleGuild Runtime UI";
+        rootObject = canvasObject;
         canvasObject.transform.SetParent(parent, false);
 
         // ScreenSpaceOverlay는 별도 카메라 없이 항상 화면 위에 UI를 그립니다.
-        Canvas canvas = canvasObject.AddComponent<Canvas>();
+        Canvas canvas = GetOrAddComponent<Canvas>(canvasObject);
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
 
         // 해상도에 따라 UI 크기가 자연스럽게 스케일되도록 기준 해상도를 설정합니다.
-        CanvasScaler scaler = canvasObject.AddComponent<CanvasScaler>();
+        CanvasScaler scaler = GetOrAddComponent<CanvasScaler>(canvasObject);
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = new Vector2(1280f, 720f);
         scaler.matchWidthOrHeight = 0.5f;
 
         // 버튼 클릭과 입력 필드 포커스를 받기 위해 GraphicRaycaster가 필요합니다.
-        canvasObject.AddComponent<GraphicRaycaster>();
+        GetOrAddComponent<GraphicRaycaster>(canvasObject);
 
         // Canvas RectTransform을 화면 전체로 늘립니다.
         RectTransform canvasRect = canvasObject.GetComponent<RectTransform>();
@@ -98,8 +107,8 @@ public sealed class IdleGuildRuntimeUi
 
         // VerticalLayoutGroup으로 텍스트와 버튼을 위에서 아래로 자동 배치합니다.
         VerticalLayoutGroup layout = panel.AddComponent<VerticalLayoutGroup>();
-        layout.padding = new RectOffset(24, 24, 20, 20);
-        layout.spacing = 10f;
+        layout.padding = new RectOffset(18, 18, 12, 12);
+        layout.spacing = 6f;
         layout.childAlignment = TextAnchor.UpperLeft;
         layout.childControlWidth = true;
         layout.childControlHeight = true;
@@ -114,39 +123,53 @@ public sealed class IdleGuildRuntimeUi
         busyText = CreateText(panel.transform, string.Empty, 15, FontStyle.Bold, TextAnchor.MiddleLeft, 24f);
 
         // 공개 API와 로그인 버튼을 첫 번째 줄에 배치합니다.
-        GameObject topButtons = CreateRow(panel.transform, "Top Buttons", 8f, 42f);
+        GameObject topButtons = CreateRow(panel.transform, "Top Buttons", 8f, 36f);
         checkStatusButton = CreateButton(topButtons.transform, "Check Server", onCheckStatus);
         runDemoButton = CreateButton(topButtons.transform, "Run Demo Flow", onRunDemo);
         guestLoginButton = CreateButton(topButtons.transform, "1. Guest Login", onGuestLogin);
 
         // 인증이 필요한 주요 게임 액션 버튼을 두 번째 줄에 배치합니다.
-        GameObject actionButtons = CreateRow(panel.transform, "Action Buttons", 8f, 42f);
+        GameObject actionButtons = CreateRow(panel.transform, "Action Buttons", 8f, 36f);
         getGameStateButton = CreateButton(actionButtons.transform, "2. State", onGetGameState);
         claimRewardButton = CreateButton(actionButtons.transform, "3. Claim", onClaimReward);
         upgradeHeroButton = CreateButton(actionButtons.transform, "4. Upgrade", onUpgradeHero);
 
         // 스테이지 입력 필드와 도전 버튼을 세 번째 줄에 배치합니다.
-        GameObject stageRow = CreateRow(panel.transform, "Stage Row", 8f, 42f);
+        GameObject stageRow = CreateRow(panel.transform, "Stage Row", 8f, 36f);
         CreateText(stageRow.transform, "Stage", 15, FontStyle.Bold, TextAnchor.MiddleLeft, 42f, 70f);
         stageInputField = CreateInputField(stageRow.transform, initialStage);
-        challengeStageButton = CreateButton(stageRow.transform, "5. Challenge Stage", () =>
+        challengeStageButton = CreateButton(stageRow.transform, "5. Boss Stage", () =>
         {
             // 버튼 클릭 시 입력 필드 값을 검증한 뒤 Bootstrap 콜백으로 전달합니다.
             onChallengeStage?.Invoke(ParseStageInput());
         });
 
         // 서버 고도화 기능인 장비와 모의 상점을 네 번째 줄에 배치합니다.
-        GameObject extendedRow = CreateRow(panel.transform, "Extended Actions", 8f, 42f);
+        GameObject extendedRow = CreateRow(panel.transform, "Extended Actions", 8f, 36f);
         equipBronzeButton = CreateButton(extendedRow.transform, "6. Equip Bronze", onEquipBronze);
         buyGoldButton = CreateButton(extendedRow.transform, "7. Buy 100 Gold (Mock)", onBuyGold);
+
+        GameObject characterRow = CreateRow(panel.transform, "Character Selection", 8f, 36f);
+        CreateText(characterRow.transform, "Hero", 15, FontStyle.Bold, TextAnchor.MiddleLeft, 36f, 55f);
+        CreateButton(characterRow.transform, "Girl", onSelectGirl);
+        CreateButton(characterRow.transform, "Black Cat", onSelectCat);
+        CreateButton(characterRow.transform, "Classic", onSelectClassic);
 
         // 테스트 중 토큰이 꼬였을 때 바로 지울 수 있는 세션 초기화 버튼입니다.
         clearSessionButton = CreateButton(panel.transform, "Clear Saved Session", onClearSession);
         // 게임 상태와 로그 표시 영역을 생성합니다.
-        gameStateText = CreateText(panel.transform, string.Empty, 16, FontStyle.Normal, TextAnchor.UpperLeft, 112f);
-        logText = CreateText(panel.transform, string.Empty, 14, FontStyle.Normal, TextAnchor.UpperLeft, 220f);
+        gameStateText = CreateText(panel.transform, string.Empty, 16, FontStyle.Normal, TextAnchor.UpperLeft, 86f);
+        logText = CreateText(panel.transform, string.Empty, 14, FontStyle.Normal, TextAnchor.UpperLeft, 110f);
         logText.horizontalOverflow = HorizontalWrapMode.Wrap;
         logText.verticalOverflow = VerticalWrapMode.Truncate;
+    }
+
+    public void SetVisible(bool visible)
+    {
+        if (rootObject != null)
+        {
+            rootObject.SetActive(visible);
+        }
     }
 
     // Bootstrap이 가진 최신 상태를 화면 텍스트와 버튼 활성화 상태에 반영합니다.
@@ -154,6 +177,7 @@ public sealed class IdleGuildRuntimeUi
         string apiBaseUrl,
         IdleGuildSession session,
         GameStateResponse gameState,
+        int huntGold,
         StringBuilder log,
         bool isBusy,
         bool isDemoRunning)
@@ -170,7 +194,7 @@ public sealed class IdleGuildRuntimeUi
         tokenText.text = "Token: " + (session.HasToken ? "saved" : "(none)");
         busyText.text = isDemoRunning ? "Status: running demo flow" : isBusy ? "Status: waiting for server" : "Status: ready";
         // 게임 상태와 로그 본문을 갱신합니다.
-        gameStateText.text = FormatGameState(gameState);
+        gameStateText.text = FormatGameState(gameState) + "\nHunt Gold (local): " + huntGold;
         logText.text = log.ToString();
 
         // 서버 요청 중이거나 데모 실행 중이면 중복 클릭을 막습니다.
@@ -241,6 +265,12 @@ public sealed class IdleGuildRuntimeUi
         GameObject eventSystem = new GameObject("EventSystem");
         eventSystem.AddComponent<EventSystem>();
         eventSystem.AddComponent<InputSystemUIInputModule>();
+    }
+
+    private static T GetOrAddComponent<T>(GameObject target) where T : Component
+    {
+        T component = target.GetComponent<T>();
+        return component != null ? component : target.AddComponent<T>();
     }
 
     // 배경색이 있는 UI 패널 오브젝트를 생성합니다.
@@ -320,12 +350,12 @@ public sealed class IdleGuildRuntimeUi
 
         // 버튼 높이와 가로 확장을 설정합니다.
         LayoutElement element = buttonObject.AddComponent<LayoutElement>();
-        element.minHeight = 40f;
-        element.preferredHeight = 40f;
+        element.minHeight = 34f;
+        element.preferredHeight = 34f;
         element.flexibleWidth = 1f;
 
         // 버튼 중앙에 라벨 텍스트를 채웁니다.
-        Text text = CreateText(buttonObject.transform, label, 14, FontStyle.Bold, TextAnchor.MiddleCenter, 40f);
+        Text text = CreateText(buttonObject.transform, label, 14, FontStyle.Bold, TextAnchor.MiddleCenter, 34f);
         Stretch(text.rectTransform);
         return button;
     }

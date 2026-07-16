@@ -13,6 +13,11 @@ public sealed class IdleGuildMockApiClient : IIdleGuildApiClient
     private long gold = 20;
     private int heroLevel = 1;
     private int highestStage = 1;
+    private int attackLevel = 1;
+    private int attackSpeedLevel;
+    private int criticalLevel;
+    private int prestigeLevel;
+    private int soulStones;
     private bool isBronzeSwordEquipped;
 
     public IEnumerator GetSystemStatus(string apiBaseUrl, Action<IdleGuildApiResult<SystemStatusResponse>> onComplete)
@@ -42,6 +47,29 @@ public sealed class IdleGuildMockApiClient : IIdleGuildApiClient
     public IEnumerator GetGameState(string apiBaseUrl, Action<IdleGuildApiResult<GameStateResponse>> onComplete)
     {
         yield return Complete(onComplete, CreateGameState());
+    }
+
+    public IEnumerator SyncProgression(string apiBaseUrl, SyncProgressionRequest progression, Action<IdleGuildApiResult<SyncProgressionResponse>> onComplete)
+    {
+        attackLevel = Mathf.Max(attackLevel, progression.attackLevel);
+        attackSpeedLevel = Mathf.Max(attackSpeedLevel, progression.attackSpeedLevel);
+        criticalLevel = Mathf.Max(criticalLevel, progression.criticalLevel);
+        prestigeLevel = Mathf.Max(prestigeLevel, progression.prestigeLevel);
+        soulStones = Mathf.Max(soulStones, progression.soulStones);
+        yield return Complete(onComplete, new SyncProgressionResponse
+        {
+            attackLevel = attackLevel,
+            attackSpeedLevel = attackSpeedLevel,
+            criticalLevel = criticalLevel,
+            prestigeLevel = prestigeLevel,
+            soulStones = soulStones,
+            equipmentTier = progression.equipmentTier,
+            equipmentCount = progression.equipmentCount,
+            unlockedRegion = progression.unlockedRegion,
+            skillOneLevel = progression.skillOneLevel,
+            skillTwoLevel = progression.skillTwoLevel,
+            skillThreeLevel = progression.skillThreeLevel
+        });
     }
 
     public IEnumerator ClaimIdleReward(string apiBaseUrl, string idempotencyKey, Action<IdleGuildApiResult<ClaimIdleRewardResponse>> onComplete)
@@ -189,6 +217,14 @@ public sealed class IdleGuildMockApiClient : IIdleGuildApiClient
             gold = gold,
             heroLevel = heroLevel,
             highestStage = highestStage,
+            attackLevel = attackLevel,
+            attackSpeedLevel = attackSpeedLevel,
+            criticalLevel = criticalLevel,
+            prestigeLevel = prestigeLevel,
+            soulStones = soulStones,
+            skillOneLevel = 1,
+            skillTwoLevel = 1,
+            skillThreeLevel = 1,
             productionBonusPercent = ProductionBonusPercent,
             heroPower = heroLevel * 10 + EquipmentPowerBonus,
             equipmentPowerBonus = EquipmentPowerBonus

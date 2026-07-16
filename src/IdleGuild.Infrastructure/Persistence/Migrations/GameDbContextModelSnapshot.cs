@@ -179,9 +179,39 @@ namespace IdleGuild.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("player_id");
 
+                    b.Property<int>("AttackLevel")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(1)
+                        .HasColumnName("attack_level");
+
+                    b.Property<int>("AttackSpeedLevel")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("attack_speed_level");
+
                     b.Property<DateTimeOffset>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at_utc");
+
+                    b.Property<int>("CriticalLevel")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("critical_level");
+
+                    b.Property<int>("EquipmentCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("equipment_count");
+
+                    b.Property<int>("EquipmentTier")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("equipment_tier");
 
                     b.Property<long>("Gold")
                         .HasColumnType("bigint")
@@ -204,6 +234,42 @@ namespace IdleGuild.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset>("LastIdleRewardClaimedAtUtc")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("last_idle_reward_claimed_at_utc");
+
+                    b.Property<int>("PrestigeLevel")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("prestige_level");
+
+                    b.Property<int>("SkillOneLevel")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(1)
+                        .HasColumnName("skill_one_level");
+
+                    b.Property<int>("SkillThreeLevel")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(1)
+                        .HasColumnName("skill_three_level");
+
+                    b.Property<int>("SkillTwoLevel")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(1)
+                        .HasColumnName("skill_two_level");
+
+                    b.Property<int>("SoulStones")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("soul_stones");
+
+                    b.Property<int>("UnlockedRegion")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("unlocked_region");
 
                     b.Property<uint>("Version")
                         .IsConcurrencyToken()

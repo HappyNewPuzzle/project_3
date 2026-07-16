@@ -72,12 +72,55 @@ public sealed class GameStateResponse
     public int heroLevel;
     // 플레이어가 도달한 최고 스테이지입니다.
     public int highestStage;
+    public int attackLevel;
+    public int attackSpeedLevel;
+    public int criticalLevel;
+    public int prestigeLevel;
+    public int soulStones;
+    public int equipmentTier;
+    public int equipmentCount;
+    public int unlockedRegion;
+    public int skillOneLevel;
+    public int skillTwoLevel;
+    public int skillThreeLevel;
     // 스테이지 진행으로 얻은 생산 보너스 퍼센트입니다.
     public int productionBonusPercent;
     // 영웅 레벨과 장착 장비를 합산한 서버 권위 전투력입니다.
     public int heroPower;
     // 현재 장착 장비가 제공하는 전투력 합계입니다.
     public int equipmentPowerBonus;
+}
+
+[Serializable]
+public sealed class SyncProgressionRequest
+{
+    public int attackLevel;
+    public int attackSpeedLevel;
+    public int criticalLevel;
+    public int prestigeLevel;
+    public int soulStones;
+    public int equipmentTier;
+    public int equipmentCount;
+    public int unlockedRegion;
+    public int skillOneLevel;
+    public int skillTwoLevel;
+    public int skillThreeLevel;
+}
+
+[Serializable]
+public sealed class SyncProgressionResponse
+{
+    public int attackLevel;
+    public int attackSpeedLevel;
+    public int criticalLevel;
+    public int prestigeLevel;
+    public int soulStones;
+    public int equipmentTier;
+    public int equipmentCount;
+    public int unlockedRegion;
+    public int skillOneLevel;
+    public int skillTwoLevel;
+    public int skillThreeLevel;
 }
 
 // GET /api/v1/equipment의 장비 한 개입니다.

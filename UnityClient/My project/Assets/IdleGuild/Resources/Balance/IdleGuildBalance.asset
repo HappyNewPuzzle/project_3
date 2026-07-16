@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 07cfe2a6d9053f04e9aba3946763142c, type: 3}
+  m_Name: IdleGuildBalance
+  m_EditorClassIdentifier: Assembly-CSharp::IdleGuildBalanceConfig
+  baseAttack: 8
+  attackPerLevel: 4
+  attackPerEquipmentTier: 9
+  attackSpeedPerLevel: 0.08
+  baseCriticalChance: 0.05
+  criticalChancePerLevel: 0.015
+  maximumCriticalChance: 0.5
+  prestigeAttackBonus: 0.12
+  regularMonsterHealthInAttacks: 1
+  bossHealthInAttacks: 5
+  bossHealthPerStage: 8
+  bossTimeLimitSeconds: 10
+  bossAttackIntervalSeconds: 2.2
+  skillDamageMultipliers: 040000000300000002000000
+  regularBaseGold: 3
+  regularGoldPerStage: 2
+  bossBaseGold: 12
+  bossGoldPerStage: 6
+  equipmentDropChance: 0.35
+  maximumOfflineHours: 8

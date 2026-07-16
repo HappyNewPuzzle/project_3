@@ -1,0 +1,597 @@
+fileFormatVersion: 2
+guid: aa7edb4c1274a284687235080990f65b
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -6217130406539345922
+    second: masked-thief-spritesheet_0
+  - first:
+      213: -724798102025737355
+    second: masked-thief-spritesheet_1
+  - first:
+      213: -2160833661618497516
+    second: masked-thief-spritesheet_2
+  - first:
+      213: 2459545372607091206
+    second: masked-thief-spritesheet_3
+  - first:
+      213: 2378573541124140252
+    second: masked-thief-spritesheet_4
+  - first:
+      213: 8539969688945195694
+    second: masked-thief-spritesheet_5
+  - first:
+      213: 8358679121520922076
+    second: masked-thief-spritesheet_6
+  - first:
+      213: -1837711234455724662
+    second: masked-thief-spritesheet_7
+  - first:
+      213: 1767292360936622447
+    second: masked-thief-spritesheet_8
+  - first:
+      213: -7956423467989188480
+    second: masked-thief-spritesheet_9
+  - first:
+      213: 6246282472280779351
+    second: masked-thief-spritesheet_10
+  - first:
+      213: 3065635485805307308
+    second: masked-thief-spritesheet_11
+  - first:
+      213: 236417771902068552
+    second: masked-thief-spritesheet_12
+  - first:
+      213: -8086056306485408141
+    second: masked-thief-spritesheet_13
+  - first:
+      213: 7142152917660674238
+    second: masked-thief-spritesheet_14
+  - first:
+      213: 5481470007304752613
+    second: masked-thief-spritesheet_15
+  - first:
+      213: 5517604393678080805
+    second: maskedThief_idle_0
+  - first:
+      213: 1402110413692554208
+    second: maskedThief_idle_1
+  - first:
+      213: -7448799031084145857
+    second: maskedThief_idle_2
+  - first:
+      213: -768295150331554736
+    second: maskedThief_idle_3
+  - first:
+      213: -2598902470794317530
+    second: maskedThief_run_0
+  - first:
+      213: 9167281984388032338
+    second: maskedThief_run_1
+  - first:
+      213: -6390967939487490533
+    second: maskedThief_run_2
+  - first:
+      213: 6061506749998402779
+    second: maskedThief_run_3
+  - first:
+      213: -7107982632659990768
+    second: maskedThief_attack_0
+  - first:
+      213: 5198594003606931760
+    second: maskedThief_attack_1
+  - first:
+      213: -8053194630624631204
+    second: maskedThief_attack_2
+  - first:
+      213: 3745899066191885357
+    second: maskedThief_attack_3
+  - first:
+      213: 9163964634790100468
+    second: maskedThief_hit_0
+  - first:
+      213: 304118252357135967
+    second: maskedThief_hit_1
+  - first:
+      213: 4003634624934127381
+    second: maskedThief_hit_2
+  - first:
+      213: 3895318716750408235
+    second: maskedThief_hit_3
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 0
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 313
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: maskedThief_idle_0
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 941
+        width: 313
+        height: 313
+      alignment: 7
+      pivot: {x: 0.5, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 52b015866f7729c40800000000000000
+      internalID: 5517604393678080805
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: maskedThief_idle_1
+      rect:
+        serializedVersion: 2
+        x: 313
+        y: 941
+        width: 313
+        height: 313
+      alignment: 7
+      pivot: {x: 0.5, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0eb45081efb457310800000000000000
+      internalID: 1402110413692554208
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: maskedThief_idle_2
+      rect:
+        serializedVersion: 2
+        x: 626
+        y: 941
+        width: 313
+        height: 313
+      alignment: 7
+      pivot: {x: 0.5, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f33a4f42fbc80a890800000000000000
+      internalID: -7448799031084145857
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: maskedThief_idle_3
+      rect:
+        serializedVersion: 2
+        x: 939
+        y: 941
+        width: 313
+        height: 313
+      alignment: 7
+      pivot: {x: 0.5, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 05415d1a1a77655f0800000000000000
+      internalID: -768295150331554736
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: maskedThief_run_0
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 628
+        width: 313
+        height: 313
+      alignment: 7
+      pivot: {x: 0.5, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6217b6ee8f7deebd0800000000000000
+      internalID: -2598902470794317530
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: maskedThief_run_1
+      rect:
+        serializedVersion: 2
+        x: 313
+        y: 628
+        width: 313
+        height: 313
+      alignment: 7
+      pivot: {x: 0.5, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 257694bf46ab83f70800000000000000
+      internalID: 9167281984388032338
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: maskedThief_run_2
+      rect:
+        serializedVersion: 2
+        x: 626
+        y: 628
+        width: 313
+        height: 313
+      alignment: 7
+      pivot: {x: 0.5, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b1e10f31588be47a0800000000000000
+      internalID: -6390967939487490533
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: maskedThief_run_3
+      rect:
+        serializedVersion: 2
+        x: 939
+        y: 628
+        width: 313
+        height: 313
+      alignment: 7
+      pivot: {x: 0.5, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bdc894d164cce1450800000000000000
+      internalID: 6061506749998402779
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: maskedThief_attack_0
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 315
+        width: 313
+        height: 313
+      alignment: 7
+      pivot: {x: 0.5, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 017c7ae847f5b5d90800000000000000
+      internalID: -7107982632659990768
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: maskedThief_attack_1
+      rect:
+        serializedVersion: 2
+        x: 313
+        y: 315
+        width: 313
+        height: 313
+      alignment: 7
+      pivot: {x: 0.5, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0398774f3bd152840800000000000000
+      internalID: 5198594003606931760
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: maskedThief_attack_2
+      rect:
+        serializedVersion: 2
+        x: 626
+        y: 315
+        width: 313
+        height: 313
+      alignment: 7
+      pivot: {x: 0.5, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c56298ea62e4d3090800000000000000
+      internalID: -8053194630624631204
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: maskedThief_attack_3
+      rect:
+        serializedVersion: 2
+        x: 939
+        y: 315
+        width: 313
+        height: 313
+      alignment: 7
+      pivot: {x: 0.5, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d24b5d4aa5b1cf330800000000000000
+      internalID: 3745899066191885357
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: maskedThief_hit_0
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 2
+        width: 313
+        height: 313
+      alignment: 7
+      pivot: {x: 0.5, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4fdf7e65841fc2f70800000000000000
+      internalID: 9163964634790100468
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: maskedThief_hit_1
+      rect:
+        serializedVersion: 2
+        x: 313
+        y: 2
+        width: 313
+        height: 313
+      alignment: 7
+      pivot: {x: 0.5, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f5ea57170f1783400800000000000000
+      internalID: 304118252357135967
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: maskedThief_hit_2
+      rect:
+        serializedVersion: 2
+        x: 626
+        y: 2
+        width: 313
+        height: 313
+      alignment: 7
+      pivot: {x: 0.5, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 51727adaa74cf8730800000000000000
+      internalID: 4003634624934127381
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: maskedThief_hit_3
+      rect:
+        serializedVersion: 2
+        x: 939
+        y: 2
+        width: 313
+        height: 313
+      alignment: 7
+      pivot: {x: 0.5, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b2aa6de0cb3fe0630800000000000000
+      internalID: 3895318716750408235
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      masked-thief-spritesheet_0: -6217130406539345922
+      masked-thief-spritesheet_1: -724798102025737355
+      masked-thief-spritesheet_10: 6246282472280779351
+      masked-thief-spritesheet_11: 3065635485805307308
+      masked-thief-spritesheet_12: 236417771902068552
+      masked-thief-spritesheet_13: -8086056306485408141
+      masked-thief-spritesheet_14: 7142152917660674238
+      masked-thief-spritesheet_15: 5481470007304752613
+      masked-thief-spritesheet_2: -2160833661618497516
+      masked-thief-spritesheet_3: 2459545372607091206
+      masked-thief-spritesheet_4: 2378573541124140252
+      masked-thief-spritesheet_5: 8539969688945195694
+      masked-thief-spritesheet_6: 8358679121520922076
+      masked-thief-spritesheet_7: -1837711234455724662
+      masked-thief-spritesheet_8: 1767292360936622447
+      masked-thief-spritesheet_9: -7956423467989188480
+      maskedThief_attack_0: -7107982632659990768
+      maskedThief_attack_1: 5198594003606931760
+      maskedThief_attack_2: -8053194630624631204
+      maskedThief_attack_3: 3745899066191885357
+      maskedThief_hit_0: 9163964634790100468
+      maskedThief_hit_1: 304118252357135967
+      maskedThief_hit_2: 4003634624934127381
+      maskedThief_hit_3: 3895318716750408235
+      maskedThief_idle_0: 5517604393678080805
+      maskedThief_idle_1: 1402110413692554208
+      maskedThief_idle_2: -7448799031084145857
+      maskedThief_idle_3: -768295150331554736
+      maskedThief_run_0: -2598902470794317530
+      maskedThief_run_1: 9167281984388032338
+      maskedThief_run_2: -6390967939487490533
+      maskedThief_run_3: 6061506749998402779
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

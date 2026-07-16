@@ -14,8 +14,12 @@ public sealed class IdleGuildWorldHealthBar
         string objectName,
         Color fillColor)
     {
-        // 체력 바 Root를 캐릭터 자식으로 만들어 캐릭터 이동을 자동으로 따라가게 합니다.
-        GameObject root = new GameObject(objectName);
+        // Prefab을 우선 사용하고, 아직 생성되지 않았다면 기존 코드 생성 방식으로 돌아갑니다.
+        GameObject prefab = Resources.Load<GameObject>("Prefabs/UI/WorldHealthBar");
+        GameObject root = prefab != null
+            ? Object.Instantiate(prefab, actor)
+            : CreateFallbackRoot(actor);
+        root.name = objectName;
         root.transform.SetParent(actor, false);
         root.transform.localPosition = new Vector3(0f, 0.82f, 0f);
 
@@ -26,18 +30,18 @@ public sealed class IdleGuildWorldHealthBar
             SafeInverse(actorScale.y),
             1f);
 
-        // 검은 배경을 Fill보다 조금 크게 만들어 테두리처럼 보이게 합니다.
-        GameObject background = CreateBarPart(
-            root.transform,
-            pixelSprite,
-            "Background",
-            new Color(0.04f, 0.05f, 0.06f, 0.95f),
-            19);
-        background.transform.localScale = new Vector3(BarWidth + 0.12f, BarHeight + 0.1f, 1f);
+        Transform background = FindOrCreatePart(root.transform, "Background", pixelSprite, 19);
+        SpriteRenderer backgroundRenderer = background.GetComponent<SpriteRenderer>();
+        backgroundRenderer.sprite = pixelSprite;
+        backgroundRenderer.color = new Color(0.04f, 0.05f, 0.06f, 0.95f);
+        backgroundRenderer.sortingOrder = 19;
+        background.localScale = new Vector3(BarWidth + 0.12f, BarHeight + 0.1f, 1f);
 
-        // 실제 체력 비율을 표시할 Fill Sprite를 배경 앞에 배치합니다.
-        GameObject fillObject = CreateBarPart(root.transform, pixelSprite, "Fill", fillColor, 20);
-        fill = fillObject.transform;
+        fill = FindOrCreatePart(root.transform, "Fill", pixelSprite, 20);
+        SpriteRenderer fillRenderer = fill.GetComponent<SpriteRenderer>();
+        fillRenderer.sprite = pixelSprite;
+        fillRenderer.color = fillColor;
+        fillRenderer.sortingOrder = 20;
         fillCenter = Vector3.zero;
         SetHealth(1, 1);
     }
@@ -55,18 +59,34 @@ public sealed class IdleGuildWorldHealthBar
         fill.localPosition = fillCenter + new Vector3((visibleWidth - BarWidth) * 0.5f, 0f, -0.01f);
     }
 
-    private static GameObject CreateBarPart(
+    private static GameObject CreateFallbackRoot(Transform actor)
+    {
+        GameObject root = new GameObject("WorldHealthBar Fallback");
+        root.transform.SetParent(actor, false);
+        return root;
+    }
+
+    private static Transform FindOrCreatePart(
         Transform parent,
-        Sprite pixelSprite,
         string objectName,
-        Color color,
+        Sprite pixelSprite,
         int sortingOrder)
     {
-        GameObject part = new GameObject(objectName);
-        part.transform.SetParent(parent, false);
-        SpriteRenderer renderer = part.AddComponent<SpriteRenderer>();
+        Transform part = parent.Find(objectName);
+        if (part == null)
+        {
+            GameObject partObject = new GameObject(objectName);
+            partObject.transform.SetParent(parent, false);
+            part = partObject.transform;
+        }
+
+        SpriteRenderer renderer = part.GetComponent<SpriteRenderer>();
+        if (renderer == null)
+        {
+            renderer = part.gameObject.AddComponent<SpriteRenderer>();
+        }
+
         renderer.sprite = pixelSprite;
-        renderer.color = color;
         renderer.sortingOrder = sortingOrder;
         return part;
     }

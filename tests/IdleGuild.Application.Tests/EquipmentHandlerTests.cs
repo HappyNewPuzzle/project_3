@@ -62,7 +62,7 @@ public sealed class EquipmentHandlerTests
         Assert.True(replay.IsReplay);
         var onlyEquipped = Assert.Single(equipped);
         Assert.Equal(bronze.EquipmentId, onlyEquipped.EquipmentId);
-        Assert.Equal(1, repository.SaveCount);
+        Assert.Equal(2, repository.SaveCount);
     }
 
     private static InMemoryPlayerGameStateRepository

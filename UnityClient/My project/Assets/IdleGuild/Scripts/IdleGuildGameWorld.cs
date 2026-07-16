@@ -20,6 +20,11 @@ public sealed class IdleGuildGameWorld
 
     private readonly Transform parent;
     private readonly MonoBehaviour coroutineHost;
+    private readonly bool useAlternateCharacters;
+    private readonly bool useBlackCatHero;
+    private readonly IdleGuildBattleSceneLayout sceneLayout;
+    private readonly IdleGuildProgression progression;
+    private readonly IdleGuildIdleHud idleHud;
 
     private Transform hero;
     private Transform monster;
@@ -35,38 +40,248 @@ public sealed class IdleGuildGameWorld
     // Resources 폴더의 PNG에서 잘라낸 영웅/몬스터 애니메이션 프레임입니다.
     private Sprite[] heroFrames;
     private Sprite[] monsterFrames;
+    private Sprite[] regionMonsterSprites;
     private Vector3 heroHome;
     private Vector3 monsterHome;
     private Coroutine combatRoutine;
+    private Coroutine autoHuntRoutine;
     private Coroutine heroAnimationRoutine;
     private Coroutine monsterAnimationRoutine;
+    private System.Action<int> onHuntGoldEarned;
+    private System.Action<int> onBossDefeated;
+    private readonly Transform[] roadSegments = new Transform[2];
+    private float roadWidth;
+    private Transform backdropTransform;
+    private Vector3 backdropOrigin;
+    private SpriteRenderer backdropRenderer;
+    private int pendingSkillDamage;
+    private int activeSkillType;
 
-    public IdleGuildGameWorld(Transform parent, MonoBehaviour coroutineHost)
+    public IdleGuildGameWorld(
+        Transform parent,
+        MonoBehaviour coroutineHost,
+        bool useAlternateCharacters,
+        bool useBlackCatHero,
+        IdleGuildBattleSceneLayout sceneLayout,
+        IdleGuildProgression progression,
+        IdleGuildIdleHud idleHud)
     {
         this.parent = parent;
         this.coroutineHost = coroutineHost;
+        this.useAlternateCharacters = useAlternateCharacters;
+        this.useBlackCatHero = useBlackCatHero;
+        this.sceneLayout = sceneLayout;
+        this.progression = progression;
+        this.idleHud = idleHud;
     }
 
     public void Build()
     {
         // 실제 PNG Sprite Sheet를 먼저 불러옵니다. 실패하면 CreateActors에서 임시 Sprite를 사용합니다.
-        heroFrames = LoadSpriteSheet("Sprites/hero-spritesheet");
-        monsterFrames = LoadSpriteSheet("Sprites/slime-spritesheet");
+        string heroSheet = useBlackCatHero
+            ? "Sprites/black-cat-red-ribbon-spritesheet"
+            : useAlternateCharacters ? "Sprites/girl-hero-spritesheet-v5" : "Sprites/hero-spritesheet";
+        string monsterSheet = useAlternateCharacters
+            ? "Sprites/masked-thief-spritesheet"
+            : "Sprites/slime-spritesheet";
+        string heroCharacterName = useBlackCatHero ? "blackCat" : useAlternateCharacters ? "girlHero" : "hero";
+        heroFrames = LoadSpriteSheet(heroSheet, heroCharacterName);
+        monsterFrames = LoadSpriteSheet(monsterSheet, useAlternateCharacters ? "maskedThief" : "slime");
+        regionMonsterSprites = LoadRegionMonsterSprites();
         CreateCameraBackdrop();
         CreateGround();
         CreateActors();
         CreateBattleHud();
         StartIdleAnimations();
+        coroutineHost.StartCoroutine(ScrollRoad());
     }
 
     public void PlayStageChallenge(int stage, string outcome)
     {
+        StopAutoHunt();
         if (combatRoutine != null)
         {
             coroutineHost.StopCoroutine(combatRoutine);
         }
 
         combatRoutine = coroutineHost.StartCoroutine(PlayCombat(stage, outcome));
+    }
+
+    public void StartAutoHunt(System.Action<int> goldEarned, System.Action<int> bossDefeated = null)
+    {
+        onHuntGoldEarned = goldEarned;
+        if (bossDefeated != null)
+        {
+            onBossDefeated = bossDefeated;
+        }
+        if (autoHuntRoutine != null || combatRoutine != null)
+        {
+            return;
+        }
+
+        autoHuntRoutine = coroutineHost.StartCoroutine(PlayAutoHunt());
+    }
+
+    public void ActivateSkill(int skillType)
+    {
+        activeSkillType = Mathf.Clamp(skillType, 0, 2);
+        int[] multipliers = progression.Balance.skillDamageMultipliers;
+        float levelBonus = 1f + (progression.GetSkillLevel(activeSkillType) - 1) * 0.18f;
+        float characterBonus = useBlackCatHero && activeSkillType == 1 ? 1.35f :
+            useAlternateCharacters && activeSkillType == 0 ? 1.25f :
+            !useAlternateCharacters && activeSkillType == 2 ? 1.3f : 1f;
+        pendingSkillDamage += Mathf.RoundToInt(progression.AttackDamage * multipliers[activeSkillType] * levelBonus * characterBonus);
+        coroutineHost.StartCoroutine(PlaySkillEffect());
+    }
+
+    private void StopAutoHunt()
+    {
+        if (autoHuntRoutine == null)
+        {
+            return;
+        }
+
+        coroutineHost.StopCoroutine(autoHuntRoutine);
+        autoHuntRoutine = null;
+        StopActorAnimations();
+    }
+
+    private IEnumerator PlayAutoHunt()
+    {
+        stageText.text = "AUTO HUNT";
+        resultText.gameObject.SetActive(false);
+        hero.position = heroHome;
+        int encounter = 0;
+        StartHeroLoop(ActorAnimationState.Run, 0.075f);
+
+        while (true)
+        {
+            encounter++;
+            bool boss = encounter % 7 == 0;
+            int regionIndex = ((progression.Stage - 1) / 10) % 3;
+            string[] regionNames = { "FOREST", "CAVE", "SNOWFIELD" };
+            if (backdropRenderer != null)
+            {
+                Color[] regionColors =
+                {
+                    new Color(0.9f, 1f, 0.9f, 1f),
+                    new Color(0.58f, 0.52f, 0.72f, 1f),
+                    new Color(0.78f, 0.9f, 1f, 1f)
+                };
+                backdropRenderer.color = regionColors[regionIndex];
+            }
+            int maxHealth = boss
+                ? progression.AttackDamage * progression.Balance.bossHealthInAttacks + progression.Stage * progression.Balance.bossHealthPerStage
+                : progression.AttackDamage * progression.Balance.regularMonsterHealthInAttacks;
+            int health = maxHealth;
+            float bossDeadline = Time.time + progression.Balance.bossTimeLimitSeconds;
+            float nextBossAttack = Time.time + progression.Balance.bossAttackIntervalSeconds;
+            stageText.text = (boss ? "BOSS " : "") + regionNames[regionIndex] + " " + progression.Stage;
+            monster.gameObject.SetActive(true);
+            monster.localScale = boss ? new Vector3(3.15f, 3.15f, 1f) : new Vector3(2.15f, 2.15f, 1f);
+            monsterRenderer.color = Color.white;
+            if (regionMonsterSprites != null && regionMonsterSprites.Length == 4)
+            {
+                monsterAnimator.enabled = false;
+                monsterRenderer.sprite = regionMonsterSprites[boss ? 3 : regionIndex];
+            }
+            monster.position = monsterHome + new Vector3(0.7f, 0f, 0f);
+            monsterRenderer.color = new Color(1f, 1f, 1f, 0f);
+            monsterHealthBar.SetHealth(health, maxHealth);
+            idleHud.SetBoss(true, health, maxHealth, boss ? progression.Balance.bossTimeLimitSeconds : -1f);
+
+            if (monsterAnimator.enabled)
+            {
+                StartMonsterLoop(ActorAnimationState.Run, 0.11f);
+            }
+            yield return MoveMonsterIntoBattle(
+                new Vector3(heroHome.x + 1.25f, monsterHome.y, monsterHome.z),
+                0.72f,
+                0.16f);
+
+            StopMonsterAnimation();
+            while (health > 0)
+            {
+                if (boss && Time.time >= bossDeadline)
+                {
+                    idleHud.ShowToast("보스 제한시간 초과!");
+                    break;
+                }
+
+                if (pendingSkillDamage > 0)
+                {
+                    int skillDamage = pendingSkillDamage;
+                    pendingSkillDamage = 0;
+                    health = Mathf.Max(0, health - skillDamage);
+                    monsterHealthBar.SetHealth(health, maxHealth);
+                    coroutineHost.StartCoroutine(ShowDamagePopup(monster.position + Vector3.up, skillDamage, new Color(0.35f, 0.9f, 1f, 1f)));
+                    idleHud.SetBoss(true, health, maxHealth, boss ? Mathf.Max(0f, bossDeadline - Time.time) : -1f);
+                    if (health <= 0) break;
+                }
+
+                if (boss && Time.time >= nextBossAttack)
+                {
+                    yield return BossAttackPattern();
+                    nextBossAttack = Time.time + progression.Balance.bossAttackIntervalSeconds;
+                }
+
+                StopHeroAnimation();
+                StartActorState(heroRenderer, heroAnimator, heroFrames, ActorAnimationState.Attack, 0.065f);
+                // 4프레임 공격 애니메이션이 눈에 보이기 전에 Run으로 덮이지 않도록 충분히 재생합니다.
+                yield return new WaitForSeconds(0.28f);
+
+                bool critical;
+                int damage = progression.RollDamage(out critical);
+                IdleGuildReleaseServices.PlayEffect(critical ? 760f : 520f);
+                health = Mathf.Max(0, health - damage);
+                monsterHealthBar.SetHealth(health, maxHealth);
+                StartActorState(monsterRenderer, monsterAnimator, monsterFrames, ActorAnimationState.Hit, 0.065f);
+                coroutineHost.StartCoroutine(PlayHitEffect(monster.position + new Vector3(0f, 0.45f, 0f)));
+                coroutineHost.StartCoroutine(ShowDamagePopup(
+                    monster.position + new Vector3(0f, 0.7f, 0f),
+                    damage,
+                    critical ? new Color(1f, 0.35f, 0.12f, 1f) : new Color(1f, 0.9f, 0.25f, 1f)));
+                coroutineHost.StartCoroutine(ShakeCamera(critical ? 0.11f : 0.07f));
+                idleHud.SetBoss(
+                    true,
+                    health,
+                    maxHealth,
+                    boss ? Mathf.Max(0f, bossDeadline - Time.time) : -1f);
+
+                StartHeroLoop(ActorAnimationState.Run, 0.075f);
+                float attackDelay = Mathf.Max(0.08f, 1f / progression.AttacksPerSecond - 0.28f);
+                yield return new WaitForSeconds(attackDelay);
+            }
+
+            idleHud.SetBoss(false, 0, 1, 0f);
+            if (health > 0)
+            {
+                if (boss)
+                {
+                    // 실패하면 한 번 일반 사냥으로 돌아간 뒤 같은 보스를 자동 재도전합니다.
+                    encounter = 5;
+                    idleHud.ShowToast("보스 실패 - 일반 사냥 후 재도전");
+                }
+                yield return KnockOutMonster();
+                yield return new WaitForSeconds(0.3f);
+                continue;
+            }
+
+            int reward = progression.RewardFor(boss);
+            if (boss)
+            {
+                onBossDefeated?.Invoke(Mathf.Max(1, progression.Stage - 1));
+                idleHud.ShowToast("BOSS CHEST OPEN!");
+            }
+            onHuntGoldEarned?.Invoke(reward);
+            idleHud.ShowGold(reward);
+            if (progression.TryDropAndAutoEquip(boss))
+            {
+                idleHud.ShowToast("장비 획득! Tier " + progression.EquipmentTier + " 자동 장착");
+            }
+            yield return KnockOutMonster();
+            yield return new WaitForSeconds(boss ? 0.35f : 0.04f);
+        }
     }
 
     private IEnumerator PlayCombat(int stage, string outcome)
@@ -77,6 +292,8 @@ public sealed class IdleGuildGameWorld
         StopActorAnimations();
         hero.position = heroHome;
         monster.position = monsterHome;
+        monsterAnimator.enabled = true;
+        monster.localScale = new Vector3(3f, 3f, 1f);
         heroRenderer.flipX = false;
         monster.gameObject.SetActive(true);
         monsterRenderer.color = Color.white;
@@ -84,7 +301,7 @@ public sealed class IdleGuildGameWorld
         StartMonsterLoop(ActorAnimationState.Idle, 0.16f);
 
         // Run 행을 반복 재생하면서 영웅의 Transform을 몬스터 앞으로 이동시킵니다.
-        Vector3 attackPoint = monsterHome + new Vector3(-1.1f, 0f, 0f);
+        Vector3 attackPoint = new Vector3(monsterHome.x - 1.1f, heroHome.y, monsterHome.z);
         StartHeroLoop(ActorAnimationState.Run, 0.09f);
         yield return MoveTo(hero, attackPoint, 0.55f);
         StopHeroAnimation();
@@ -164,6 +381,7 @@ public sealed class IdleGuildGameWorld
         // 전투가 끝나면 살아 있는 캐릭터를 다시 Idle 애니메이션으로 전환합니다.
         StartIdleAnimations();
         combatRoutine = null;
+        StartAutoHunt(onHuntGoldEarned, onBossDefeated);
     }
 
     // 전투 시작 시 스테이지 제목과 양쪽 체력을 초기 상태로 되돌립니다.
@@ -236,7 +454,7 @@ public sealed class IdleGuildGameWorld
     // 작은 사각 Sprite들이 공격 지점에서 퍼져 나가는 타격 플래시입니다.
     private IEnumerator PlayHitEffect(Vector3 worldPosition)
     {
-        const int particleCount = 8;
+        int particleCount = 8 + Mathf.Min(8, progression.EquipmentTier * 2);
         GameObject effectRoot = new GameObject("Hit Effect");
         effectRoot.transform.SetParent(parent, false);
         effectRoot.transform.position = worldPosition;
@@ -249,14 +467,15 @@ public sealed class IdleGuildGameWorld
             float angle = index * Mathf.PI * 2f / particleCount;
             GameObject particle = new GameObject("Hit Pixel " + index);
             particle.transform.SetParent(effectRoot.transform, false);
-            particle.transform.localScale = new Vector3(0.16f, 0.16f, 1f);
+            float effectScale = 0.16f + Mathf.Min(0.12f, progression.AttackLevel * 0.008f);
+            particle.transform.localScale = new Vector3(effectScale, effectScale, 1f);
             particles[index] = particle.transform;
 
             SpriteRenderer renderer = particle.AddComponent<SpriteRenderer>();
             renderer.sprite = hudPixelSprite;
-            renderer.color = index % 2 == 0
-                ? new Color(1f, 0.9f, 0.25f, 1f)
-                : new Color(1f, 0.45f, 0.18f, 1f);
+            renderer.color = progression.EquipmentTier >= 3
+                ? (index % 2 == 0 ? new Color(0.35f, 0.9f, 1f, 1f) : new Color(0.65f, 0.35f, 1f, 1f))
+                : (index % 2 == 0 ? new Color(1f, 0.9f, 0.25f, 1f) : new Color(1f, 0.45f, 0.18f, 1f));
             renderer.sortingOrder = 28;
             renderers[index] = renderer;
 
@@ -380,6 +599,22 @@ public sealed class IdleGuildGameWorld
         animator.SetInteger(AnimationStateParameter, (int)state);
     }
 
+    private void StartActorState(
+        SpriteRenderer renderer,
+        Animator animator,
+        Sprite[] frames,
+        ActorAnimationState state,
+        float frameDuration)
+    {
+        if (HasAnimatorController(animator))
+        {
+            SetAnimatorState(animator, state);
+            return;
+        }
+
+        coroutineHost.StartCoroutine(PlayAnimation(renderer, frames, state, frameDuration, false));
+    }
+
     // 현재 캐릭터 애니메이션 코루틴을 모두 안전하게 중지합니다.
     private void StopActorAnimations()
     {
@@ -424,20 +659,141 @@ public sealed class IdleGuildGameWorld
         target.position = destination;
     }
 
+    private IEnumerator MoveMonsterIntoBattle(Vector3 destination, float duration, float fadeDuration)
+    {
+        Vector3 origin = monster.position;
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            monster.position = Vector3.Lerp(origin, destination, Mathf.Clamp01(elapsed / duration));
+            float alpha = Mathf.Clamp01(elapsed / fadeDuration);
+            monsterRenderer.color = new Color(1f, 1f, 1f, alpha);
+            yield return null;
+        }
+
+        monster.position = destination;
+        monsterRenderer.color = Color.white;
+    }
+
     private IEnumerator KnockOutMonster()
     {
         Vector3 origin = monster.position;
         float elapsed = 0f;
-        while (elapsed < 0.35f)
+        while (elapsed < 0.24f)
         {
             elapsed += Time.deltaTime;
-            float t = Mathf.Clamp01(elapsed / 0.35f);
+            float t = Mathf.Clamp01(elapsed / 0.24f);
             monster.position = origin + new Vector3(0.45f * t, 0.35f * t, 0f);
             monsterRenderer.color = new Color(1f, 1f, 1f, 1f - t);
             yield return null;
         }
 
         monster.gameObject.SetActive(false);
+    }
+
+    private IEnumerator ShakeCamera(float strength)
+    {
+        Camera targetCamera = Camera.main;
+        if (targetCamera == null)
+        {
+            yield break;
+        }
+
+        Transform cameraTransform = targetCamera.transform;
+        Vector3 origin = cameraTransform.position;
+        float elapsed = 0f;
+        const float duration = 0.12f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float fade = 1f - Mathf.Clamp01(elapsed / duration);
+            cameraTransform.position = origin + (Vector3)(UnityEngine.Random.insideUnitCircle * strength * fade);
+            yield return null;
+        }
+
+        cameraTransform.position = origin;
+    }
+
+    private IEnumerator PlaySkillEffect()
+    {
+        const int count = 18;
+        for (int index = 0; index < count; index++)
+        {
+            float angle = index * Mathf.PI * 2f / count;
+            GameObject star = new GameObject("Skill Star " + index);
+            star.transform.SetParent(parent, false);
+            star.transform.position = hero.position + new Vector3(Mathf.Cos(angle), Mathf.Sin(angle), 0f) * 0.7f;
+            star.transform.localScale = Vector3.one * 0.13f;
+            SpriteRenderer renderer = star.AddComponent<SpriteRenderer>();
+            renderer.sprite = hudPixelSprite;
+            Color[] skillColors = { new Color(0.3f, 0.95f, 1f, 1f), new Color(1f, 0.85f, 0.2f, 1f), new Color(0.4f, 1f, 0.55f, 1f) };
+            renderer.color = index % 2 == 0 ? skillColors[activeSkillType] : Color.white;
+            renderer.sortingOrder = 35;
+            coroutineHost.StartCoroutine(FlySkillStar(star.transform, renderer));
+        }
+
+        yield return ShakeCamera(0.16f);
+    }
+
+    private IEnumerator FlySkillStar(Transform star, SpriteRenderer renderer)
+    {
+        Vector3 start = star.position;
+        Vector3 destination = monster.gameObject.activeSelf ? monster.position + Vector3.up * 0.45f : start + Vector3.right * 3f;
+        float elapsed = 0f;
+        while (elapsed < 0.35f)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / 0.35f);
+            star.position = Vector3.Lerp(start, destination, t);
+            Color color = renderer.color;
+            color.a = 1f - t;
+            renderer.color = color;
+            yield return null;
+        }
+
+        Object.Destroy(star.gameObject);
+    }
+
+    private IEnumerator BossAttackPattern()
+    {
+        idleHud.ShowToast("BOSS ATTACK!");
+        StartActorState(monsterRenderer, monsterAnimator, monsterFrames, ActorAnimationState.Attack, 0.07f);
+        Vector3 origin = monster.position;
+        yield return MoveTo(monster, origin + Vector3.left * 0.45f, 0.15f);
+        coroutineHost.StartCoroutine(ShakeCamera(0.13f));
+        coroutineHost.StartCoroutine(ShowDamagePopup(hero.position + Vector3.up * 0.65f, Mathf.Max(1, progression.Stage * 2), new Color(1f, 0.3f, 0.25f, 1f)));
+        yield return BumpBack(hero);
+        yield return MoveTo(monster, origin, 0.2f);
+        StartMonsterLoop(ActorAnimationState.Idle, 0.12f);
+    }
+
+    private IEnumerator ScrollRoad()
+    {
+        while (true)
+        {
+            if (roadWidth > 0f)
+            {
+                float movement = 0.55f * Time.deltaTime;
+                for (int index = 0; index < roadSegments.Length; index++)
+                {
+                    Transform segment = roadSegments[index];
+                    if (segment == null) continue;
+                    segment.position += Vector3.left * movement;
+                    if (segment.position.x <= -roadWidth)
+                    {
+                        segment.position += Vector3.right * roadWidth * 2f;
+                    }
+                }
+            }
+
+            if (backdropTransform != null)
+            {
+                backdropTransform.position = backdropOrigin + new Vector3(Mathf.Sin(Time.time * 0.18f) * 0.14f, 0f, 0f);
+            }
+
+            yield return null;
+        }
     }
 
     private IEnumerator BumpBack(Transform target)
@@ -451,43 +807,125 @@ public sealed class IdleGuildGameWorld
     private void CreateCameraBackdrop()
     {
         GameObject backdrop = new GameObject("Game Backdrop");
-        backdrop.transform.SetParent(parent, false);
-        backdrop.transform.position = new Vector3(0f, 0f, 8f);
+        Transform backdropParent = sceneLayout != null ? sceneLayout.BackdropAnchor : null;
+        backdrop.transform.SetParent(backdropParent != null ? backdropParent : parent, false);
+        backdrop.transform.position = backdropParent != null
+            ? backdropParent.position
+            : new Vector3(0f, 0f, 8f);
+        backdropTransform = backdrop.transform;
+        backdropOrigin = backdrop.transform.position;
 
         SpriteRenderer renderer = backdrop.AddComponent<SpriteRenderer>();
-        renderer.sprite = CreateSolidSprite("Backdrop Sprite", 1, 1, new Color(0.12f, 0.17f, 0.22f, 1f));
-        renderer.drawMode = SpriteDrawMode.Sliced;
-        renderer.size = new Vector2(14f, 8f);
+        backdropRenderer = renderer;
+        Texture2D mountainTexture = Resources.Load<Texture2D>("Backgrounds/mountain-hunt");
+        if (mountainTexture != null)
+        {
+            renderer.sprite = Sprite.Create(
+                mountainTexture,
+                new Rect(0f, 0f, mountainTexture.width, mountainTexture.height),
+                new Vector2(0.5f, 0.5f),
+                mountainTexture.height / 8f,
+                0,
+                SpriteMeshType.FullRect);
+        }
+        else
+        {
+            renderer.sprite = CreateSolidSprite("Backdrop Sprite", 1, 1, new Color(0.12f, 0.17f, 0.22f, 1f));
+            renderer.drawMode = SpriteDrawMode.Sliced;
+            renderer.size = new Vector2(14f, 8f);
+        }
         renderer.sortingOrder = -20;
     }
 
     private void CreateGround()
     {
-        GameObject ground = new GameObject("Stone Ground");
-        ground.transform.SetParent(parent, false);
-        ground.transform.position = new Vector3(0f, -2.1f, 0f);
+        Transform groundParent = sceneLayout != null ? sceneLayout.GroundAnchor : null;
+        Texture2D texture = Resources.Load<Texture2D>("Environment/mountain-road-strip");
+        if (texture == null)
+        {
+            GameObject fallback = new GameObject("Mountain Road Fallback");
+            fallback.transform.SetParent(groundParent != null ? groundParent : parent, false);
+            fallback.transform.position = new Vector3(0f, -2.1f, 0f);
+            SpriteRenderer fallbackRenderer = fallback.AddComponent<SpriteRenderer>();
+            fallbackRenderer.sprite = CreateSolidSprite("Ground Sprite", 1, 1, new Color(0.28f, 0.32f, 0.22f, 1f));
+            fallbackRenderer.drawMode = SpriteDrawMode.Sliced;
+            fallbackRenderer.size = new Vector2(15f, 1.2f);
+            fallbackRenderer.sortingOrder = -10;
+            return;
+        }
 
-        SpriteRenderer renderer = ground.AddComponent<SpriteRenderer>();
-        renderer.sprite = CreateSolidSprite("Ground Sprite", 1, 1, new Color(0.25f, 0.28f, 0.31f, 1f));
-        renderer.drawMode = SpriteDrawMode.Sliced;
-        renderer.size = new Vector2(14f, 0.7f);
-        renderer.sortingOrder = -10;
+        Sprite roadSprite = Sprite.Create(
+            texture,
+            new Rect(0f, 0f, texture.width, texture.height),
+            new Vector2(0.5f, 0.5f),
+            texture.height / 3.7f,
+            0,
+            SpriteMeshType.FullRect);
+        roadWidth = roadSprite.bounds.size.x;
+        Vector3 basePosition = groundParent != null ? groundParent.position : new Vector3(0f, -1.75f, 0f);
+        for (int index = 0; index < roadSegments.Length; index++)
+        {
+            GameObject road = new GameObject("Scrolling Mountain Road " + index);
+            road.transform.SetParent(groundParent != null ? groundParent : parent, false);
+            road.transform.position = basePosition + Vector3.right * roadWidth * index;
+            SpriteRenderer renderer = road.AddComponent<SpriteRenderer>();
+            renderer.sprite = roadSprite;
+            renderer.sortingOrder = -5;
+            roadSegments[index] = road.transform;
+        }
     }
 
     private void CreateActors()
     {
-        heroHome = new Vector3(-3.2f, -1.35f, 0f);
-        monsterHome = new Vector3(2.6f, -1.35f, 0f);
+        // 생성된 Sprite Sheet마다 셀 아래쪽 투명 여백이 다릅니다.
+        // 자동 사냥에서 가장 오래 보이는 Run 행의 발바닥 선을 기준으로 소녀와 고양이를 아래로 보정합니다.
+        // Transform 값이 아니라 실제 불투명 픽셀의 바닥을 맞추기 위한 캐릭터별 시각 오프셋입니다.
+        // Spawn Anchor의 Y를 실제 캐릭터 Transform Y로 그대로 사용합니다.
+        // 사용자가 Scene에서 맞춘 위치가 캐릭터 종류에 따라 다시 이동하지 않도록 추가 Y 보정은 적용하지 않습니다.
+        float heroVisualYOffset = 0f;
+        Vector3 defaultHeroHome = new Vector3(-2.8f, -2.5f, 0f);
+        Vector3 defaultMonsterHome = new Vector3(1.8f, -2.1f, 0f);
+        Vector3 configuredHeroHome = sceneLayout != null && sceneLayout.HeroSpawn != null
+            ? sceneLayout.HeroSpawn.position
+            : defaultHeroHome;
+        // 열린 Unity Scene이 외부 파일 변경 전의 -1.35 값을 메모리에 들고 있어도 요청한 Y를 강제로 사용합니다.
+        heroHome = new Vector3(configuredHeroHome.x, -2.5f + heroVisualYOffset, configuredHeroHome.z);
+        Vector3 configuredMonsterHome = sceneLayout != null && sceneLayout.MonsterSpawn != null
+            ? sceneLayout.MonsterSpawn.position
+            : defaultMonsterHome;
+        monsterHome = new Vector3(configuredMonsterHome.x, -2.1f, configuredMonsterHome.z);
 
         // PNG를 정상 로드했으면 첫 Idle 프레임을, 실패했으면 기존 코드 생성 Sprite를 사용합니다.
         Sprite heroSprite = heroFrames != null ? heroFrames[0] : CreateHeroSprite();
         Sprite monsterSprite = monsterFrames != null ? monsterFrames[0] : CreateMonsterSprite();
-        heroRenderer = CreateActor("Pixel Hero", heroHome, heroSprite, 5);
-        monsterRenderer = CreateActor("Training Slime", monsterHome, monsterSprite, 5);
+        string heroPrefabPath = useBlackCatHero
+            ? "Prefabs/Characters/BlackCat"
+            : useAlternateCharacters ? "Prefabs/Characters/GirlHero" : "Prefabs/Characters/ClassicHero";
+        string monsterPrefabPath = useAlternateCharacters
+            ? "Prefabs/Characters/MaskedThief"
+            : "Prefabs/Characters/Slime";
+        heroRenderer = CreateActorFromPrefabOrFallback(
+            heroPrefabPath,
+            useBlackCatHero ? "Black Cat Hero" : useAlternateCharacters ? "Cute Girl Hero" : "Pixel Hero",
+            heroHome,
+            heroSprite,
+            5);
+        monsterRenderer = CreateActorFromPrefabOrFallback(
+            monsterPrefabPath,
+            useAlternateCharacters ? "Masked Thief" : "Training Slime",
+            monsterHome,
+            monsterSprite,
+            5);
 
         // Resources에 생성된 Controller를 각 캐릭터의 Animator 컴포넌트에 연결합니다.
-        heroAnimator = CreateAnimator(heroRenderer.gameObject, "Animations/Hero/HeroAnimator");
-        monsterAnimator = CreateAnimator(monsterRenderer.gameObject, "Animations/Slime/SlimeAnimator");
+        heroAnimator = GetOrCreateAnimator(
+            heroRenderer.gameObject,
+            useBlackCatHero
+                ? "Animations/BlackCat/BlackCatAnimator"
+                : useAlternateCharacters ? "Animations/GirlHeroV5/GirlHeroAnimator" : "Animations/Hero/HeroAnimator");
+        monsterAnimator = GetOrCreateAnimator(
+            monsterRenderer.gameObject,
+            useAlternateCharacters ? "Animations/MaskedThief/MaskedThiefAnimator" : "Animations/Slime/SlimeAnimator");
 
         hero = heroRenderer.transform;
         monster = monsterRenderer.transform;
@@ -559,10 +997,10 @@ public sealed class IdleGuildGameWorld
     }
 
     // Resources의 4x4 PNG를 위에서 아래, 왼쪽에서 오른쪽 순서의 Sprite 배열로 나눕니다.
-    private static Sprite[] LoadSpriteSheet(string resourcePath)
+    private static Sprite[] LoadSpriteSheet(string resourcePath, string characterName)
     {
         // Editor 빌더가 분할한 Sprite 하위 애셋이 있으면 이름 규칙대로 먼저 불러옵니다.
-        Sprite[] importedFrames = LoadImportedSpriteFrames(resourcePath);
+        Sprite[] importedFrames = LoadImportedSpriteFrames(resourcePath, characterName);
         if (importedFrames != null)
         {
             return importedFrames;
@@ -605,8 +1043,33 @@ public sealed class IdleGuildGameWorld
         return frames;
     }
 
+    private static Sprite[] LoadRegionMonsterSprites()
+    {
+        Texture2D texture = Resources.Load<Texture2D>("Sprites/monster-roster-regions");
+        if (texture == null) return null;
+        int width = texture.width / 2;
+        int height = texture.height / 2;
+        Sprite[] sprites = new Sprite[4];
+        for (int row = 0; row < 2; row++)
+        {
+            for (int column = 0; column < 2; column++)
+            {
+                int index = row * 2 + column;
+                sprites[index] = Sprite.Create(
+                    texture,
+                    new Rect(column * width, texture.height - (row + 1) * height, width, height),
+                    new Vector2(0.5f, 0f),
+                    width,
+                    0,
+                    SpriteMeshType.FullRect);
+            }
+        }
+
+        return sprites;
+    }
+
     // Multiple Sprite Import로 생성된 하위 Sprite를 상태 행/열 순서의 배열로 정렬합니다.
-    private static Sprite[] LoadImportedSpriteFrames(string resourcePath)
+    private static Sprite[] LoadImportedSpriteFrames(string resourcePath, string characterName)
     {
         Sprite[] sprites = Resources.LoadAll<Sprite>(resourcePath);
         if (sprites == null || sprites.Length != SheetColumns * SheetRows)
@@ -614,7 +1077,6 @@ public sealed class IdleGuildGameWorld
             return null;
         }
 
-        string characterName = resourcePath.EndsWith("hero-spritesheet") ? "hero" : "slime";
         string[] stateNames = { "idle", "run", "attack", "hit" };
         Sprite[] orderedFrames = new Sprite[SheetColumns * SheetRows];
 
@@ -638,9 +1100,14 @@ public sealed class IdleGuildGameWorld
     }
 
     // 캐릭터 GameObject에 Animator를 붙이고 Resources의 Controller를 할당합니다.
-    private static Animator CreateAnimator(GameObject actor, string controllerResourcePath)
+    private static Animator GetOrCreateAnimator(GameObject actor, string controllerResourcePath)
     {
-        Animator animator = actor.AddComponent<Animator>();
+        Animator animator = actor.GetComponent<Animator>();
+        if (animator == null)
+        {
+            animator = actor.AddComponent<Animator>();
+        }
+
         animator.runtimeAnimatorController = Resources.Load<RuntimeAnimatorController>(controllerResourcePath);
         animator.applyRootMotion = false;
 
@@ -651,6 +1118,40 @@ public sealed class IdleGuildGameWorld
         }
 
         return animator;
+    }
+
+    private SpriteRenderer CreateActorFromPrefabOrFallback(
+        string prefabResourcePath,
+        string objectName,
+        Vector3 position,
+        Sprite fallbackSprite,
+        int sortingOrder)
+    {
+        GameObject prefab = Resources.Load<GameObject>(prefabResourcePath);
+        if (prefab == null)
+        {
+            Debug.LogWarning("Character Prefab was not found; using runtime fallback: " + prefabResourcePath);
+            return CreateActor(objectName, position, fallbackSprite, sortingOrder);
+        }
+
+        GameObject actor = Object.Instantiate(prefab, parent);
+        actor.name = objectName;
+        actor.transform.position = position;
+        actor.transform.localScale = new Vector3(3f, 3f, 1f);
+
+        SpriteRenderer renderer = actor.GetComponent<SpriteRenderer>();
+        if (renderer == null)
+        {
+            renderer = actor.AddComponent<SpriteRenderer>();
+        }
+
+        if (renderer.sprite == null)
+        {
+            renderer.sprite = fallbackSprite;
+        }
+
+        renderer.sortingOrder = sortingOrder;
+        return renderer;
     }
 
     private SpriteRenderer CreateActor(string objectName, Vector3 position, Sprite sprite, int sortingOrder)

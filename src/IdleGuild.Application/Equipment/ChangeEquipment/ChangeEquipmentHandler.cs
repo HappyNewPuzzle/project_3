@@ -88,6 +88,9 @@ public sealed class ChangeEquipmentHandler(
                 {
                     equipped.SetEquipped(false);
                     replacedEquipmentId = equipped.EquipmentId;
+                    // PostgreSQL의 장착 슬롯 부분 유니크 인덱스가 새 장비 UPDATE를
+                    // 먼저 처리해 충돌하지 않도록 기존 장비 해제를 선반영합니다.
+                    await unitOfWork.SaveChangesAsync(cancellationToken);
                 }
 
                 changed = target.SetEquipped(true) ||

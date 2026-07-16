@@ -2,6 +2,7 @@ using IdleGuild.Application.Accounts.CreateGuest;
 using IdleGuild.Application.Admin.Players.GetAdminPlayer;
 using IdleGuild.Application.Admin.Players.GetGoldLedgerPage;
 using IdleGuild.Application.GameStates.GetGameState;
+using IdleGuild.Application.GameStates.SyncProgression;
 using IdleGuild.Application.Equipment.ChangeEquipment;
 using IdleGuild.Application.Equipment.GetEquipment;
 using IdleGuild.Application.Heroes.UpgradeMainHero;
@@ -23,6 +24,7 @@ public static class DependencyInjection
     {
         services.AddScoped<CreateGuestAccountHandler>();
         services.AddScoped<GetGameStateHandler>();
+        services.AddScoped<SyncProgressionHandler>();
         services.AddScoped<ClaimIdleRewardHandler>();
         services.AddScoped<UpgradeMainHeroHandler>();
         services.AddScoped<ChallengeStageHandler>();

@@ -8,6 +8,7 @@ public interface IIdleGuildApiClient
     IEnumerator GetSystemStatus(string apiBaseUrl, Action<IdleGuildApiResult<SystemStatusResponse>> onComplete);
     IEnumerator GuestLogin(string apiBaseUrl, Action<IdleGuildApiResult<GuestLoginResponse>> onComplete);
     IEnumerator GetGameState(string apiBaseUrl, Action<IdleGuildApiResult<GameStateResponse>> onComplete);
+    IEnumerator SyncProgression(string apiBaseUrl, SyncProgressionRequest progression, Action<IdleGuildApiResult<SyncProgressionResponse>> onComplete);
     IEnumerator ClaimIdleReward(string apiBaseUrl, string idempotencyKey, Action<IdleGuildApiResult<ClaimIdleRewardResponse>> onComplete);
     IEnumerator UpgradeMainHero(string apiBaseUrl, string idempotencyKey, Action<IdleGuildApiResult<UpgradeHeroResponse>> onComplete);
     IEnumerator ChallengeStage(string apiBaseUrl, int stage, string idempotencyKey, Action<IdleGuildApiResult<ChallengeStageResponse>> onComplete);
@@ -67,6 +68,18 @@ public sealed class IdleGuildApiClient : IIdleGuildApiClient
             null,
             true,
             onComplete);
+    }
+
+    public IEnumerator SyncProgression(string apiBaseUrl, SyncProgressionRequest progression, Action<IdleGuildApiResult<SyncProgressionResponse>> onComplete)
+    {
+        yield return Send(
+            apiBaseUrl,
+            UnityWebRequest.kHttpVerbPUT,
+            "/api/v1/game-state/progression",
+            null,
+            true,
+            onComplete,
+            JsonUtility.ToJson(progression));
     }
 
     // 방치 보상 수령 API를 호출합니다.
@@ -151,6 +164,7 @@ public sealed class IdleGuildApiClient : IIdleGuildApiClient
         // UnityWebRequest는 using으로 감싸 요청 객체와 핸들러가 정리되게 합니다.
         using (UnityWebRequest request = new UnityWebRequest(url, method))
         {
+            request.timeout = 12;
             // 응답 본문을 문자열로 읽기 위해 DownloadHandlerBuffer를 사용합니다.
             request.downloadHandler = new DownloadHandlerBuffer();
 

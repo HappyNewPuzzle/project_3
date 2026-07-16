@@ -13,9 +13,15 @@ public static class IdleGuildAnimationAssetBuilder
     // 원본 PNG와 생성할 Animator 애셋의 프로젝트 상대 경로입니다.
     private const string HeroTexturePath = "Assets/IdleGuild/Resources/Sprites/hero-spritesheet.png";
     private const string SlimeTexturePath = "Assets/IdleGuild/Resources/Sprites/slime-spritesheet.png";
+    private const string GirlHeroTexturePath = "Assets/IdleGuild/Resources/Sprites/girl-hero-spritesheet-v5.png";
+    private const string MaskedThiefTexturePath = "Assets/IdleGuild/Resources/Sprites/masked-thief-spritesheet.png";
+    private const string BlackCatTexturePath = "Assets/IdleGuild/Resources/Sprites/black-cat-red-ribbon-spritesheet.png";
     private const string AnimationRoot = "Assets/IdleGuild/Resources/Animations";
     private const string HeroControllerPath = AnimationRoot + "/Hero/HeroAnimator.controller";
     private const string SlimeControllerPath = AnimationRoot + "/Slime/SlimeAnimator.controller";
+    private const string GirlHeroControllerPath = AnimationRoot + "/GirlHeroV5/GirlHeroAnimator.controller";
+    private const string MaskedThiefControllerPath = AnimationRoot + "/MaskedThief/MaskedThiefAnimator.controller";
+    private const string BlackCatControllerPath = AnimationRoot + "/BlackCat/BlackCatAnimator.controller";
     private const string StateParameter = "State";
     private const int Columns = 4;
     private const int Rows = 4;
@@ -56,7 +62,10 @@ public static class IdleGuildAnimationAssetBuilder
 
         bool heroExists = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(HeroControllerPath) != null;
         bool slimeExists = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(SlimeControllerPath) != null;
-        if (!heroExists || !slimeExists)
+        bool girlHeroExists = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(GirlHeroControllerPath) != null;
+        bool maskedThiefExists = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(MaskedThiefControllerPath) != null;
+        bool blackCatExists = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(BlackCatControllerPath) != null;
+        if (!heroExists || !slimeExists || !girlHeroExists || !maskedThiefExists || !blackCatExists)
         {
             BuildAnimationAssets(false);
         }
@@ -75,7 +84,12 @@ public static class IdleGuildAnimationAssetBuilder
             EnsureFolder(AnimationRoot);
             BuildCharacter("hero", HeroTexturePath, AnimationRoot + "/Hero", HeroControllerPath, forceRebuild);
             BuildCharacter("slime", SlimeTexturePath, AnimationRoot + "/Slime", SlimeControllerPath, forceRebuild);
+            BuildCharacter("girlHero", GirlHeroTexturePath, AnimationRoot + "/GirlHeroV5", GirlHeroControllerPath, forceRebuild);
+            BuildCharacter("maskedThief", MaskedThiefTexturePath, AnimationRoot + "/MaskedThief", MaskedThiefControllerPath, forceRebuild);
+            BuildCharacter("blackCat", BlackCatTexturePath, AnimationRoot + "/BlackCat", BlackCatControllerPath, forceRebuild);
             AssetDatabase.SaveAssets();
+            IdleGuildCharacterPrefabBuilder.RebuildCharacterPrefabs();
+            IdleGuildUiPrefabBuilder.RebuildUiPrefabs();
             AssetDatabase.Refresh();
             Debug.Log("Idle Guild character Animation Clips and Animator Controllers are ready.");
         }
@@ -197,7 +211,7 @@ public static class IdleGuildAnimationAssetBuilder
         int row,
         IReadOnlyDictionary<string, Sprite> sprites)
     {
-        float frameRate = stateName == "Idle" ? 6f : 10f;
+        float frameRate = stateName == "Idle" ? 6f : 12f;
         AnimationClip clip = new AnimationClip
         {
             name = characterName + stateName,
@@ -250,7 +264,7 @@ public static class IdleGuildAnimationAssetBuilder
             AnimatorStateTransition transition = stateMachine.AddAnyStateTransition(state);
             transition.hasExitTime = false;
             transition.hasFixedDuration = true;
-            transition.duration = 0f;
+            transition.duration = 0.04f;
             transition.canTransitionToSelf = false;
             transition.AddCondition(AnimatorConditionMode.Equals, index, StateParameter);
 

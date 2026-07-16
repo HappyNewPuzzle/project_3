@@ -2,13 +2,24 @@ using System;
 using System.Collections;
 using System.Text;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 // MainScene에서 실행되는 클라이언트 진입점이며, 서버 API 호출 흐름과 런타임 UI를 연결합니다.
 public sealed class UnityClientBootstrap : MonoBehaviour
 {
+    public enum CharacterVisualSet
+    {
+        CuteGirlAndMaskedThief,
+        ClassicHeroAndSlime,
+        BlackCatAndMaskedThief
+    }
+
     // Unity Inspector에서 바꿀 수 있는 서버 주소이며, 로컬 서버 기본 포트는 5219입니다.
     [SerializeField] private string apiBaseUrl = "http://localhost:5219";
     [SerializeField] private bool useMockApi = true;
+    [SerializeField] private CharacterVisualSet characterVisualSet = CharacterVisualSet.CuteGirlAndMaskedThief;
+    [SerializeField] private IdleGuildBattleSceneLayout battleSceneLayout;
+    [SerializeField] private bool showDeveloperPanel;
 
     // 게스트 로그인 토큰과 playerId를 PlayerPrefs에 저장하고 불러오는 세션 객체입니다.
     private readonly IdleGuildSession session = new IdleGuildSession();
@@ -20,6 +31,8 @@ public sealed class UnityClientBootstrap : MonoBehaviour
     // Play 시 코드로 생성되는 버튼/텍스트 기반 런타임 UI입니다.
     private IdleGuildRuntimeUi ui;
     private IdleGuildGameWorld gameWorld;
+    private IdleGuildProgression progression;
+    private IdleGuildIdleHud idleHud;
     // 스테이지 입력의 기본값이며, 수동 도전 UI에 전달됩니다.
     private string stageInput = "2";
     // 서버 요청이 진행 중인지 표시해서 중복 클릭을 막는 상태값입니다.
@@ -30,10 +43,34 @@ public sealed class UnityClientBootstrap : MonoBehaviour
     private bool lastRequestSucceeded;
     // 서버에서 받아온 최신 게임 상태이며, UI의 Gold/Level/Stage 표시로 사용됩니다.
     private GameStateResponse gameState;
+    private int huntGold;
+    private Coroutine progressionSyncRoutine;
+    private int syncedAttackLevel;
+    private int syncedSpeedLevel;
+    private int syncedCriticalLevel;
+    private int syncedPrestigeLevel;
+    private int syncedSoulStones;
+    private int syncedEquipmentTier;
+    private int syncedEquipmentCount;
+    private int syncedUnlockedRegion;
+    private int syncedSkillOneLevel;
+    private int syncedSkillTwoLevel;
+    private int syncedSkillThreeLevel;
+    private const string CharacterVisualSetKey = "IdleGuild.CharacterVisualSet";
 
     // Unity 오브젝트가 활성화될 때 세션을 불러오고 API/UI 객체를 준비합니다.
     private void Awake()
     {
+#if IDLE_GUILD_SERVER_BUILD && UNITY_ANDROID
+        useMockApi = false;
+        apiBaseUrl = "http://10.0.2.2:5219";
+#elif IDLE_GUILD_SERVER_BUILD
+        useMockApi = false;
+#endif
+        IdleGuildReleaseServices.Install(gameObject);
+        characterVisualSet = (CharacterVisualSet)PlayerPrefs.GetInt(
+            CharacterVisualSetKey,
+            (int)characterVisualSet);
         // 이전 Play에서 저장된 게스트 토큰과 playerId를 복원합니다.
         session.Load();
         // API 클라이언트가 요청 직전에 최신 토큰을 읽을 수 있도록 세션 접근 함수를 넘깁니다.
@@ -47,8 +84,38 @@ public sealed class UnityClientBootstrap : MonoBehaviour
         }
         // UI 생성과 버튼 콜백 연결을 전담 객체에 맡겨 Bootstrap의 책임을 줄입니다.
         ui = new IdleGuildRuntimeUi();
-        gameWorld = new IdleGuildGameWorld(transform, this);
+        if (battleSceneLayout == null)
+        {
+            battleSceneLayout = FindFirstObjectByType<IdleGuildBattleSceneLayout>();
+        }
+        progression = new IdleGuildProgression();
+        RememberSyncedProgression();
+        progression.Changed += OnProgressionChanged;
+        GameObject hudObject = new GameObject("Idle Guild Game HUD");
+        hudObject.transform.SetParent(transform, false);
+        idleHud = hudObject.AddComponent<IdleGuildIdleHud>();
+        idleHud.Build(
+            progression,
+            () => SelectCharacter(CharacterVisualSet.CuteGirlAndMaskedThief),
+            () => SelectCharacter(CharacterVisualSet.BlackCatAndMaskedThief),
+            () => SelectCharacter(CharacterVisualSet.ClassicHeroAndSlime));
+        gameWorld = new IdleGuildGameWorld(
+            transform,
+            this,
+            characterVisualSet != CharacterVisualSet.ClassicHeroAndSlime,
+            characterVisualSet == CharacterVisualSet.BlackCatAndMaskedThief,
+            battleSceneLayout,
+            progression,
+            idleHud);
         gameWorld.Build();
+        idleHud.SetSkillAction(gameWorld.ActivateSkill);
+        idleHud.SetOfflineClaimAction(() =>
+        {
+            if (session.HasToken && !isBusy)
+            {
+                StartCoroutine(ClaimIdleReward("game-offline-claim"));
+            }
+        });
         // 각 버튼이 눌렸을 때 실행할 코루틴/액션을 런타임 UI에 연결합니다.
         ui.Build(
             transform,
@@ -62,7 +129,16 @@ public sealed class UnityClientBootstrap : MonoBehaviour
             stage => StartCoroutine(ChallengeStage(stage, "stage")),
             () => StartCoroutine(EquipBronzeSword()),
             () => StartCoroutine(BuySmallGoldPack()),
+            () => SelectCharacter(CharacterVisualSet.CuteGirlAndMaskedThief),
+            () => SelectCharacter(CharacterVisualSet.BlackCatAndMaskedThief),
+            () => SelectCharacter(CharacterVisualSet.ClassicHeroAndSlime),
             ClearSession);
+        ui.SetVisible(showDeveloperPanel);
+        gameWorld.StartAutoHunt(OnHuntGoldEarned, OnAutoBossDefeated);
+        if (session.HasToken)
+        {
+            StartCoroutine(RestoreSessionWithRetry());
+        }
         // 초기 상태를 로그에 남기고 UI를 한 번 갱신합니다.
         AddLog("Ready. Mode: " + (useMockApi ? "Mock API" : "Server API") + ", Server: " + apiBaseUrl);
     }
@@ -197,8 +273,33 @@ public sealed class UnityClientBootstrap : MonoBehaviour
 
                 // 성공 응답을 로컬 캐시에 보관하고 UI가 최신 값을 표시하게 합니다.
                 gameState = result.response;
+                syncedAttackLevel = Mathf.Max(gameState.heroLevel, gameState.attackLevel);
+                syncedSpeedLevel = gameState.attackSpeedLevel;
+                syncedCriticalLevel = gameState.criticalLevel;
+                syncedPrestigeLevel = gameState.prestigeLevel;
+                syncedSoulStones = gameState.soulStones;
+                syncedEquipmentTier = gameState.equipmentTier;
+                syncedEquipmentCount = gameState.equipmentCount;
+                syncedUnlockedRegion = gameState.unlockedRegion;
+                syncedSkillOneLevel = gameState.skillOneLevel;
+                syncedSkillTwoLevel = gameState.skillTwoLevel;
+                syncedSkillThreeLevel = gameState.skillThreeLevel;
+                progression.ApplyServerState(gameState);
                 AddLog("State: gold " + gameState.gold + ", hero " + gameState.heroLevel + ", stage " + gameState.highestStage + ", bonus " + gameState.productionBonusPercent + "%");
             }));
+    }
+
+    private IEnumerator RestoreSessionWithRetry()
+    {
+        for (int attempt = 1; attempt <= 3; attempt++)
+        {
+            yield return GetGameState();
+            if (lastRequestSucceeded) yield break;
+            AddLog("Reconnect attempt " + attempt + "/3 failed.");
+            yield return new WaitForSeconds(attempt * 1.5f);
+        }
+
+        AddLog("Server reconnect failed. Local progress remains available.");
     }
 
     // 방치 보상 수령 API를 호출합니다.
@@ -402,6 +503,160 @@ public sealed class UnityClientBootstrap : MonoBehaviour
         return isReplay ? " (replay)" : string.Empty;
     }
 
+    private void OnHuntGoldEarned(int amount)
+    {
+        huntGold += amount;
+        RefreshUi();
+    }
+
+    private void OnProgressionChanged()
+    {
+        if (!session.HasToken || ProgressionMatchesLastSync() || progressionSyncRoutine != null)
+        {
+            return;
+        }
+
+        progressionSyncRoutine = StartCoroutine(SyncProgressionAfterDelay());
+    }
+
+    private IEnumerator SyncProgressionAfterDelay()
+    {
+        yield return new WaitForSeconds(1.5f);
+        while (isBusy)
+        {
+            yield return null;
+        }
+
+        SyncProgressionRequest request = new SyncProgressionRequest
+        {
+            attackLevel = progression.AttackLevel,
+            attackSpeedLevel = progression.SpeedLevel,
+            criticalLevel = progression.CriticalLevel,
+            prestigeLevel = progression.PrestigeLevel,
+            soulStones = progression.SoulStones
+            ,equipmentTier = progression.EquipmentTier
+            ,equipmentCount = progression.EquipmentCount
+            ,unlockedRegion = progression.UnlockedRegion
+            ,skillOneLevel = progression.SkillOneLevel
+            ,skillTwoLevel = progression.SkillTwoLevel
+            ,skillThreeLevel = progression.SkillThreeLevel
+        };
+
+        yield return RunRequest(api.SyncProgression(apiBaseUrl, request, result =>
+        {
+            if (HandleFailure(result)) return;
+            syncedAttackLevel = result.response.attackLevel;
+            syncedSpeedLevel = result.response.attackSpeedLevel;
+            syncedCriticalLevel = result.response.criticalLevel;
+            syncedPrestigeLevel = result.response.prestigeLevel;
+            syncedSoulStones = result.response.soulStones;
+            syncedEquipmentTier = result.response.equipmentTier;
+            syncedEquipmentCount = result.response.equipmentCount;
+            syncedUnlockedRegion = result.response.unlockedRegion;
+            syncedSkillOneLevel = result.response.skillOneLevel;
+            syncedSkillTwoLevel = result.response.skillTwoLevel;
+            syncedSkillThreeLevel = result.response.skillThreeLevel;
+        }));
+
+        progressionSyncRoutine = null;
+        if (!ProgressionMatchesLastSync())
+        {
+            OnProgressionChanged();
+        }
+    }
+
+    private bool ProgressionMatchesLastSync()
+    {
+        return progression.AttackLevel == syncedAttackLevel &&
+               progression.SpeedLevel == syncedSpeedLevel &&
+               progression.CriticalLevel == syncedCriticalLevel &&
+               progression.PrestigeLevel == syncedPrestigeLevel &&
+               progression.SoulStones == syncedSoulStones &&
+               progression.EquipmentTier == syncedEquipmentTier &&
+               progression.EquipmentCount == syncedEquipmentCount &&
+               progression.UnlockedRegion == syncedUnlockedRegion &&
+               progression.SkillOneLevel == syncedSkillOneLevel &&
+               progression.SkillTwoLevel == syncedSkillTwoLevel &&
+               progression.SkillThreeLevel == syncedSkillThreeLevel;
+    }
+
+    private void RememberSyncedProgression()
+    {
+        syncedAttackLevel = progression.AttackLevel;
+        syncedSpeedLevel = progression.SpeedLevel;
+        syncedCriticalLevel = progression.CriticalLevel;
+        syncedPrestigeLevel = progression.PrestigeLevel;
+        syncedSoulStones = progression.SoulStones;
+        syncedEquipmentTier = progression.EquipmentTier;
+        syncedEquipmentCount = progression.EquipmentCount;
+        syncedUnlockedRegion = progression.UnlockedRegion;
+        syncedSkillOneLevel = progression.SkillOneLevel;
+        syncedSkillTwoLevel = progression.SkillTwoLevel;
+        syncedSkillThreeLevel = progression.SkillThreeLevel;
+    }
+
+    private void OnAutoBossDefeated(int clearedStage)
+    {
+        if (!session.HasToken || isBusy)
+        {
+            return;
+        }
+
+        StartCoroutine(SyncAutoStage(clearedStage));
+    }
+
+    private IEnumerator SyncAutoStage(int stage)
+    {
+        yield return RunRequest(
+            api.ChallengeStage(apiBaseUrl, stage, CreateIdempotencyKey("auto-stage-" + stage), result =>
+            {
+                if (HandleFailure(result)) return;
+                AddLog("Auto stage synced: " + stage + " / " + result.response.outcome);
+            }));
+
+        if (lastRequestSucceeded)
+        {
+            yield return GetGameState();
+        }
+    }
+
+    private void OnApplicationQuit()
+    {
+        progression?.MarkExitTime();
+    }
+
+    private void OnDestroy()
+    {
+        if (progression != null)
+        {
+            progression.Changed -= OnProgressionChanged;
+        }
+    }
+
+    private void OnApplicationPause(bool paused)
+    {
+        if (paused)
+        {
+            progression?.MarkExitTime();
+        }
+        else if (session.HasToken && !isBusy)
+        {
+            StartCoroutine(RestoreSessionWithRetry());
+        }
+    }
+
+    private void SelectCharacter(CharacterVisualSet selectedSet)
+    {
+        if (characterVisualSet == selectedSet)
+        {
+            return;
+        }
+
+        PlayerPrefs.SetInt(CharacterVisualSetKey, (int)selectedSet);
+        PlayerPrefs.Save();
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+    }
+
     // 상태 변경 API마다 고유한 Idempotency-Key 값을 만듭니다.
     private static string CreateIdempotencyKey(string keyPrefix)
     {
@@ -419,6 +674,6 @@ public sealed class UnityClientBootstrap : MonoBehaviour
         }
 
         // UI 객체는 표시만 담당하고 실제 상태 소유권은 Bootstrap이 유지합니다.
-        ui.Refresh(apiBaseUrl, session, gameState, log, isBusy, isDemoRunning);
+        ui.Refresh(apiBaseUrl, session, gameState, huntGold, log, isBusy, isDemoRunning);
     }
 }

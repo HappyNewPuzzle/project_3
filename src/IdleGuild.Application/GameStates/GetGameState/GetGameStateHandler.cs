@@ -39,6 +39,17 @@ public sealed class GetGameStateHandler(
                     equipmentPowerBonus),
                 equipmentPowerBonus,
                 gameState.HighestStage,
+                gameState.AttackLevel,
+                gameState.AttackSpeedLevel,
+                gameState.CriticalLevel,
+                gameState.PrestigeLevel,
+                gameState.SoulStones,
+                gameState.EquipmentTier,
+                gameState.EquipmentCount,
+                gameState.UnlockedRegion,
+                gameState.SkillOneLevel,
+                gameState.SkillTwoLevel,
+                gameState.SkillThreeLevel,
                 StageChallengePolicy
                     .CalculateProductionBonusPercent(
                         gameState.HighestStage),

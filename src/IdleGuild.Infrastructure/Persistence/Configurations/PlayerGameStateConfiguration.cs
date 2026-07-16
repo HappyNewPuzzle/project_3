@@ -47,6 +47,18 @@ public sealed class PlayerGameStateConfiguration :
             .HasColumnName("highest_stage")
             .IsRequired();
 
+        builder.Property(state => state.AttackLevel).HasColumnName("attack_level").HasDefaultValue(1).IsRequired();
+        builder.Property(state => state.AttackSpeedLevel).HasColumnName("attack_speed_level").HasDefaultValue(0).IsRequired();
+        builder.Property(state => state.CriticalLevel).HasColumnName("critical_level").HasDefaultValue(0).IsRequired();
+        builder.Property(state => state.PrestigeLevel).HasColumnName("prestige_level").HasDefaultValue(0).IsRequired();
+        builder.Property(state => state.SoulStones).HasColumnName("soul_stones").HasDefaultValue(0).IsRequired();
+        builder.Property(state => state.EquipmentTier).HasColumnName("equipment_tier").HasDefaultValue(0).IsRequired();
+        builder.Property(state => state.EquipmentCount).HasColumnName("equipment_count").HasDefaultValue(0).IsRequired();
+        builder.Property(state => state.UnlockedRegion).HasColumnName("unlocked_region").HasDefaultValue(0).IsRequired();
+        builder.Property(state => state.SkillOneLevel).HasColumnName("skill_one_level").HasDefaultValue(1).IsRequired();
+        builder.Property(state => state.SkillTwoLevel).HasColumnName("skill_two_level").HasDefaultValue(1).IsRequired();
+        builder.Property(state => state.SkillThreeLevel).HasColumnName("skill_three_level").HasDefaultValue(1).IsRequired();
+
         builder.Property(state => state.CreatedAtUtc)
             .HasColumnName("created_at_utc")
             .IsRequired();

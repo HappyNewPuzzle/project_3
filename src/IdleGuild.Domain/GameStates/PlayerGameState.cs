@@ -21,6 +21,17 @@ public sealed class PlayerGameState
         CreatedAtUtc = createdAtUtc;
         LastIdleRewardClaimedAtUtc = createdAtUtc;
         IdleRewardRemainderHundredths = 0;
+        AttackLevel = 1;
+        AttackSpeedLevel = 0;
+        CriticalLevel = 0;
+        PrestigeLevel = 0;
+        SoulStones = 0;
+        EquipmentTier = 0;
+        EquipmentCount = 0;
+        UnlockedRegion = 0;
+        SkillOneLevel = 1;
+        SkillTwoLevel = 1;
+        SkillThreeLevel = 1;
     }
 
     public Guid PlayerId { get; private set; }
@@ -30,6 +41,48 @@ public sealed class PlayerGameState
     public int HeroLevel { get; private set; }
 
     public int HighestStage { get; private set; }
+
+    public int AttackLevel { get; private set; }
+    public int AttackSpeedLevel { get; private set; }
+    public int CriticalLevel { get; private set; }
+    public int PrestigeLevel { get; private set; }
+    public int SoulStones { get; private set; }
+    public int EquipmentTier { get; private set; }
+    public int EquipmentCount { get; private set; }
+    public int UnlockedRegion { get; private set; }
+    public int SkillOneLevel { get; private set; }
+    public int SkillTwoLevel { get; private set; }
+    public int SkillThreeLevel { get; private set; }
+
+    public void SynchronizeProgression(
+        int attackLevel,
+        int attackSpeedLevel,
+        int criticalLevel,
+        int prestigeLevel,
+        int soulStones,
+        int equipmentTier,
+        int equipmentCount,
+        int unlockedRegion,
+        int skillOneLevel,
+        int skillTwoLevel,
+        int skillThreeLevel)
+    {
+        if (attackLevel < 1 || attackSpeedLevel < 0 || criticalLevel < 0 || prestigeLevel < 0 || soulStones < 0 ||
+            equipmentTier < 0 || equipmentCount < 0 || unlockedRegion < 0 || skillOneLevel < 1 || skillTwoLevel < 1 || skillThreeLevel < 1)
+            throw new ArgumentOutOfRangeException(nameof(attackLevel));
+
+        AttackLevel = Math.Max(AttackLevel, attackLevel);
+        AttackSpeedLevel = Math.Max(AttackSpeedLevel, attackSpeedLevel);
+        CriticalLevel = Math.Max(CriticalLevel, criticalLevel);
+        PrestigeLevel = Math.Max(PrestigeLevel, prestigeLevel);
+        SoulStones = Math.Max(SoulStones, soulStones);
+        EquipmentTier = Math.Max(EquipmentTier, equipmentTier);
+        EquipmentCount = Math.Max(EquipmentCount, equipmentCount);
+        UnlockedRegion = Math.Max(UnlockedRegion, unlockedRegion);
+        SkillOneLevel = Math.Max(SkillOneLevel, skillOneLevel);
+        SkillTwoLevel = Math.Max(SkillTwoLevel, skillTwoLevel);
+        SkillThreeLevel = Math.Max(SkillThreeLevel, skillThreeLevel);
+    }
 
     public DateTimeOffset CreatedAtUtc { get; private set; }
 

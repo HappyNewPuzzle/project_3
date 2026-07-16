@@ -1,0 +1,649 @@
+fileFormatVersion: 2
+guid: db707d0237106bb498b682933c471401
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -125113466699100314
+    second: girl-hero-spritesheet-v2_0
+  - first:
+      213: -8870776959335242282
+    second: girl-hero-spritesheet-v2_1
+  - first:
+      213: -3189973969158987256
+    second: girl-hero-spritesheet-v2_2
+  - first:
+      213: 1818359289754554096
+    second: girl-hero-spritesheet-v2_3
+  - first:
+      213: -3246302154010546452
+    second: girl-hero-spritesheet-v2_4
+  - first:
+      213: -6741032691119286286
+    second: girl-hero-spritesheet-v2_5
+  - first:
+      213: 1288943576705119336
+    second: girl-hero-spritesheet-v2_6
+  - first:
+      213: -3695815227657213203
+    second: girl-hero-spritesheet-v2_7
+  - first:
+      213: 8129607217609236895
+    second: girl-hero-spritesheet-v2_8
+  - first:
+      213: 5481163332107920688
+    second: girl-hero-spritesheet-v2_9
+  - first:
+      213: 5625175460673477350
+    second: girl-hero-spritesheet-v2_10
+  - first:
+      213: 7668821121445361818
+    second: girl-hero-spritesheet-v2_11
+  - first:
+      213: 6793799064125134671
+    second: girl-hero-spritesheet-v2_12
+  - first:
+      213: -3787757337691755750
+    second: girl-hero-spritesheet-v2_13
+  - first:
+      213: -880370826407883621
+    second: girl-hero-spritesheet-v2_14
+  - first:
+      213: -8844076219685639881
+    second: girl-hero-spritesheet-v2_15
+  - first:
+      213: 2670118426832192010
+    second: girl-hero-spritesheet-v2_16
+  - first:
+      213: -7392146834239500474
+    second: girl-hero-spritesheet-v2_17
+  - first:
+      213: 646943097880652432
+    second: girl-hero-spritesheet-v2_18
+  - first:
+      213: -7072071612542134712
+    second: girl-hero-spritesheet-v2_19
+  - first:
+      213: 3660547576938412194
+    second: girl-hero-spritesheet-v2_20
+  - first:
+      213: 1536821217081217251
+    second: girl-hero-spritesheet-v2_21
+  - first:
+      213: -7069465307272646121
+    second: girl-hero-spritesheet-v2_22
+  - first:
+      213: 6990375277880329200
+    second: girl-hero-spritesheet-v2_23
+  - first:
+      213: 8292547530520600169
+    second: girl-hero-spritesheet-v2_24
+  - first:
+      213: 7477303412409706111
+    second: girl-hero-spritesheet-v2_25
+  - first:
+      213: 1262983948049175026
+    second: girl-hero-spritesheet-v2_26
+  - first:
+      213: 6582239840139076386
+    second: girl-hero-spritesheet-v2_27
+  - first:
+      213: -6276197251151669922
+    second: girl-hero-spritesheet-v2_28
+  - first:
+      213: -5376045738550466244
+    second: girlHero_idle_0
+  - first:
+      213: 4808384891320571350
+    second: girlHero_idle_1
+  - first:
+      213: 2702245014738443117
+    second: girlHero_idle_2
+  - first:
+      213: 6812869960054209390
+    second: girlHero_idle_3
+  - first:
+      213: -4277129920782961157
+    second: girlHero_run_0
+  - first:
+      213: 5058618650084985421
+    second: girlHero_run_1
+  - first:
+      213: 4011261749269785325
+    second: girlHero_run_2
+  - first:
+      213: -9077972429349511549
+    second: girlHero_run_3
+  - first:
+      213: -8560469870658613924
+    second: girlHero_attack_0
+  - first:
+      213: -1962829325596314862
+    second: girlHero_attack_1
+  - first:
+      213: -5263747818073534406
+    second: girlHero_attack_2
+  - first:
+      213: -2274644223622329501
+    second: girlHero_attack_3
+  - first:
+      213: -848462447210460867
+    second: girlHero_hit_0
+  - first:
+      213: 4910525992555464811
+    second: girlHero_hit_1
+  - first:
+      213: 650789135402663484
+    second: girlHero_hit_2
+  - first:
+      213: -8947783665965710022
+    second: girlHero_hit_3
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 0
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 313
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: girlHero_idle_0
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 941
+        width: 313
+        height: 313
+      alignment: 7
+      pivot: {x: 0.5, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c39627162e27465b0800000000000000
+      internalID: -5376045738550466244
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: girlHero_idle_1
+      rect:
+        serializedVersion: 2
+        x: 313
+        y: 941
+        width: 313
+        height: 313
+      alignment: 7
+      pivot: {x: 0.5, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6d5948e2590dab240800000000000000
+      internalID: 4808384891320571350
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: girlHero_idle_2
+      rect:
+        serializedVersion: 2
+        x: 626
+        y: 941
+        width: 313
+        height: 313
+      alignment: 7
+      pivot: {x: 0.5, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d6b1e87168d408520800000000000000
+      internalID: 2702245014738443117
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: girlHero_idle_3
+      rect:
+        serializedVersion: 2
+        x: 939
+        y: 941
+        width: 313
+        height: 313
+      alignment: 7
+      pivot: {x: 0.5, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e6bf5fde12d2c8e50800000000000000
+      internalID: 6812869960054209390
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: girlHero_run_0
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 628
+        width: 313
+        height: 313
+      alignment: 7
+      pivot: {x: 0.5, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bf5798d8ff494a4c0800000000000000
+      internalID: -4277129920782961157
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: girlHero_run_1
+      rect:
+        serializedVersion: 2
+        x: 313
+        y: 628
+        width: 313
+        height: 313
+      alignment: 7
+      pivot: {x: 0.5, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d4a4b7c4cd2d33640800000000000000
+      internalID: 5058618650084985421
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: girlHero_run_2
+      rect:
+        serializedVersion: 2
+        x: 626
+        y: 628
+        width: 313
+        height: 313
+      alignment: 7
+      pivot: {x: 0.5, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: dea6652fe4ddaa730800000000000000
+      internalID: 4011261749269785325
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: girlHero_run_3
+      rect:
+        serializedVersion: 2
+        x: 939
+        y: 628
+        width: 313
+        height: 313
+      alignment: 7
+      pivot: {x: 0.5, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 38e15d33c20940280800000000000000
+      internalID: -9077972429349511549
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: girlHero_attack_0
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 315
+        width: 313
+        height: 313
+      alignment: 7
+      pivot: {x: 0.5, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c5d85f8020a133980800000000000000
+      internalID: -8560469870658613924
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: girlHero_attack_1
+      rect:
+        serializedVersion: 2
+        x: 313
+        y: 315
+        width: 313
+        height: 313
+      alignment: 7
+      pivot: {x: 0.5, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 213bc1db021a2c4e0800000000000000
+      internalID: -1962829325596314862
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: girlHero_attack_2
+      rect:
+        serializedVersion: 2
+        x: 626
+        y: 315
+        width: 313
+        height: 313
+      alignment: 7
+      pivot: {x: 0.5, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a305d7c7f3963f6b0800000000000000
+      internalID: -5263747818073534406
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: girlHero_attack_3
+      rect:
+        serializedVersion: 2
+        x: 939
+        y: 315
+        width: 313
+        height: 313
+      alignment: 7
+      pivot: {x: 0.5, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 36bc8945127de60e0800000000000000
+      internalID: -2274644223622329501
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: girlHero_hit_0
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 2
+        width: 313
+        height: 313
+      alignment: 7
+      pivot: {x: 0.5, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d3903cc46e7a934f0800000000000000
+      internalID: -848462447210460867
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: girlHero_hit_1
+      rect:
+        serializedVersion: 2
+        x: 313
+        y: 2
+        width: 313
+        height: 313
+      alignment: 7
+      pivot: {x: 0.5, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b6847968f51b52440800000000000000
+      internalID: 4910525992555464811
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: girlHero_hit_2
+      rect:
+        serializedVersion: 2
+        x: 626
+        y: 2
+        width: 313
+        height: 313
+      alignment: 7
+      pivot: {x: 0.5, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c3efb574541180900800000000000000
+      internalID: 650789135402663484
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: girlHero_hit_3
+      rect:
+        serializedVersion: 2
+        x: 939
+        y: 2
+        width: 313
+        height: 313
+      alignment: 7
+      pivot: {x: 0.5, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a354217c92613d380800000000000000
+      internalID: -8947783665965710022
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      girl-hero-spritesheet-v2_0: -125113466699100314
+      girl-hero-spritesheet-v2_1: -8870776959335242282
+      girl-hero-spritesheet-v2_10: 5625175460673477350
+      girl-hero-spritesheet-v2_11: 7668821121445361818
+      girl-hero-spritesheet-v2_12: 6793799064125134671
+      girl-hero-spritesheet-v2_13: -3787757337691755750
+      girl-hero-spritesheet-v2_14: -880370826407883621
+      girl-hero-spritesheet-v2_15: -8844076219685639881
+      girl-hero-spritesheet-v2_16: 2670118426832192010
+      girl-hero-spritesheet-v2_17: -7392146834239500474
+      girl-hero-spritesheet-v2_18: 646943097880652432
+      girl-hero-spritesheet-v2_19: -7072071612542134712
+      girl-hero-spritesheet-v2_2: -3189973969158987256
+      girl-hero-spritesheet-v2_20: 3660547576938412194
+      girl-hero-spritesheet-v2_21: 1536821217081217251
+      girl-hero-spritesheet-v2_22: -7069465307272646121
+      girl-hero-spritesheet-v2_23: 6990375277880329200
+      girl-hero-spritesheet-v2_24: 8292547530520600169
+      girl-hero-spritesheet-v2_25: 7477303412409706111
+      girl-hero-spritesheet-v2_26: 1262983948049175026
+      girl-hero-spritesheet-v2_27: 6582239840139076386
+      girl-hero-spritesheet-v2_28: -6276197251151669922
+      girl-hero-spritesheet-v2_3: 1818359289754554096
+      girl-hero-spritesheet-v2_4: -3246302154010546452
+      girl-hero-spritesheet-v2_5: -6741032691119286286
+      girl-hero-spritesheet-v2_6: 1288943576705119336
+      girl-hero-spritesheet-v2_7: -3695815227657213203
+      girl-hero-spritesheet-v2_8: 8129607217609236895
+      girl-hero-spritesheet-v2_9: 5481163332107920688
+      girlHero_attack_0: -8560469870658613924
+      girlHero_attack_1: -1962829325596314862
+      girlHero_attack_2: -5263747818073534406
+      girlHero_attack_3: -2274644223622329501
+      girlHero_hit_0: -848462447210460867
+      girlHero_hit_1: 4910525992555464811
+      girlHero_hit_2: 650789135402663484
+      girlHero_hit_3: -8947783665965710022
+      girlHero_idle_0: -5376045738550466244
+      girlHero_idle_1: 4808384891320571350
+      girlHero_idle_2: 2702245014738443117
+      girlHero_idle_3: 6812869960054209390
+      girlHero_run_0: -4277129920782961157
+      girlHero_run_1: 5058618650084985421
+      girlHero_run_2: 4011261749269785325
+      girlHero_run_3: -9077972429349511549
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

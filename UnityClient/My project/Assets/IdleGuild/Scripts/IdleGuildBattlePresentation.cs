@@ -36,7 +36,7 @@ public sealed class IdleGuildBattlePresentation
             MonsterHealthAfter = monsterHealthAfter,
             DamageToHero = HeroMaxHealthValue - heroHealthAfter,
             DamageToMonster = monsterMaxHealth - monsterHealthAfter,
-            StageLabel = "STAGE " + normalizedStage,
+            StageLabel = "BOSS STAGE " + normalizedStage,
             ResultLabel = isVictory ? "VICTORY" : "DEFEAT"
         };
     }
