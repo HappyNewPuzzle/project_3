@@ -57,6 +57,7 @@ public sealed class UnityClientBootstrap : MonoBehaviour
     private int syncedSkillTwoLevel;
     private int syncedSkillThreeLevel;
     private const string CharacterVisualSetKey = "IdleGuild.CharacterVisualSet";
+    private const string SkipOfflineRewardOnceKey = "IdleGuild.SkipOfflineRewardOnce";
 
     // Unity 오브젝트가 활성화될 때 세션을 불러오고 API/UI 객체를 준비합니다.
     private void Awake()
@@ -88,7 +89,14 @@ public sealed class UnityClientBootstrap : MonoBehaviour
         {
             battleSceneLayout = FindFirstObjectByType<IdleGuildBattleSceneLayout>();
         }
-        progression = new IdleGuildProgression();
+        // 영웅 변경은 Scene을 다시 로드하지만 실제 앱 재접속은 아니므로 방치 보상을 한 번만 건너뜁니다.
+        bool skipOfflineReward = PlayerPrefs.GetInt(SkipOfflineRewardOnceKey, 0) == 1;
+        if (skipOfflineReward)
+        {
+            PlayerPrefs.DeleteKey(SkipOfflineRewardOnceKey);
+            PlayerPrefs.Save();
+        }
+        progression = new IdleGuildProgression(calculateOfflineReward: !skipOfflineReward);
         RememberSyncedProgression();
         progression.Changed += OnProgressionChanged;
         GameObject hudObject = new GameObject("Idle Guild Game HUD");
@@ -653,6 +661,8 @@ public sealed class UnityClientBootstrap : MonoBehaviour
         }
 
         PlayerPrefs.SetInt(CharacterVisualSetKey, (int)selectedSet);
+        // 다음 Scene 초기화가 영웅 변경 때문임을 표시합니다. Awake에서 읽은 즉시 삭제되는 일회성 값입니다.
+        PlayerPrefs.SetInt(SkipOfflineRewardOnceKey, 1);
         PlayerPrefs.Save();
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }

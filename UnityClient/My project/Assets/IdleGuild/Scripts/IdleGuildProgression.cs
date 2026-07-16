@@ -54,7 +54,7 @@ public sealed class IdleGuildProgression
     public int SpeedUpgradeCost => 35 + SpeedLevel * 22;
     public int CriticalUpgradeCost => 50 + CriticalLevel * 30;
 
-    public IdleGuildProgression(IdleGuildBalanceConfig balance = null)
+    public IdleGuildProgression(IdleGuildBalanceConfig balance = null, bool calculateOfflineReward = true)
     {
         Balance = balance != null ? balance : IdleGuildBalanceConfig.LoadOrCreateRuntimeDefault();
         Inventory = new IdleGuildEquipmentInventory();
@@ -77,7 +77,17 @@ public sealed class IdleGuildProgression
         SkillThreeLevel = Mathf.Max(1, PlayerPrefs.GetInt(Prefix + "SkillThree", 1));
         LoadDailyMissions();
         AchievementClaimMask = PlayerPrefs.GetInt(Prefix + "AchievementClaims", 0);
-        CalculateOfflineReward();
+        if (calculateOfflineReward)
+        {
+            CalculateOfflineReward();
+        }
+        else
+        {
+            // 영웅 변경 Scene 재로드는 방치가 아니므로 보상은 만들지 않고 시간 기준만 현재로 갱신합니다.
+            PendingOfflineGold = 0;
+            OfflineSeconds = 0;
+            MarkExitTime();
+        }
     }
 
     public bool UpgradeAttack() => SpendAndUpgrade(AttackUpgradeCost, () => AttackLevel++);
