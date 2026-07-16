@@ -41,6 +41,7 @@ public sealed class IdleGuildGameWorld
     private Sprite[] heroFrames;
     private Sprite[] monsterFrames;
     private Sprite[] regionMonsterSprites;
+    private Sprite[] skillEffectSprites;
     private Vector3 heroHome;
     private Vector3 monsterHome;
     private Coroutine combatRoutine;
@@ -88,6 +89,12 @@ public sealed class IdleGuildGameWorld
         heroFrames = LoadSpriteSheet(heroSheet, heroCharacterName);
         monsterFrames = LoadSpriteSheet(monsterSheet, useAlternateCharacters ? "maskedThief" : "slime");
         regionMonsterSprites = LoadRegionMonsterSprites();
+        skillEffectSprites = new[]
+        {
+            Resources.Load<Sprite>("Effects/star-burst-vfx"),
+            Resources.Load<Sprite>("Effects/swift-strike-vfx"),
+            Resources.Load<Sprite>("Effects/guardian-light-vfx")
+        };
         CreateCameraBackdrop();
         CreateGround();
         CreateActors();
@@ -789,6 +796,10 @@ public sealed class IdleGuildGameWorld
     private IEnumerator PlayStarBurst(Vector3 origin, Vector3 originalScale)
     {
         IdleGuildReleaseServices.PlayEffect(880f);
+        Vector3 impactPosition = monster.gameObject.activeSelf
+            ? monster.position + Vector3.up * 0.45f
+            : origin + Vector3.right * 2.4f;
+        ShowLargeSkillEffect(0, impactPosition, 2.7f, 0.52f, 80f);
         const int count = 18;
         for (int index = 0; index < count; index++)
         {
@@ -819,6 +830,7 @@ public sealed class IdleGuildGameWorld
         }
 
         yield return MoveTo(hero, destination, 0.13f);
+        ShowLargeSkillEffect(1, destination + new Vector3(0.65f, 0.45f, 0f), 3f, 0.44f, -35f);
         coroutineHost.StartCoroutine(ShakeCamera(0.12f));
         yield return new WaitForSeconds(0.08f);
         yield return MoveTo(hero, origin, 0.17f);
@@ -827,6 +839,7 @@ public sealed class IdleGuildGameWorld
     private IEnumerator PlayGuardianLight(Vector3 origin, Vector3 originalScale)
     {
         IdleGuildReleaseServices.PlayEffect(640f);
+        ShowLargeSkillEffect(2, origin + Vector3.up * 0.55f, 3.3f, 0.62f, 22f);
         const int count = 16;
         for (int index = 0; index < count; index++)
         {
@@ -861,6 +874,49 @@ public sealed class IdleGuildGameWorld
         renderer.color = color;
         renderer.sortingOrder = 35;
         coroutineHost.StartCoroutine(FlySkillParticle(particle.transform, renderer, destination, duration));
+    }
+
+    private void ShowLargeSkillEffect(int skillIndex, Vector3 position, float worldSize, float duration, float rotationSpeed)
+    {
+        if (skillEffectSprites == null || skillIndex < 0 || skillIndex >= skillEffectSprites.Length || skillEffectSprites[skillIndex] == null)
+        {
+            return;
+        }
+
+        GameObject effect = new GameObject("Large Skill VFX " + skillIndex);
+        effect.transform.SetParent(parent, false);
+        effect.transform.position = position;
+        SpriteRenderer renderer = effect.AddComponent<SpriteRenderer>();
+        renderer.sprite = skillEffectSprites[skillIndex];
+        renderer.sortingOrder = 38;
+        renderer.color = new Color(1f, 1f, 1f, 0f);
+        float spriteSize = Mathf.Max(renderer.sprite.bounds.size.x, renderer.sprite.bounds.size.y);
+        float targetScale = spriteSize <= 0f ? 1f : worldSize / spriteSize;
+        coroutineHost.StartCoroutine(AnimateLargeSkillEffect(effect.transform, renderer, targetScale, duration, rotationSpeed));
+    }
+
+    private IEnumerator AnimateLargeSkillEffect(
+        Transform effect,
+        SpriteRenderer renderer,
+        float targetScale,
+        float duration,
+        float rotationSpeed)
+    {
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / duration);
+            float appear = Mathf.Clamp01(t / 0.18f);
+            float disappear = 1f - Mathf.Clamp01((t - 0.62f) / 0.38f);
+            float pulse = 0.72f + Mathf.Sin(t * Mathf.PI) * 0.38f;
+            effect.localScale = Vector3.one * targetScale * pulse;
+            effect.Rotate(0f, 0f, rotationSpeed * Time.deltaTime);
+            renderer.color = new Color(1f, 1f, 1f, appear * disappear);
+            yield return null;
+        }
+
+        Object.Destroy(effect.gameObject);
     }
 
     private IEnumerator FlySkillParticle(Transform particle, SpriteRenderer renderer, Vector3 destination, float duration)

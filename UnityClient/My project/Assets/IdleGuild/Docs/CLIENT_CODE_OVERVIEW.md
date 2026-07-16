@@ -728,6 +728,24 @@ Hierarchy 학습 방법:
 2. `git check-ignore -v .utmp/example.txt`로 `.utmp/` ignore 규칙이 적용되는지 확인합니다.
 3. Unity가 열려 있을 때 자동 생성된 변경이 보이면 바로 커밋하지 말고 `git diff`로 실제 내용을 먼저 확인합니다.
 
+### Step 23: 전용 스킬 이펙트 리소스
+
+- 작은 단색 사각형만으로 표현하던 스킬에 투명 PNG 전용 이펙트 3개를 추가했습니다.
+- `star-burst-vfx.png`는 몬스터 위치에서 크게 터지는 청록색 별 폭발입니다.
+- `swift-strike-vfx.png`는 돌진이 끝나는 지점에 나타나는 황금색 교차 베기입니다.
+- `guardian-light-vfx.png`는 주인공을 감싸는 녹색·금색 보호 결계입니다.
+- `Resources.Load<Sprite>`로 스킬 이펙트를 한 번 불러오고, `ShowLargeSkillEffect`가 위치와 크기를 결정합니다.
+- `AnimateLargeSkillEffect` 코루틴은 빠른 등장, 크기 맥동, 회전, 페이드아웃을 담당합니다.
+- 기존 작은 파티클은 보조 이펙트로 유지해 큰 이미지 주변에도 움직임이 보이도록 했습니다.
+
+#### Unity Editor에서 확인하기
+
+1. Play 후 스킬 패널에서 각 스킬을 한 번씩 사용합니다.
+2. `STAR BURST`와 `SWIFT STRIKE`의 큰 이펙트가 몬스터 타격 위치에 표시되는지 확인합니다.
+3. `GUARDIAN LIGHT`의 결계가 주인공을 중심으로 표시되는지 확인합니다.
+4. 이펙트가 캐릭터와 몬스터보다 앞에 보이고 약 0.5초 후 자연스럽게 사라지는지 확인합니다.
+5. Game View의 밝은 산 배경에서도 청록색, 황금색, 녹색 이펙트가 명확히 구분되는지 확인합니다.
+
 ## 12. 매 Step 완료 체크리스트
 
 앞으로 Step 완료 시 아래 항목을 기준으로 마무리합니다.
