@@ -32,11 +32,12 @@ public static class IdleGuildSceneLayoutBuilder
         }
 
         Transform hero = FindOrCreate(root.transform, "Hero Spawn", new Vector3(-2.8f, -2.5f, 0f));
-        Transform monster = FindOrCreate(root.transform, "Monster Spawn", new Vector3(1.8f, -2.1f, 0f));
+        Transform monster = FindOrCreate(root.transform, "Monster Spawn", new Vector3(1.8f, -2.75f, 0f));
         UpgradePreviousDefaultPosition(hero, new Vector3(-3.2f, -1.35f, 0f), new Vector3(-2.8f, -2.5f, 0f));
         UpgradePreviousDefaultPosition(hero, new Vector3(-2.8f, -1.35f, 0f), new Vector3(-2.8f, -2.5f, 0f));
         UpgradePreviousDefaultPosition(monster, new Vector3(2.6f, -1.35f, 0f), new Vector3(1.8f, -2.1f, 0f));
         UpgradePreviousDefaultPosition(monster, new Vector3(1.8f, -1.35f, 0f), new Vector3(1.8f, -2.1f, 0f));
+        UpgradePreviousDefaultPosition(monster, new Vector3(1.8f, -2.1f, 0f), new Vector3(1.8f, -2.75f, 0f));
         Transform backdrop = FindOrCreate(root.transform, "Backdrop Anchor", new Vector3(0f, 0f, 8f));
         Transform ground = FindOrCreate(root.transform, "Ground Anchor", new Vector3(0f, -2.1f, 0f));
         layout.Configure(hero, monster, backdrop, ground);

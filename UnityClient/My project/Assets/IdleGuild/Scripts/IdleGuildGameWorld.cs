@@ -940,7 +940,7 @@ public sealed class IdleGuildGameWorld
         // 사용자가 Scene에서 맞춘 위치가 캐릭터 종류에 따라 다시 이동하지 않도록 추가 Y 보정은 적용하지 않습니다.
         float heroVisualYOffset = 0f;
         Vector3 defaultHeroHome = new Vector3(-2.8f, -2.5f, 0f);
-        Vector3 defaultMonsterHome = new Vector3(1.8f, -2.1f, 0f);
+        Vector3 defaultMonsterHome = new Vector3(1.8f, -2.75f, 0f);
         Vector3 configuredHeroHome = sceneLayout != null && sceneLayout.HeroSpawn != null
             ? sceneLayout.HeroSpawn.position
             : defaultHeroHome;
@@ -949,7 +949,8 @@ public sealed class IdleGuildGameWorld
         Vector3 configuredMonsterHome = sceneLayout != null && sceneLayout.MonsterSpawn != null
             ? sceneLayout.MonsterSpawn.position
             : defaultMonsterHome;
-        monsterHome = new Vector3(configuredMonsterHome.x, -2.1f, configuredMonsterHome.z);
+        // Scene이 이전 값을 들고 있어도 요청한 적군 전투선 Y를 일관되게 적용합니다.
+        monsterHome = new Vector3(configuredMonsterHome.x, -2.75f, configuredMonsterHome.z);
 
         // PNG를 정상 로드했으면 첫 Idle 프레임을, 실패했으면 기존 코드 생성 Sprite를 사용합니다.
         Sprite heroSprite = heroFrames != null ? heroFrames[0] : CreateHeroSprite();

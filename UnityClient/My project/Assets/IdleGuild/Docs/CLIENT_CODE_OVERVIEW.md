@@ -632,6 +632,22 @@ Hierarchy 학습 방법:
 4. 일곱 번째 보스는 일반 몬스터보다 강한 피해와 큰 화면 흔들림을 사용하는지 확인합니다.
 5. 주인공 체력이 0이 되면 잠시 재정비한 후 자동 사냥이 다시 시작되는지 확인합니다.
 
+### Step 18: 적군 전투 기준 Y 좌표 조정
+
+- 적군의 `monsterHome.y`를 `-2.75`로 변경했습니다.
+- MainScene의 `Monster Spawn` Anchor도 같은 Y 값으로 저장했습니다.
+- Scene이 이전 `-2.1` 값을 가지고 있으면 `IdleGuildSceneLayoutBuilder`가 새 기본값으로 이전합니다.
+- 런타임에서도 Y를 명시적으로 적용하므로 열린 Scene의 이전 메모리 값 때문에 위치가 되돌아가지 않습니다.
+- 바닥 Anchor는 별도 요소이므로 기존 위치를 유지합니다.
+- 학습 개념: Scene 직렬화 값, 런타임 좌표, Editor 마이그레이션, 단일 기준값 유지.
+
+#### Unity Editor에서 확인하기
+
+1. MainScene의 `Battle Scene Layout > Monster Spawn`을 선택합니다.
+2. Inspector의 Position Y가 `-2.75`인지 확인합니다.
+3. Play 후 일반 적과 보스가 모두 같은 Y 기준에서 등장하는지 확인합니다.
+4. 적의 접근·공격·퇴장 후에도 Y 위치가 원래 값으로 돌아가지 않는지 확인합니다.
+
 ## 12. 매 Step 완료 체크리스트
 
 앞으로 Step 완료 시 아래 항목을 기준으로 마무리합니다.
