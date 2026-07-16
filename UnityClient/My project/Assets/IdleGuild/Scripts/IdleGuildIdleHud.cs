@@ -258,6 +258,8 @@ public sealed class IdleGuildIdleHud : MonoBehaviour
             return;
         }
 
+        // 성공한 스킬 입력은 패널을 먼저 닫아 전투 캐릭터와 스킬 연출이 가려지지 않게 합니다.
+        CloseAllPanels();
         skillAction?.Invoke(skillIndex);
         string[] names = { "STAR BURST!", "SWIFT STRIKE!", "GUARDIAN LIGHT!" };
         ShowToast(names[Mathf.Clamp(skillIndex, 0, names.Length - 1)]);
