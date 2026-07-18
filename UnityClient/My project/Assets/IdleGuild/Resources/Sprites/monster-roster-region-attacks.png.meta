@@ -44,7 +44,7 @@ TextureImporter:
     sprites:
     - serializedVersion: 2
       name: regionAttack_0
-      rect: {serializedVersion: 2, x: 15, y: 728, width: 612, height: 373}
+      rect: {serializedVersion: 2, x: 0, y: 627, width: 627, height: 627}
       alignment: 9
       pivot: {x: 0.5, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -56,7 +56,7 @@ TextureImporter:
       internalID: 9100001
     - serializedVersion: 2
       name: regionAttack_1
-      rect: {serializedVersion: 2, x: 627, y: 769, width: 595, height: 314}
+      rect: {serializedVersion: 2, x: 627, y: 627, width: 627, height: 627}
       alignment: 9
       pivot: {x: 0.5, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -68,7 +68,7 @@ TextureImporter:
       internalID: 9100002
     - serializedVersion: 2
       name: regionAttack_2
-      rect: {serializedVersion: 2, x: 27, y: 159, width: 600, height: 388}
+      rect: {serializedVersion: 2, x: 0, y: 0, width: 627, height: 627}
       alignment: 9
       pivot: {x: 0.5, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -80,7 +80,7 @@ TextureImporter:
       internalID: 9100003
     - serializedVersion: 2
       name: regionAttack_3
-      rect: {serializedVersion: 2, x: 627, y: 155, width: 592, height: 467}
+      rect: {serializedVersion: 2, x: 627, y: 0, width: 627, height: 627}
       alignment: 9
       pivot: {x: 0.5, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}

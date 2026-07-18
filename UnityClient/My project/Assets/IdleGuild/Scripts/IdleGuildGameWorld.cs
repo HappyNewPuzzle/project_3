@@ -1140,7 +1140,7 @@ public sealed class IdleGuildGameWorld
             ? sceneLayout.HeroSpawn.position
             : defaultHeroHome;
         // 열린 Unity Scene이 외부 파일 변경 전의 -1.35 값을 메모리에 들고 있어도 요청한 Y를 강제로 사용합니다.
-        heroHome = new Vector3(configuredHeroHome.x, -3.4f + heroVisualYOffset, configuredHeroHome.z);
+        heroHome = new Vector3(configuredHeroHome.x, -3f + heroVisualYOffset, configuredHeroHome.z);
         Vector3 configuredMonsterHome = sceneLayout != null && sceneLayout.MonsterSpawn != null
             ? sceneLayout.MonsterSpawn.position
             : defaultMonsterHome;
