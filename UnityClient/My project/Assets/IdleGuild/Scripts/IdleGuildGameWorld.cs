@@ -207,7 +207,7 @@ public sealed class IdleGuildGameWorld
                 monsterRenderer.sprite = regionMonsterSprites[currentRegionMonsterIndex];
             }
             // 같은 숫자보다 실제 Sprite의 발바닥 픽셀을 기준으로 몬스터별 전투선을 사용합니다.
-            float encounterMonsterY = GetRegionMonsterBattleY(boss, regionIndex);
+            float encounterMonsterY = GetRegionMonsterBattleY();
             float encounterMonsterX = boss ? -0.9f : -0.55f;
             monster.position = new Vector3(monsterHome.x + 0.7f, encounterMonsterY, monsterHome.z);
             monsterRenderer.color = new Color(1f, 1f, 1f, 0f);
@@ -228,7 +228,12 @@ public sealed class IdleGuildGameWorld
                 0.72f,
                 0.16f);
 
-            if (monsterAnimator.enabled) StopMonsterAnimation();
+            StopMonsterAnimation();
+            if (!monsterAnimator.enabled && regionMonsterSprites != null && currentRegionMonsterIndex >= 0)
+            {
+                // 등장 이동이 끝나면 달리기 반복을 멈추고 정지 자세로 전환합니다.
+                monsterRenderer.sprite = regionMonsterSprites[currentRegionMonsterIndex];
+            }
             while (health > 0)
             {
                 if (boss && Time.time >= bossDeadline)
@@ -1008,7 +1013,6 @@ public sealed class IdleGuildGameWorld
         else if (regionMonsterSprites != null && currentRegionMonsterIndex >= 0 && currentRegionMonsterIndex < regionMonsterSprites.Length)
         {
             monsterRenderer.sprite = regionMonsterSprites[currentRegionMonsterIndex];
-            StartRegionMonsterRun(currentRegionMonsterIndex);
         }
     }
 
@@ -1425,21 +1429,10 @@ public sealed class IdleGuildGameWorld
         }
     }
 
-    private float GetRegionMonsterBattleY(bool boss, int regionIndex)
+    private float GetRegionMonsterBattleY()
     {
-        if (boss) return -3.6f;
-
-        // 고블린과 박쥐는 기본 적 전투선, 늑대는 아래쪽 투명 여백을 보정한 전투선입니다.
-        switch (regionIndex)
-        {
-            case 0:
-            case 1:
-                return -3.15f;
-            case 2:
-                return -3.4f;
-            default:
-                return -3.15f;
-        }
+        // 모든 지역 Sprite가 실제 발바닥 Pivot을 사용하므로 Transform Y도 주인공 전투선과 같게 둡니다.
+        return heroHome.y;
     }
 
     // Multiple Sprite Import로 생성된 하위 Sprite를 상태 행/열 순서의 배열로 정렬합니다.
