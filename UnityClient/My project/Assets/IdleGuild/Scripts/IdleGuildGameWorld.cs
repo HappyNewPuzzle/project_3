@@ -41,6 +41,8 @@ public sealed class IdleGuildGameWorld
     private Sprite[] heroFrames;
     private Sprite[] monsterFrames;
     private Sprite[] regionMonsterSprites;
+    private Sprite[] regionMonsterAttackSprites;
+    private int currentRegionMonsterIndex = -1;
     private Sprite[] skillEffectSprites;
     private Vector3 heroHome;
     private Vector3 monsterHome;
@@ -90,6 +92,7 @@ public sealed class IdleGuildGameWorld
         heroFrames = LoadSpriteSheet(heroSheet, heroCharacterName);
         monsterFrames = LoadSpriteSheet(monsterSheet, useAlternateCharacters ? "maskedThief" : "slime");
         regionMonsterSprites = LoadRegionMonsterSprites();
+        regionMonsterAttackSprites = LoadRegionMonsterAttackSprites();
         skillEffectSprites = new[]
         {
             Resources.Load<Sprite>("Effects/star-burst-vfx"),
@@ -198,9 +201,11 @@ public sealed class IdleGuildGameWorld
             if (regionMonsterSprites != null && regionMonsterSprites.Length == 4)
             {
                 monsterAnimator.enabled = false;
-                monsterRenderer.sprite = regionMonsterSprites[boss ? 3 : regionIndex];
+                currentRegionMonsterIndex = boss ? 3 : regionIndex;
+                monsterRenderer.sprite = regionMonsterSprites[currentRegionMonsterIndex];
             }
-            monster.position = monsterHome + new Vector3(0.7f, 0f, 0f);
+            float encounterMonsterY = !boss && regionIndex == 2 ? -3.4f : monsterHome.y;
+            monster.position = new Vector3(monsterHome.x + 0.7f, encounterMonsterY, monsterHome.z);
             monsterRenderer.color = new Color(1f, 1f, 1f, 0f);
             monsterHealthBar.SetHealth(health, maxHealth);
             heroHealthBar.SetHealth(heroHealth, heroMaxHealth);
@@ -211,7 +216,7 @@ public sealed class IdleGuildGameWorld
                 StartMonsterLoop(ActorAnimationState.Run, 0.11f);
             }
             yield return MoveMonsterIntoBattle(
-                new Vector3(heroHome.x + 1.25f, monsterHome.y, monsterHome.z),
+                new Vector3(heroHome.x + 1.25f, encounterMonsterY, monsterHome.z),
                 0.72f,
                 0.16f);
 
@@ -972,6 +977,11 @@ public sealed class IdleGuildGameWorld
         {
             StartActorState(monsterRenderer, monsterAnimator, monsterFrames, ActorAnimationState.Attack, 0.07f);
         }
+        else if (regionMonsterAttackSprites != null && currentRegionMonsterIndex >= 0 && currentRegionMonsterIndex < regionMonsterAttackSprites.Length)
+        {
+            // 지역 몬스터는 전용 공격 자세 Sprite로 교체해 돌진 동작이 명확하게 보이게 합니다.
+            monsterRenderer.sprite = regionMonsterAttackSprites[currentRegionMonsterIndex];
+        }
         Vector3 origin = monster.position;
         yield return MoveTo(monster, origin + Vector3.left * (boss ? 0.52f : 0.32f), 0.14f);
         StartActorState(heroRenderer, heroAnimator, heroFrames, ActorAnimationState.Hit, 0.07f);
@@ -983,6 +993,10 @@ public sealed class IdleGuildGameWorld
         if (monsterAnimator.enabled)
         {
             StartMonsterLoop(ActorAnimationState.Idle, 0.12f);
+        }
+        else if (regionMonsterSprites != null && currentRegionMonsterIndex >= 0 && currentRegionMonsterIndex < regionMonsterSprites.Length)
+        {
+            monsterRenderer.sprite = regionMonsterSprites[currentRegionMonsterIndex];
         }
     }
 
@@ -1126,7 +1140,7 @@ public sealed class IdleGuildGameWorld
             ? sceneLayout.HeroSpawn.position
             : defaultHeroHome;
         // 열린 Unity Scene이 외부 파일 변경 전의 -1.35 값을 메모리에 들고 있어도 요청한 Y를 강제로 사용합니다.
-        heroHome = new Vector3(configuredHeroHome.x, -2.5f + heroVisualYOffset, configuredHeroHome.z);
+        heroHome = new Vector3(configuredHeroHome.x, -3.4f + heroVisualYOffset, configuredHeroHome.z);
         Vector3 configuredMonsterHome = sceneLayout != null && sceneLayout.MonsterSpawn != null
             ? sceneLayout.MonsterSpawn.position
             : defaultMonsterHome;
@@ -1304,6 +1318,14 @@ public sealed class IdleGuildGameWorld
             }
         }
 
+        return sprites;
+    }
+
+    private static Sprite[] LoadRegionMonsterAttackSprites()
+    {
+        Sprite[] sprites = Resources.LoadAll<Sprite>("Sprites/monster-roster-region-attacks");
+        if (sprites == null || sprites.Length != 4) return null;
+        System.Array.Sort(sprites, (left, right) => string.CompareOrdinal(left.name, right.name));
         return sprites;
     }
 
