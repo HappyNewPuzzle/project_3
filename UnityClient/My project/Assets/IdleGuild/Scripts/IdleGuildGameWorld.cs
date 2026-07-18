@@ -41,6 +41,7 @@ public sealed class IdleGuildGameWorld
     private Sprite[] heroFrames;
     private Sprite[] monsterFrames;
     private Sprite[] regionMonsterSprites;
+    private Sprite[] regionMonsterRunSprites;
     private Sprite[] regionMonsterAttackSprites;
     private int currentRegionMonsterIndex = -1;
     private Sprite[] skillEffectSprites;
@@ -92,6 +93,7 @@ public sealed class IdleGuildGameWorld
         heroFrames = LoadSpriteSheet(heroSheet, heroCharacterName);
         monsterFrames = LoadSpriteSheet(monsterSheet, useAlternateCharacters ? "maskedThief" : "slime");
         regionMonsterSprites = LoadRegionMonsterSprites();
+        regionMonsterRunSprites = LoadRegionMonsterRunSprites();
         regionMonsterAttackSprites = LoadRegionMonsterAttackSprites();
         skillEffectSprites = new[]
         {
@@ -217,12 +219,16 @@ public sealed class IdleGuildGameWorld
             {
                 StartMonsterLoop(ActorAnimationState.Run, 0.11f);
             }
+            else
+            {
+                StartRegionMonsterRun(currentRegionMonsterIndex);
+            }
             yield return MoveMonsterIntoBattle(
                 new Vector3(encounterMonsterX, encounterMonsterY, monsterHome.z),
                 0.72f,
                 0.16f);
 
-            StopMonsterAnimation();
+            if (monsterAnimator.enabled) StopMonsterAnimation();
             while (health > 0)
             {
                 if (boss && Time.time >= bossDeadline)
@@ -745,6 +751,7 @@ public sealed class IdleGuildGameWorld
 
     private IEnumerator KnockOutMonster()
     {
+        StopMonsterAnimation();
         Vector3 origin = monster.position;
         float elapsed = 0f;
         while (elapsed < 0.24f)
@@ -982,6 +989,7 @@ public sealed class IdleGuildGameWorld
         else if (regionMonsterAttackSprites != null && currentRegionMonsterIndex >= 0 && currentRegionMonsterIndex < regionMonsterAttackSprites.Length)
         {
             // 지역 몬스터는 전용 공격 자세 Sprite로 교체해 돌진 동작이 명확하게 보이게 합니다.
+            StopMonsterAnimation();
             monsterRenderer.sprite = regionMonsterAttackSprites[currentRegionMonsterIndex];
         }
         Vector3 origin = monster.position;
@@ -999,11 +1007,13 @@ public sealed class IdleGuildGameWorld
         else if (regionMonsterSprites != null && currentRegionMonsterIndex >= 0 && currentRegionMonsterIndex < regionMonsterSprites.Length)
         {
             monsterRenderer.sprite = regionMonsterSprites[currentRegionMonsterIndex];
+            StartRegionMonsterRun(currentRegionMonsterIndex);
         }
     }
 
     private IEnumerator RetreatMonster()
     {
+        StopMonsterAnimation();
         Vector3 start = monster.position;
         Color startColor = monsterRenderer.color;
         float elapsed = 0f;
@@ -1329,6 +1339,50 @@ public sealed class IdleGuildGameWorld
         if (sprites == null || sprites.Length != 4) return null;
         System.Array.Sort(sprites, (left, right) => string.CompareOrdinal(left.name, right.name));
         return sprites;
+    }
+
+    private static Sprite[] LoadRegionMonsterRunSprites()
+    {
+        Texture2D texture = Resources.Load<Texture2D>("Sprites/monster-roster-region-runs");
+        if (texture == null) return null;
+
+        float frameWidth = texture.width / 4f;
+        float frameHeight = texture.height / 2f;
+        Sprite[] sprites = new Sprite[8];
+        for (int pose = 0; pose < 2; pose++)
+        {
+            for (int monsterIndex = 0; monsterIndex < 4; monsterIndex++)
+            {
+                int index = pose * 4 + monsterIndex;
+                sprites[index] = Sprite.Create(
+                    texture,
+                    new Rect(monsterIndex * frameWidth, texture.height - (pose + 1) * frameHeight, frameWidth, frameHeight),
+                    new Vector2(0.5f, 0f),
+                    frameWidth,
+                    0,
+                    SpriteMeshType.FullRect);
+            }
+        }
+
+        return sprites;
+    }
+
+    private void StartRegionMonsterRun(int monsterIndex)
+    {
+        StopMonsterAnimation();
+        if (regionMonsterRunSprites == null || regionMonsterRunSprites.Length != 8) return;
+        monsterAnimationRoutine = coroutineHost.StartCoroutine(PlayRegionMonsterRun(monsterIndex));
+    }
+
+    private IEnumerator PlayRegionMonsterRun(int monsterIndex)
+    {
+        while (true)
+        {
+            monsterRenderer.sprite = regionMonsterRunSprites[monsterIndex];
+            yield return new WaitForSeconds(0.11f);
+            monsterRenderer.sprite = regionMonsterRunSprites[monsterIndex + 4];
+            yield return new WaitForSeconds(0.11f);
+        }
     }
 
     private float GetRegionMonsterBattleY(bool boss, int regionIndex)
