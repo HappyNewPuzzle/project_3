@@ -166,6 +166,7 @@ public sealed class IdleGuildGameWorld
         {
             encounter++;
             bool boss = encounter % 7 == 0;
+            idleHud.SetEncounterProgress(boss ? 7 : encounter % 7, boss);
             int regionIndex = ((progression.Stage - 1) / 10) % 3;
             string[] regionNames = { "FOREST", "CAVE", "SNOWFIELD" };
             if (backdropRenderer != null)

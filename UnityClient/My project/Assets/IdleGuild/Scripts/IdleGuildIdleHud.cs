@@ -31,14 +31,19 @@ public sealed class IdleGuildIdleHud : MonoBehaviour
     private Text skillCooldownText;
     private Action<int> skillAction;
     private Action offlineClaimAction;
+    private string heroDisplayName;
+    private int encounterProgress;
+    private bool bossEncounter;
 
     public void Build(
         IdleGuildProgression value,
+        string selectedHeroName,
         Action onSelectGirl,
         Action onSelectCat,
         Action onSelectClassic)
     {
         progression = value;
+        heroDisplayName = selectedHeroName;
         font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         Canvas canvas = gameObject.AddComponent<Canvas>();
         gameObject.AddComponent<IdleGuildSafeArea>();
@@ -203,6 +208,13 @@ public sealed class IdleGuildIdleHud : MonoBehaviour
     public void ShowGold(int amount)
     {
         ShowToast("+" + amount + " GOLD");
+    }
+
+    public void SetEncounterProgress(int progress, bool isBoss)
+    {
+        encounterProgress = Mathf.Clamp(progress, 0, 7);
+        bossEncounter = isBoss;
+        RefreshStageHeader();
     }
 
     public void SetSkillAction(Action<int> action)
@@ -385,9 +397,9 @@ public sealed class IdleGuildIdleHud : MonoBehaviour
 
     private void Refresh()
     {
-        stageText.text = "STAGE " + progression.Stage;
+        RefreshStageHeader();
         currencyText.text = "GOLD " + progression.Gold + "     GEM " + progression.Gems;
-        powerText.text = "전투력 " + progression.CombatPower;
+        powerText.text = heroDisplayName + "  |  전투력 " + progression.CombatPower;
         ratesText.text = "초당 골드 " + progression.GoldPerSecond.ToString("0.0") + "  |  초당 공격력 " + progression.DamagePerSecond;
         growthText.text = "성장  ATK Lv." + progression.AttackLevel + " / SPD Lv." + progression.SpeedLevel + " / CRIT Lv." + progression.CriticalLevel + "\n장비 Tier " + progression.EquipmentTier;
         if (equipmentText != null)
@@ -398,6 +410,13 @@ public sealed class IdleGuildIdleHud : MonoBehaviour
         {
             missionText.text = "몬스터 " + progression.DailyKillProgress + "/20\n보스 " + progression.DailyBossProgress + "/1\n공격 강화 " + progression.DailyUpgradeProgress + "/3\n누적: 처치 " + progression.DefeatedMonsters + " / 스테이지 " + progression.Stage + " / 장비 " + progression.EquipmentCount;
         }
+    }
+
+    private void RefreshStageHeader()
+    {
+        if (stageText == null) return;
+        string progress = bossEncounter ? "BOSS BATTLE" : "NEXT BOSS " + encounterProgress + "/7";
+        stageText.text = "IDLE GUILD  |  STAGE " + progression.Stage + "\n" + progress;
     }
 
     private GameObject Panel(Transform parent, string name, Color color)

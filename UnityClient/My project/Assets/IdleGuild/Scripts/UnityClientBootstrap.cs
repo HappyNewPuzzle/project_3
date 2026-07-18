@@ -104,6 +104,9 @@ public sealed class UnityClientBootstrap : MonoBehaviour
         idleHud = hudObject.AddComponent<IdleGuildIdleHud>();
         idleHud.Build(
             progression,
+            characterVisualSet == CharacterVisualSet.BlackCatAndMaskedThief
+                ? "BLACK CAT"
+                : characterVisualSet == CharacterVisualSet.ClassicHeroAndSlime ? "CLASSIC" : "GIRL HERO",
             () => SelectCharacter(CharacterVisualSet.CuteGirlAndMaskedThief),
             () => SelectCharacter(CharacterVisualSet.BlackCatAndMaskedThief),
             () => SelectCharacter(CharacterVisualSet.ClassicHeroAndSlime));
