@@ -9,6 +9,8 @@ public interface IIdleGuildApiClient
     IEnumerator GuestLogin(string apiBaseUrl, Action<IdleGuildApiResult<GuestLoginResponse>> onComplete);
     IEnumerator GetGameState(string apiBaseUrl, Action<IdleGuildApiResult<GameStateResponse>> onComplete);
     IEnumerator SyncProgression(string apiBaseUrl, SyncProgressionRequest progression, Action<IdleGuildApiResult<SyncProgressionResponse>> onComplete);
+    IEnumerator UpdateSelectedHero(string apiBaseUrl, string selectedHeroId, Action<IdleGuildApiResult<UpdateSelectedHeroResponse>> onComplete);
+    IEnumerator GetIdleRewardPreview(string apiBaseUrl, Action<IdleGuildApiResult<IdleRewardPreviewResponse>> onComplete);
     IEnumerator ClaimIdleReward(string apiBaseUrl, string idempotencyKey, Action<IdleGuildApiResult<ClaimIdleRewardResponse>> onComplete);
     IEnumerator UpgradeMainHero(string apiBaseUrl, string idempotencyKey, Action<IdleGuildApiResult<UpgradeHeroResponse>> onComplete);
     IEnumerator ChallengeStage(string apiBaseUrl, int stage, string idempotencyKey, Action<IdleGuildApiResult<ChallengeStageResponse>> onComplete);
@@ -80,6 +82,17 @@ public sealed class IdleGuildApiClient : IIdleGuildApiClient
             true,
             onComplete,
             JsonUtility.ToJson(progression));
+    }
+
+    public IEnumerator UpdateSelectedHero(string apiBaseUrl, string selectedHeroId, Action<IdleGuildApiResult<UpdateSelectedHeroResponse>> onComplete)
+    {
+        UpdateSelectedHeroRequest request = new UpdateSelectedHeroRequest { selectedHeroId = selectedHeroId };
+        yield return Send(apiBaseUrl, UnityWebRequest.kHttpVerbPUT, "/api/v1/profile/selected-hero", null, true, onComplete, JsonUtility.ToJson(request));
+    }
+
+    public IEnumerator GetIdleRewardPreview(string apiBaseUrl, Action<IdleGuildApiResult<IdleRewardPreviewResponse>> onComplete)
+    {
+        yield return Send(apiBaseUrl, UnityWebRequest.kHttpVerbGET, "/api/v1/rewards/idle/preview", null, true, onComplete);
     }
 
     // 방치 보상 수령 API를 호출합니다.

@@ -83,12 +83,34 @@ public sealed class GameStateResponse
     public int skillOneLevel;
     public int skillTwoLevel;
     public int skillThreeLevel;
+    public string selectedHeroId;
     // 스테이지 진행으로 얻은 생산 보너스 퍼센트입니다.
     public int productionBonusPercent;
     // 영웅 레벨과 장착 장비를 합산한 서버 권위 전투력입니다.
     public int heroPower;
     // 현재 장착 장비가 제공하는 전투력 합계입니다.
     public int equipmentPowerBonus;
+}
+
+[Serializable]
+public sealed class UpdateSelectedHeroRequest
+{
+    public string selectedHeroId;
+}
+
+[Serializable]
+public sealed class UpdateSelectedHeroResponse
+{
+    public string selectedHeroId;
+}
+
+[Serializable]
+public sealed class IdleRewardPreviewResponse
+{
+    public int elapsedSeconds;
+    public long claimableGold;
+    public int maximumAccumulationSeconds;
+    public string calculatedAtUtc;
 }
 
 [Serializable]

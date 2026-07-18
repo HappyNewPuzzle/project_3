@@ -19,6 +19,7 @@ public sealed class IdleGuildMockApiClient : IIdleGuildApiClient
     private int prestigeLevel;
     private int soulStones;
     private bool isBronzeSwordEquipped;
+    private string selectedHeroId = "girl";
 
     public IEnumerator GetSystemStatus(string apiBaseUrl, Action<IdleGuildApiResult<SystemStatusResponse>> onComplete)
     {
@@ -69,6 +70,23 @@ public sealed class IdleGuildMockApiClient : IIdleGuildApiClient
             skillOneLevel = progression.skillOneLevel,
             skillTwoLevel = progression.skillTwoLevel,
             skillThreeLevel = progression.skillThreeLevel
+        });
+    }
+
+    public IEnumerator UpdateSelectedHero(string apiBaseUrl, string heroId, Action<IdleGuildApiResult<UpdateSelectedHeroResponse>> onComplete)
+    {
+        selectedHeroId = string.IsNullOrWhiteSpace(heroId) ? "girl" : heroId;
+        yield return Complete(onComplete, new UpdateSelectedHeroResponse { selectedHeroId = selectedHeroId });
+    }
+
+    public IEnumerator GetIdleRewardPreview(string apiBaseUrl, Action<IdleGuildApiResult<IdleRewardPreviewResponse>> onComplete)
+    {
+        yield return Complete(onComplete, new IdleRewardPreviewResponse
+        {
+            elapsedSeconds = 0,
+            claimableGold = 0,
+            maximumAccumulationSeconds = 28800,
+            calculatedAtUtc = DateTime.UtcNow.ToString("O")
         });
     }
 
@@ -225,6 +243,7 @@ public sealed class IdleGuildMockApiClient : IIdleGuildApiClient
             skillOneLevel = 1,
             skillTwoLevel = 1,
             skillThreeLevel = 1,
+            selectedHeroId = selectedHeroId,
             productionBonusPercent = ProductionBonusPercent,
             heroPower = heroLevel * 10 + EquipmentPowerBonus,
             equipmentPowerBonus = EquipmentPowerBonus

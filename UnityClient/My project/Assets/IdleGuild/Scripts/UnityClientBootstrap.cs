@@ -296,6 +296,15 @@ public sealed class UnityClientBootstrap : MonoBehaviour
                 syncedSkillTwoLevel = gameState.skillTwoLevel;
                 syncedSkillThreeLevel = gameState.skillThreeLevel;
                 progression.ApplyServerState(gameState);
+                CharacterVisualSet restoredSet;
+                if (TryMapServerHero(gameState.selectedHeroId, out restoredSet) && restoredSet != characterVisualSet)
+                {
+                    PlayerPrefs.SetInt(CharacterVisualSetKey, (int)restoredSet);
+                    PlayerPrefs.SetInt(SkipOfflineRewardOnceKey, 1);
+                    PlayerPrefs.Save();
+                    SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+                    return;
+                }
                 AddLog("State: gold " + gameState.gold + ", hero " + gameState.heroLevel + ", stage " + gameState.highestStage + ", bonus " + gameState.productionBonusPercent + "%");
             }));
     }
@@ -305,12 +314,25 @@ public sealed class UnityClientBootstrap : MonoBehaviour
         for (int attempt = 1; attempt <= 3; attempt++)
         {
             yield return GetGameState();
-            if (lastRequestSucceeded) yield break;
+            if (lastRequestSucceeded)
+            {
+                yield return GetIdleRewardPreview();
+                yield break;
+            }
             AddLog("Reconnect attempt " + attempt + "/3 failed.");
             yield return new WaitForSeconds(attempt * 1.5f);
         }
 
         AddLog("Server reconnect failed. Local progress remains available.");
+    }
+
+    private IEnumerator GetIdleRewardPreview()
+    {
+        yield return RunRequest(api.GetIdleRewardPreview(apiBaseUrl, result =>
+        {
+            if (HandleFailure(result)) return;
+            AddLog("Idle preview: " + result.response.elapsedSeconds + "s / " + result.response.claimableGold + " gold");
+        }));
     }
 
     // 방치 보상 수령 API를 호출합니다.
@@ -663,8 +685,40 @@ public sealed class UnityClientBootstrap : MonoBehaviour
             return;
         }
 
+        if (session.HasToken && !isBusy)
+        {
+            StartCoroutine(UpdateSelectedHeroAndReload(selectedSet));
+            return;
+        }
+
+        SaveCharacterAndReload(selectedSet);
+    }
+
+    private IEnumerator UpdateSelectedHeroAndReload(CharacterVisualSet selectedSet)
+    {
+        yield return RunRequest(api.UpdateSelectedHero(apiBaseUrl, ToServerHeroId(selectedSet), result =>
+        {
+            if (HandleFailure(result)) return;
+            AddLog("Selected hero saved: " + result.response.selectedHeroId);
+        }));
+        if (lastRequestSucceeded) SaveCharacterAndReload(selectedSet);
+    }
+
+    private static string ToServerHeroId(CharacterVisualSet set) =>
+        set == CharacterVisualSet.BlackCatAndMaskedThief ? "black_cat" :
+        set == CharacterVisualSet.ClassicHeroAndSlime ? "classic" : "girl";
+
+    private static bool TryMapServerHero(string heroId, out CharacterVisualSet set)
+    {
+        if (heroId == "black_cat") { set = CharacterVisualSet.BlackCatAndMaskedThief; return true; }
+        if (heroId == "classic") { set = CharacterVisualSet.ClassicHeroAndSlime; return true; }
+        set = CharacterVisualSet.CuteGirlAndMaskedThief;
+        return heroId == "girl";
+    }
+
+    private static void SaveCharacterAndReload(CharacterVisualSet selectedSet)
+    {
         PlayerPrefs.SetInt(CharacterVisualSetKey, (int)selectedSet);
-        // 다음 Scene 초기화가 영웅 변경 때문임을 표시합니다. Awake에서 읽은 즉시 삭제되는 일회성 값입니다.
         PlayerPrefs.SetInt(SkipOfflineRewardOnceKey, 1);
         PlayerPrefs.Save();
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
