@@ -1322,13 +1322,8 @@ public sealed class IdleGuildGameWorld
             for (int column = 0; column < 2; column++)
             {
                 int index = row * 2 + column;
-                sprites[index] = Sprite.Create(
-                    texture,
-                    new Rect(column * width, texture.height - (row + 1) * height, width, height),
-                    new Vector2(0.5f, 0f),
-                    width,
-                    0,
-                    SpriteMeshType.FullRect);
+                Rect rect = new Rect(column * width, texture.height - (row + 1) * height, width, height);
+                sprites[index] = CreateFootAnchoredSprite(texture, rect, width);
             }
         }
 
@@ -1337,9 +1332,21 @@ public sealed class IdleGuildGameWorld
 
     private static Sprite[] LoadRegionMonsterAttackSprites()
     {
-        Sprite[] sprites = Resources.LoadAll<Sprite>("Sprites/monster-roster-region-attacks");
-        if (sprites == null || sprites.Length != 4) return null;
-        System.Array.Sort(sprites, (left, right) => string.CompareOrdinal(left.name, right.name));
+        Texture2D texture = Resources.Load<Texture2D>("Sprites/monster-roster-region-attacks");
+        if (texture == null) return null;
+        int width = texture.width / 2;
+        int height = texture.height / 2;
+        Sprite[] sprites = new Sprite[4];
+        for (int row = 0; row < 2; row++)
+        {
+            for (int column = 0; column < 2; column++)
+            {
+                int index = row * 2 + column;
+                Rect rect = new Rect(column * width, texture.height - (row + 1) * height, width, height);
+                sprites[index] = CreateFootAnchoredSprite(texture, rect, width);
+            }
+        }
+
         return sprites;
     }
 
@@ -1350,27 +1357,54 @@ public sealed class IdleGuildGameWorld
 
         float frameWidth = texture.width / 4f;
         float frameHeight = texture.height / 2f;
-        // 생성 이미지의 프레임별 아래 투명 여백입니다. 기존 정지 Sprite의 발 위치에 맞춰 Pivot을 보정합니다.
-        float[] idleBottomPadding = { 83f, 0f, 127f, 127f };
-        float[] runBottomPadding = { 194f, 237f, 191f, 193f, 287f, 320f, 275f, 264f };
         Sprite[] sprites = new Sprite[8];
         for (int pose = 0; pose < 2; pose++)
         {
             for (int monsterIndex = 0; monsterIndex < 4; monsterIndex++)
             {
                 int index = pose * 4 + monsterIndex;
-                float pivotPixels = Mathf.Max(0f, runBottomPadding[index] - idleBottomPadding[monsterIndex]);
-                sprites[index] = Sprite.Create(
-                    texture,
-                    new Rect(monsterIndex * frameWidth, texture.height - (pose + 1) * frameHeight, frameWidth, frameHeight),
-                    new Vector2(0.5f, pivotPixels / frameHeight),
+                Rect rect = new Rect(
+                    monsterIndex * frameWidth,
+                    texture.height - (pose + 1) * frameHeight,
                     frameWidth,
-                    0,
-                    SpriteMeshType.FullRect);
+                    frameHeight);
+                sprites[index] = CreateFootAnchoredSprite(texture, rect, frameWidth);
             }
         }
 
         return sprites;
+    }
+
+    private static Sprite CreateFootAnchoredSprite(Texture2D texture, Rect rect, float pixelsPerUnit)
+    {
+        int xMin = Mathf.Clamp(Mathf.FloorToInt(rect.xMin), 0, texture.width - 1);
+        int xMax = Mathf.Clamp(Mathf.CeilToInt(rect.xMax), xMin + 1, texture.width);
+        int yMin = Mathf.Clamp(Mathf.FloorToInt(rect.yMin), 0, texture.height - 1);
+        int yMax = Mathf.Clamp(Mathf.CeilToInt(rect.yMax), yMin + 1, texture.height);
+        int lowestOpaqueY = yMin;
+        bool foundOpaquePixel = false;
+
+        for (int y = yMin; y < yMax && !foundOpaquePixel; y++)
+        {
+            for (int x = xMin; x < xMax; x++)
+            {
+                if (texture.GetPixel(x, y).a <= 0.08f) continue;
+                lowestOpaqueY = y;
+                foundOpaquePixel = true;
+                break;
+            }
+        }
+
+        float pivotY = foundOpaquePixel
+            ? Mathf.Clamp01((lowestOpaqueY + 0.5f - rect.yMin) / rect.height)
+            : 0f;
+        return Sprite.Create(
+            texture,
+            rect,
+            new Vector2(0.5f, pivotY),
+            pixelsPerUnit,
+            0,
+            SpriteMeshType.FullRect);
     }
 
     private void StartRegionMonsterRun(int monsterIndex)
