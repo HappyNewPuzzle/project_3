@@ -46,7 +46,7 @@ TextureImporter:
       name: regionAttack_0
       rect: {serializedVersion: 2, x: 0, y: 627, width: 627, height: 627}
       alignment: 9
-      pivot: {x: 0.5, y: 0}
+      pivot: {x: 0.5, y: 0.028708}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape: []
@@ -58,7 +58,7 @@ TextureImporter:
       name: regionAttack_1
       rect: {serializedVersion: 2, x: 627, y: 627, width: 627, height: 627}
       alignment: 9
-      pivot: {x: 0.5, y: 0}
+      pivot: {x: 0.5, y: 0.226475}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape: []
@@ -70,7 +70,7 @@ TextureImporter:
       name: regionAttack_2
       rect: {serializedVersion: 2, x: 0, y: 0, width: 627, height: 627}
       alignment: 9
-      pivot: {x: 0.5, y: 0}
+      pivot: {x: 0.5, y: 0.051037}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape: []
@@ -82,7 +82,7 @@ TextureImporter:
       name: regionAttack_3
       rect: {serializedVersion: 2, x: 627, y: 0, width: 627, height: 627}
       alignment: 9
-      pivot: {x: 0.5, y: 0}
+      pivot: {x: 0.5, y: 0.044657}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape: []

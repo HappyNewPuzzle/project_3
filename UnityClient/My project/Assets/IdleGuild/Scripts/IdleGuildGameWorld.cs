@@ -758,7 +758,8 @@ public sealed class IdleGuildGameWorld
         {
             elapsed += Time.deltaTime;
             float t = Mathf.Clamp01(elapsed / 0.24f);
-            monster.position = origin + new Vector3(0.45f * t, 0.35f * t, 0f);
+            // 몬스터의 발선을 유지하기 위해 처치 연출도 X축으로만 튕겨 나갑니다.
+            monster.position = origin + new Vector3(0.45f * t, 0f, 0f);
             monsterRenderer.color = new Color(1f, 1f, 1f, 1f - t);
             yield return null;
         }
@@ -1022,7 +1023,8 @@ public sealed class IdleGuildGameWorld
         {
             elapsed += Time.deltaTime;
             float t = Mathf.Clamp01(elapsed / duration);
-            monster.position = Vector3.Lerp(start, monsterHome + Vector3.right * 0.8f, t);
+            Vector3 retreatDestination = new Vector3(monsterHome.x + 0.8f, start.y, start.z);
+            monster.position = Vector3.Lerp(start, retreatDestination, t);
             monsterRenderer.color = new Color(startColor.r, startColor.g, startColor.b, 1f - t);
             yield return null;
         }
@@ -1348,16 +1350,20 @@ public sealed class IdleGuildGameWorld
 
         float frameWidth = texture.width / 4f;
         float frameHeight = texture.height / 2f;
+        // 생성 이미지의 프레임별 아래 투명 여백입니다. 기존 정지 Sprite의 발 위치에 맞춰 Pivot을 보정합니다.
+        float[] idleBottomPadding = { 83f, 0f, 127f, 127f };
+        float[] runBottomPadding = { 194f, 237f, 191f, 193f, 287f, 320f, 275f, 264f };
         Sprite[] sprites = new Sprite[8];
         for (int pose = 0; pose < 2; pose++)
         {
             for (int monsterIndex = 0; monsterIndex < 4; monsterIndex++)
             {
                 int index = pose * 4 + monsterIndex;
+                float pivotPixels = Mathf.Max(0f, runBottomPadding[index] - idleBottomPadding[monsterIndex]);
                 sprites[index] = Sprite.Create(
                     texture,
                     new Rect(monsterIndex * frameWidth, texture.height - (pose + 1) * frameHeight, frameWidth, frameHeight),
-                    new Vector2(0.5f, 0f),
+                    new Vector2(0.5f, pivotPixels / frameHeight),
                     frameWidth,
                     0,
                     SpriteMeshType.FullRect);
