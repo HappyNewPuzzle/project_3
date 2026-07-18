@@ -206,6 +206,7 @@ public sealed class IdleGuildGameWorld
             }
             // 같은 숫자보다 실제 Sprite의 발바닥 픽셀을 기준으로 몬스터별 전투선을 사용합니다.
             float encounterMonsterY = GetRegionMonsterBattleY(boss, regionIndex);
+            float encounterMonsterX = boss ? -0.9f : -0.55f;
             monster.position = new Vector3(monsterHome.x + 0.7f, encounterMonsterY, monsterHome.z);
             monsterRenderer.color = new Color(1f, 1f, 1f, 0f);
             monsterHealthBar.SetHealth(health, maxHealth);
@@ -217,7 +218,7 @@ public sealed class IdleGuildGameWorld
                 StartMonsterLoop(ActorAnimationState.Run, 0.11f);
             }
             yield return MoveMonsterIntoBattle(
-                new Vector3(heroHome.x + 1.25f, encounterMonsterY, monsterHome.z),
+                new Vector3(encounterMonsterX, encounterMonsterY, monsterHome.z),
                 0.72f,
                 0.16f);
 
