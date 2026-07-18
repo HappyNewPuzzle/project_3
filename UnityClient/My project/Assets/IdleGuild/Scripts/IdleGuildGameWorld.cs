@@ -204,7 +204,8 @@ public sealed class IdleGuildGameWorld
                 currentRegionMonsterIndex = boss ? 3 : regionIndex;
                 monsterRenderer.sprite = regionMonsterSprites[currentRegionMonsterIndex];
             }
-            float encounterMonsterY = !boss && regionIndex == 2 ? -3.4f : monsterHome.y;
+            // 같은 숫자보다 실제 Sprite의 발바닥 픽셀을 기준으로 몬스터별 전투선을 사용합니다.
+            float encounterMonsterY = GetRegionMonsterBattleY(boss, regionIndex);
             monster.position = new Vector3(monsterHome.x + 0.7f, encounterMonsterY, monsterHome.z);
             monsterRenderer.color = new Color(1f, 1f, 1f, 0f);
             monsterHealthBar.SetHealth(health, maxHealth);
@@ -1327,6 +1328,23 @@ public sealed class IdleGuildGameWorld
         if (sprites == null || sprites.Length != 4) return null;
         System.Array.Sort(sprites, (left, right) => string.CompareOrdinal(left.name, right.name));
         return sprites;
+    }
+
+    private float GetRegionMonsterBattleY(bool boss, int regionIndex)
+    {
+        if (boss) return -3.6f;
+
+        // 고블린과 박쥐는 기본 적 전투선, 늑대는 아래쪽 투명 여백을 보정한 전투선입니다.
+        switch (regionIndex)
+        {
+            case 0:
+            case 1:
+                return -3.15f;
+            case 2:
+                return -3.4f;
+            default:
+                return -3.15f;
+        }
     }
 
     // Multiple Sprite Import로 생성된 하위 Sprite를 상태 행/열 순서의 배열로 정렬합니다.
