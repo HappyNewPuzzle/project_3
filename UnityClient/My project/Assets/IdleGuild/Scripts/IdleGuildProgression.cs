@@ -304,7 +304,7 @@ public sealed class IdleGuildProgression
         if (boss)
         {
             Stage++;
-            UnlockedRegion = Mathf.Max(UnlockedRegion, (Stage - 1) / 10);
+            UnlockedRegion = Mathf.Max(UnlockedRegion, (Stage - 1) / Mathf.Max(1, Balance.stagesPerRegion));
             if (Stage % 5 == 0)
             {
                 Gems++;

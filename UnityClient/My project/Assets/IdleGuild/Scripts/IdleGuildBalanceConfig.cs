@@ -19,6 +19,7 @@ public sealed class IdleGuildBalanceConfig : ScriptableObject
     public int bossHealthPerStage = 8;
     public float bossTimeLimitSeconds = 10f;
     public float bossAttackIntervalSeconds = 2.2f;
+    public int stagesPerRegion = 3;
     public int[] skillDamageMultipliers = { 4, 3, 2 };
 
     [Header("Rewards")]

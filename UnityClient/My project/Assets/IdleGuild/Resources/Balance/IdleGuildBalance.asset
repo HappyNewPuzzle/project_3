@@ -23,12 +23,13 @@ MonoBehaviour:
   regularMonsterHealthInAttacks: 1
   bossHealthInAttacks: 5
   bossHealthPerStage: 8
-  bossTimeLimitSeconds: 10
+  bossTimeLimitSeconds: 12
   bossAttackIntervalSeconds: 2.2
+  stagesPerRegion: 3
   skillDamageMultipliers: 040000000300000002000000
-  regularBaseGold: 3
-  regularGoldPerStage: 2
+  regularBaseGold: 5
+  regularGoldPerStage: 3
   bossBaseGold: 12
   bossGoldPerStage: 6
-  equipmentDropChance: 0.35
+  equipmentDropChance: 0.65
   maximumOfflineHours: 8
