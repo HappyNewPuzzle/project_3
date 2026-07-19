@@ -34,6 +34,12 @@ public sealed class IdleGuildIdleHud : MonoBehaviour
     private string heroDisplayName;
     private int encounterProgress;
     private bool bossEncounter;
+    private Sprite topHudSkin;
+    private Sprite bossHudSkin;
+    private Sprite modalSkin;
+    private Sprite buttonSkin;
+    private Sprite[] bottomMenuSkins;
+    private int bottomMenuSkinIndex;
 
     public void Build(
         IdleGuildProgression value,
@@ -45,6 +51,7 @@ public sealed class IdleGuildIdleHud : MonoBehaviour
         progression = value;
         heroDisplayName = selectedHeroName;
         font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        LoadUiSkin();
         Canvas canvas = gameObject.AddComponent<Canvas>();
         gameObject.AddComponent<IdleGuildSafeArea>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
@@ -423,7 +430,21 @@ public sealed class IdleGuildIdleHud : MonoBehaviour
     {
         GameObject target = new GameObject(name, typeof(RectTransform), typeof(Image));
         target.transform.SetParent(parent, false);
-        target.GetComponent<Image>().color = color;
+        Image image = target.GetComponent<Image>();
+        image.color = color;
+
+        Sprite skin = null;
+        if (name == "Top HUD" || name == "Bottom Menu") skin = topHudSkin;
+        else if (name == "Boss HUD") skin = bossHudSkin;
+        else if (name == "Growth" || name == "Character Selection" || name == "Equipment Inventory" ||
+                 name == "Skill Loadout" || name == "Settings and Rewards" || name == "Missions" ||
+                 name == "Offline Reward" || name == "First Run Tutorial") skin = modalSkin;
+        if (skin != null)
+        {
+            image.sprite = skin;
+            image.type = Image.Type.Sliced;
+            image.color = Color.white;
+        }
         return target;
     }
 
@@ -445,8 +466,21 @@ public sealed class IdleGuildIdleHud : MonoBehaviour
     private void Button(Transform parent, string title, Action action)
     {
         GameObject target = Panel(parent, title, new Color(0.16f, 0.36f, 0.56f, 1f));
+        Image image = target.GetComponent<Image>();
+        if (parent.name == "Bottom Menu" && bottomMenuSkins != null && bottomMenuSkinIndex < bottomMenuSkins.Length)
+        {
+            image.sprite = bottomMenuSkins[bottomMenuSkinIndex++];
+            image.type = Image.Type.Simple;
+            image.color = Color.white;
+        }
+        else if (buttonSkin != null)
+        {
+            image.sprite = buttonSkin;
+            image.type = Image.Type.Sliced;
+            image.color = Color.white;
+        }
         UnityEngine.UI.Button button = target.AddComponent<UnityEngine.UI.Button>();
-        button.targetGraphic = target.GetComponent<Image>();
+        button.targetGraphic = image;
         button.onClick.AddListener(() => action());
         button.onClick.AddListener(() => IdleGuildReleaseServices.PlayEffect(620f));
         LayoutElement element = target.AddComponent<LayoutElement>();
@@ -454,6 +488,38 @@ public sealed class IdleGuildIdleHud : MonoBehaviour
         element.flexibleWidth = 1f;
         Text text = Label(target.transform, title, 17, FontStyle.Bold);
         SetRect(text.gameObject, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+    }
+
+    private void LoadUiSkin()
+    {
+        Texture2D atlas = Resources.Load<Texture2D>("UI/idle-guild-ui-atlas");
+        if (atlas == null) return;
+
+        topHudSkin = AtlasSprite(atlas, 29f, 775f, 1775f, 82f, new Vector4(24f, 24f, 24f, 24f));
+        bossHudSkin = AtlasSprite(atlas, 464f, 661f, 937f, 88f, new Vector4(20f, 18f, 20f, 18f));
+        modalSkin = AtlasSprite(atlas, 685f, 284f, 496f, 306f, new Vector4(24f, 24f, 24f, 24f));
+        buttonSkin = AtlasSprite(atlas, 1297f, 451f, 357f, 64f, new Vector4(22f, 18f, 22f, 18f));
+
+        bottomMenuSkins = new Sprite[8];
+        float[] x = { 54f, 445f, 835f, 1224f };
+        float[] width = { 381f, 380f, 381f, 386f };
+        for (int column = 0; column < 4; column++)
+        {
+            bottomMenuSkins[column] = AtlasSprite(atlas, x[column], 61f, width[column], 55f, Vector4.zero);
+            bottomMenuSkins[column + 4] = AtlasSprite(atlas, x[column], 6f, width[column], 54f, Vector4.zero);
+        }
+    }
+
+    private static Sprite AtlasSprite(Texture2D atlas, float x, float y, float width, float height, Vector4 border)
+    {
+        return Sprite.Create(
+            atlas,
+            new Rect(x, y, width, height),
+            new Vector2(0.5f, 0.5f),
+            100f,
+            0,
+            SpriteMeshType.FullRect,
+            border);
     }
 
     private static void SetRect(GameObject target, Vector2 min, Vector2 max, Vector2 offsetMin, Vector2 offsetMax)
